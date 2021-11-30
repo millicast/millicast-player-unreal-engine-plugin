@@ -1,0 +1,29 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "1.0",
+	"FriendlyName": "MillicastPlayer",
+	"Description": "Play a millicast stream",
+	"Category": "Media Players",
+	"CreatedBy": "David Baldassin",
+	"CreatedByURL": "david.baldassin@cosmosoftware.io",
+	"DocsURL": "",
+	"MarketplaceURL": "",
+	"SupportURL": "",
+	"CanContainContent": true,
+	"IsBetaVersion": true,
+        "IsExperimentalVersion": true,
+        "Installed": false,
+        "Modules": [
+                {
+                        "Name": "MillicastPlayer",
+                        "Type": "Runtime",
+                        "LoadingPhase": "PreLoadingScreen"
+                },
+                {
+                        "Name": "MillicastPlayerEditor",
+                        "Type": "Editor",
+                        "LoadingPhase": "PostEngineInit"
+                }
+        ]
+}
