@@ -10,8 +10,13 @@
 
 #include "MillicastDirectorComponent.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_SPARSE_DELEGATE_OneParam(FMillicastDirectorComponentAuthenticated, UMillicastDirectorComponent, OnAuthenticated, const FMillicastSignalingData&, SignalingData);
+DECLARE_DYNAMIC_MULTICAST_SPARSE_DELEGATE_TwoParams(FMillicastDirectorComponentAuthenticationFailure, UMillicastDirectorComponent, OnAuthenticationFailure, int, Code, const FString&, Msg);
+
 /**
-	A component used to receive audio, video from a Millicast feed.
+	A component make request to the Millicast director API
+	in order to get the WebSocket url and the JsonWebToken
+	of the corresponding stream
 */
 UCLASS(BlueprintType, Blueprintable, Category = "MillicastPlayer",
 	   META = (DisplayName = "Millicast Director Component", BlueprintSpawnableComponent))
@@ -38,19 +43,12 @@ public:
 	*/
 	UFUNCTION(BlueprintCallable, Category = "MillicastPlayer", META = (DisplayName = "Authenticate"))
 	bool Authenticate();
+public:
+	/** Called when the response from the director api is successfull */
+	UPROPERTY(BlueprintAssignable, Category = "Components|Activation")
+	FMillicastDirectorComponentAuthenticated OnAuthenticated;
 
-
-	/** Event which is triggered when the HTTP request to Millicast is successfull */
-	DECLARE_EVENT_OneParam(UMillicastDirectorComponent, FOnMillicastPlayerConnected, FMillicastSignalingData&)
-	FOnMillicastPlayerConnected OnConnected() const { return OnMillicastPlayerConnected; }
-
-	/** Event which is triggered when the HTTP request failed or is rejected by Millicast */
-	DECLARE_EVENT_TwoParams(UMillicastDirectorComponent, FOnMillicastPlayerConnectedError, int, FString&)
-	FOnMillicastPlayerConnectedError OnConnectedError() const { return OnMillicastPlayerConnectedError; }
-
-private:
-	FOnMillicastPlayerConnected OnMillicastPlayerConnected;
-	FOnMillicastPlayerConnectedError OnMillicastPlayerConnectedError;
-
-
+	/** Called when the response from the director api is an error */
+	UPROPERTY(BlueprintAssignable, Category = "Components|Activation")
+	FMillicastDirectorComponentAuthenticationFailure OnAuthenticationFailure;
 };

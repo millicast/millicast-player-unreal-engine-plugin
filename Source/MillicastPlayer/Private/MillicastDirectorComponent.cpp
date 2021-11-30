@@ -29,6 +29,8 @@ bool UMillicastDirectorComponent::Initialize(UMillicastMediaSource* InMediaSourc
 */
 bool UMillicastDirectorComponent::Authenticate()
 {
+  constexpr auto HTTP_OK = 200;
+
   UE_LOG(LogMillicastPlayer, Log, TEXT("Authenticate"));
   if(!IsValid(MillicastMediaSource)) return false;
 
@@ -54,7 +56,7 @@ bool UMillicastDirectorComponent::Authenticate()
       .BindLambda([this, &PostHttpRequest](FHttpRequestPtr Request,
                   FHttpResponsePtr Response,
                   bool bConnectedSuccessfully) {
-    if(bConnectedSuccessfully) {
+    if(bConnectedSuccessfully && Response->GetResponseCode() == HTTP_OK) {
           UE_LOG(LogMillicastPlayer, Log, TEXT("Director HTTP resquest successfull"));
           FString DataString = Response->GetContentAsString();
           TSharedPtr<FJsonObject> DataJson;
@@ -70,18 +72,14 @@ bool UMillicastDirectorComponent::Authenticate()
 
               UE_LOG(LogMillicastPlayer, Log, TEXT("WsUrl : %s \njwt : %s"),
                      *data.WsUrl, *data.Jwt);
-              if(OnConnected().IsBound()) {
-                UE_LOG(LogMillicastPlayer, Log, TEXT("Broadcasting onConnected event"));
-                OnConnected().Broadcast(data);
-              }
+
+              OnAuthenticated.Broadcast(data);
           }
     }
     else {
         UE_LOG(LogMillicastPlayer, Error, TEXT("Director HTTP request failed %d %s"), Response->GetResponseCode(), *Response->GetContentType());
-        if(OnConnectedError().IsBound()) {
-          FString ErrorMsg = Response->GetContentType();
-          OnConnectedError().Broadcast(Response->GetResponseCode(), ErrorMsg);
-        }
+        FString ErrorMsg = Response->GetContentAsString();
+        OnAuthenticationFailure.Broadcast(Response->GetResponseCode(), ErrorMsg);
     }
   });
 
