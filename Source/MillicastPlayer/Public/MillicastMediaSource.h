@@ -5,6 +5,9 @@
 #include "StreamMediaSource.h"
 #include "MillicastMediaTexture2D.h"
 #include "MillicastSignalingData.h"
+
+#include "api/media_stream_interface.h"
+
 #include "MillicastMediaSource.generated.h"
 
 
@@ -13,7 +16,8 @@
  */
 UCLASS(BlueprintType, hideCategories=(Platforms,Object),
        META = (DisplayName = "Millicast Media Source"))
-class MILLICASTPLAYER_API UMillicastMediaSource : public UStreamMediaSource
+class MILLICASTPLAYER_API UMillicastMediaSource : public UStreamMediaSource,
+                                                  public rtc::VideoSinkInterface<webrtc::VideoFrame>
 {
         GENERATED_BODY()
 
@@ -82,4 +86,12 @@ public:
 	virtual void PostEditChangeChainProperty(struct FPropertyChangedChainEvent& InPropertyChangedEvent) override;
 #endif //WITH_EDITOR
 	//~ End UObject interface
+
+protected:
+	//~ VideoSink interface
+	void OnFrame(const webrtc::VideoFrame& frame) override;
+
+private:
+	uint8_t * Buffer;
+	size_t    BufferSize;
 };

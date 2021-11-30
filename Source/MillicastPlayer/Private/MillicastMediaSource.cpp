@@ -99,6 +99,11 @@ void UMillicastMediaSource::UpdateMaterialTexture(UMaterialInstanceDynamic* Mate
 	}*/
 }
 
+void UMillicastMediaSource::OnFrame(const webrtc::VideoFrame& frame)
+{
+  // UE_LOG(LogMillicastPlayer, Log, TEXT("Video Frame received"));
+}
+
 #if WITH_EDITOR
 bool UMillicastMediaSource::CanEditChange(const FProperty* InProperty) const
 {

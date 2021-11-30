@@ -10,6 +10,13 @@
 
 #include "MillicastSubscriberComponent.generated.h"
 
+class IWebSocket;
+
+namespace millicast
+{
+class PeerConnection;
+}
+
 /**
 	A component used to receive audio, video from a Millicast feed.
 */
@@ -44,4 +51,24 @@ public:
 	*/
 	UFUNCTION(BlueprintCallable, Category = "MillicastPlayer", META = (DisplayName = "Unsubscribe"))
 	void Unsubscribe();
+
+private:
+	/** Websocket Connection */
+	bool StartWebSocketConnection(const FString& url, const FString& jwt);
+	void OnConnected();
+	void OnConnectionError(const FString& Error);
+	void OnClosed(int32 StatusCode, const FString& Reason, bool bWasClean);
+	void OnMessage(const FString& Msg);
+
+	/** Create the peerconnection and starts subscribing*/
+	bool SubscribeToMillicast();
+
+	/** WebSocket Connection */
+	TSharedPtr<IWebSocket> WS;
+	FDelegateHandle OnConnectedHandle;
+	FDelegateHandle OnConnectionErrorHandle;
+	FDelegateHandle OnClosedHandle;
+	FDelegateHandle OnMessageHandle;
+
+	millicast::PeerConnection* PeerConnection;
 };

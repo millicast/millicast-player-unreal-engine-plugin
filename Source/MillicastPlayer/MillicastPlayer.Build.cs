@@ -23,6 +23,7 @@ namespace UnrealBuildTool.Rules
 					"CoreUObject",
 					"MediaAssets",
 					"TimeManagement",
+					"WebRTC",
 					"RenderCore"
 				});
 
@@ -33,7 +34,6 @@ namespace UnrealBuildTool.Rules
 					"MediaIOCore",
 					"Projects",
 					"SlateCore",
-					"WebRTC",
 					"AudioMixer",
 					"WebSockets",
 					"HTTP",
