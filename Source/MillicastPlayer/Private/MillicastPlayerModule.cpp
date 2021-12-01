@@ -3,7 +3,6 @@
 #include "IMillicastPlayerModule.h"
 
 #include "MillicastPlayerPrivate.h"
-#include "MillicastMediaPlayer.h"
 #include "Brushes/SlateImageBrush.h"
 #include "Interfaces/IPluginManager.h"
 #include "Modules/ModuleManager.h"
