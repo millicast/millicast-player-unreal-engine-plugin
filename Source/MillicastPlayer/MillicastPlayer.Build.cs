@@ -24,8 +24,7 @@ namespace UnrealBuildTool.Rules
 					"MediaAssets",
 					"TimeManagement",
 					"WebRTC",
-					"RenderCore",
-					"MillicastPlayerShaders"
+					"RenderCore"
 				});
 
 			PrivateDependencyModuleNames.AddRange(

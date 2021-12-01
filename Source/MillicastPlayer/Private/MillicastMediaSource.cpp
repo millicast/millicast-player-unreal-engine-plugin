@@ -7,12 +7,7 @@
 #include <common_video/libyuv/include/webrtc_libyuv.h>
 
 #include <RenderTargetPool.h>
-#include <GlobalShader.h>
-#include <ShaderParameterUtils.h>
-#include <MediaShaders.h>
 #include <XRThreadUtils.h>
-
-#include "MillicastShaders.h"
 
 UMillicastMediaSource::UMillicastMediaSource()
 {
@@ -21,6 +16,7 @@ UMillicastMediaSource::UMillicastMediaSource()
 bool UMillicastMediaSource::Initialize(const FMillicastSignalingData& /*data*/)
 {
   UE_LOG(LogMillicastPlayer, Log, TEXT("Initialize Media Source"));
+  Buffer = nullptr;
   BufferSize = 0;
   return true;
 }
@@ -149,7 +145,7 @@ void UMillicastMediaSource::OnFrame(const webrtc::VideoFrame& frame)
             GRenderTargetPool.FindFreeElement(RHICmdList, RenderTargetDescriptor, RenderTarget,
                                                                                   TEXT("MILLICASTPLAYER"));
     }
-    
+
     // Create the update region structure
     FUpdateTextureRegion2D Region(0, 0, 0, 0, FrameSize.X, FrameSize.Y);
 
