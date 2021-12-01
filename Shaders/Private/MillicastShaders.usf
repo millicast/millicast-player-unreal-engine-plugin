@@ -94,8 +94,6 @@ void MillicastUYVYtoBGRAPS(
 		if(MillicastShaderUB.LinearToSrgb)
 			OutColor.xyz = sRGBToLinear(OutColor.xyz);
 		OutColor.w = 1.f;
-
-		// OutColor.xyz = float3(1.f,0.f,0.f);
 	}
 	else
 	{
@@ -103,6 +101,5 @@ void MillicastUYVYtoBGRAPS(
 		if(MillicastShaderUB.LinearToSrgb)
 			OutColor.xyz = sRGBToLinear(OutColor.xyz);
 		OutColor.w = 1.f;
-		OutColor.y = 1.f - OutColor.y;
 	}
 }

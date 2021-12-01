@@ -112,12 +112,11 @@ void UMillicastMediaSource::UpdateMaterialTexture(UMaterialInstanceDynamic* Mate
 
 void UMillicastMediaSource::OnFrame(const webrtc::VideoFrame& frame)
 {
-  // UE_LOG(LogMillicastPlayer, Log, TEXT("Video Frame received"));
   AsyncTask(ENamedThreads::ActualRenderingThread, [=]() {
       // code to execute on game thread here
     FScopeLock Lock(&RenderSyncContext);
 
-    uint32_t Size = webrtc::CalcBufferSize(webrtc::VideoType::kI420,
+    uint32_t Size = webrtc::CalcBufferSize(webrtc::VideoType::kARGB,
                                            frame.width(),
                                            frame.height());
 
@@ -127,8 +126,7 @@ void UMillicastMediaSource::OnFrame(const webrtc::VideoFrame& frame)
       BufferSize = Size;
     }
 
-    auto BufferI420 = frame.video_frame_buffer()->ToI420();
-    webrtc::ExtractBuffer(BufferI420, Size, Buffer);
+    webrtc::ConvertFromI420(frame, webrtc::VideoType::kARGB, 0, Buffer);
 
     FIntPoint FrameSize = FIntPoint(frame.width(), frame.height());
     FRHICommandListImmediate& RHICmdList = FRHICommandListExecutor::GetImmediateCommandList();
@@ -141,10 +139,9 @@ void UMillicastMediaSource::OnFrame(const webrtc::VideoFrame& frame)
                     FrameSize, PF_B8G8R8A8, FClearValueBinding::None, TexCreate_None, TexCreate_RenderTargetable, false);
 
             // Update the shader resource for the 'SourceTexture'
-            // The source texture will be given UYVY data, so make it half-width
             FRHIResourceCreateInfo CreateInfo;
             TRefCountPtr<FRHITexture2D> DummyTexture2DRHI;
-            RHICreateTargetableShaderResource2D(FrameSize.X/2, FrameSize.Y, PF_B8G8R8A8, 1, TexCreate_Dynamic,
+            RHICreateTargetableShaderResource2D(FrameSize.X, FrameSize.Y, PF_B8G8R8A8, 1, TexCreate_Dynamic,
                                                                                     TexCreate_RenderTargetable, false, CreateInfo, SourceTexture,
                                                                                     DummyTexture2DRHI);
 
@@ -152,69 +149,15 @@ void UMillicastMediaSource::OnFrame(const webrtc::VideoFrame& frame)
             GRenderTargetPool.FindFreeElement(RHICmdList, RenderTargetDescriptor, RenderTarget,
                                                                                   TEXT("MILLICASTPLAYER"));
     }
-
-    FSceneRenderTargetItem RenderTargetItem = RenderTarget->GetRenderTargetItem();
-    FTextureRHIRef TargetableTexture = RenderTargetItem.TargetableTexture;
-
-    // Initialize the Graphics Pipeline State Object
-    FGraphicsPipelineStateInitializer GraphicsPSOInit;
-
-    // Initialize the Render pass with the conversion texture
-    FRHITexture* ConversionTexture = TargetableTexture.GetReference();
-    FRHIRenderPassInfo RPInfo(ConversionTexture, ERenderTargetActions::DontLoad_Store);
-
-    // configure media shaders
-    FGlobalShaderMap* ShaderMap = GetGlobalShaderMap(GMaxRHIFeatureLevel);
-
-    // construct the shaders
-    TShaderMapRef<FMillicastShaderVS> VertexShader(ShaderMap);
-    TShaderMapRef<FMillicastShaderUYVYtoBGRAPS> ConvertShader(ShaderMap);
-
-    FVertexBufferRHIRef VertexBuffer = CreateTempMediaVertexBuffer();
-
-    // Needs to be called *before* ApplyCachedRenderTargets, since BeginRenderPass is caching the render targets.
-    RHICmdList.BeginRenderPass(RPInfo, TEXT("Millicast Recv Color Conversion"));
-
-    // do as it suggests
-    RHICmdList.ApplyCachedRenderTargets(GraphicsPSOInit);
-
-    // set the state objects
-    GraphicsPSOInit.DepthStencilState = TStaticDepthStencilState<false, CF_Always>::GetRHI();
-    GraphicsPSOInit.RasterizerState = TStaticRasterizerState<>::GetRHI();
-    GraphicsPSOInit.BlendState = TStaticBlendStateWriteMask<CW_RGBA, CW_NONE, CW_NONE, CW_NONE, CW_NONE, CW_NONE,
-                                                                                                                    CW_NONE, CW_NONE>::GetRHI();
-    // perform binding operations for the shaders to be used
-    GraphicsPSOInit.BoundShaderState.VertexDeclarationRHI = GMediaVertexDeclaration.VertexDeclarationRHI;
-    GraphicsPSOInit.BoundShaderState.VertexShaderRHI = VertexShader.GetVertexShader();
-    GraphicsPSOInit.BoundShaderState.PixelShaderRHI = ConvertShader.GetPixelShader();
-    // Going to draw triangle strips
-    GraphicsPSOInit.PrimitiveType = PT_TriangleStrip;
-
-    // Ensure the pipeline state is set to the one we've configured
-    SetGraphicsPipelineState(RHICmdList, GraphicsPSOInit);
-
-    // set the stream source
-    RHICmdList.SetStreamSource(0, VertexBuffer, 0);
-
-    // set the texture parameter of the conversion shader
-    ConvertShader->SetParameters(RHICmdList, FMillicastShaderUYVYtoBGRAPS::Params(SourceTexture, FrameSize, false));
-
+    
     // Create the update region structure
-    FUpdateTextureRegion2D Region(0, 0, 0, 0, FrameSize.X/2, FrameSize.Y);
+    FUpdateTextureRegion2D Region(0, 0, 0, 0, FrameSize.X, FrameSize.Y);
 
     // Set the Pixel data of the webrtc Frame to the SourceTexture
-    RHIUpdateTexture2D(SourceTexture, 0, Region, BufferI420->StrideY(), (uint8*&)Buffer);
+    RHIUpdateTexture2D(SourceTexture, 0, Region, frame.width() * 4, (uint8*&)Buffer);
 
-    // begin our drawing
-    {
-            RHICmdList.SetViewport(0, 0, 0.0f, FrameSize.X, FrameSize.Y, 1.0f);
-            RHICmdList.DrawPrimitive(0, 2, 1);
-    }
-
-    RHICmdList.EndRenderPass();
-
-    VideoTexture->UpdateTextureReference(RHICmdList, (FTexture2DRHIRef&)ConversionTexture);
-    });
+    VideoTexture->UpdateTextureReference(RHICmdList, (FTexture2DRHIRef&)SourceTexture);
+  });
 }
 
 #if WITH_EDITOR
