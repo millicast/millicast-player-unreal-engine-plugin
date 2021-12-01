@@ -24,6 +24,11 @@
                         "Name": "MillicastPlayerEditor",
                         "Type": "Editor",
                         "LoadingPhase": "PostEngineInit"
+                },
+                {
+                        "Name": "MillicastPlayerShaders",
+                        "Type": "Runtime",
+                        "LoadingPhase": "PostConfigInit"
                 }
         ]
 }

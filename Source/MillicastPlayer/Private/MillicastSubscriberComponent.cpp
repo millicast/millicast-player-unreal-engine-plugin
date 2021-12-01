@@ -49,7 +49,7 @@ void UMillicastSubscriberComponent::Unsubscribe()
     delete PeerConnection;
     PeerConnection = nullptr;
 
-    WS->Disconnect();
+    WS->Close();
     WS = nullptr;
   }
   if (IsValid(MillicastMediaSource))

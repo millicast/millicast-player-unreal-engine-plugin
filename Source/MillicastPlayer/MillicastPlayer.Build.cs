@@ -24,7 +24,8 @@ namespace UnrealBuildTool.Rules
 					"MediaAssets",
 					"TimeManagement",
 					"WebRTC",
-					"RenderCore"
+					"RenderCore",
+					"MillicastPlayerShaders"
 				});
 
 			PrivateDependencyModuleNames.AddRange(
@@ -39,6 +40,7 @@ namespace UnrealBuildTool.Rules
 					"HTTP",
 					"Json",
 					"RHI",
+					"HeadMountedDisplay"
 		});
 
 			PrivateIncludePathModuleNames.AddRange(

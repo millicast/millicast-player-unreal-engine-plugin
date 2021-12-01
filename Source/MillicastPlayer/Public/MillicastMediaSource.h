@@ -94,4 +94,9 @@ protected:
 private:
 	uint8_t * Buffer;
 	size_t    BufferSize;
+
+	FCriticalSection RenderSyncContext;
+	FTexture2DRHIRef SourceTexture;
+	FPooledRenderTargetDesc RenderTargetDescriptor;
+	TRefCountPtr<IPooledRenderTarget> RenderTarget;
 };

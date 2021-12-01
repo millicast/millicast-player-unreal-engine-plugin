@@ -1,0 +1,108 @@
+/*
+	All rights reserved. Copyright(c) 2018-2021, NewTek Inc.
+
+	This file and it's use within a Product is bound by the terms of NDI SDK license that was provided
+	as part of the NDI SDK. For more information, please review the license and the NDI SDK documentation.
+*/
+
+#include "/Engine/Public/Platform.ush"
+#include "/Engine/Generated/GeneratedUniformBuffers.ush" 
+#include "/Engine/Private/GammaCorrectionCommon.ush"
+
+
+
+void MillicastMainVS(
+	in float4 InPosition : ATTRIBUTE0,
+	in float2 InUV : ATTRIBUTE1,
+	out float4 OutPosition : SV_POSITION,
+	out float2 OutUV : TEXCOORD0)
+{
+	OutPosition = InPosition;
+	OutUV = InUV;
+}
+
+
+
+// shader from 8 bits RGB to 8 bits UYVY
+void MillicastBGRAtoUYVYPS(
+	float4 InPosition : SV_POSITION,
+	float2 InUV : TEXCOORD0,
+	out float4 OutColor : SV_Target0)
+{
+	float3x3 RGBToYCbCrMat =
+	{
+		0.18300, 0.61398, 0.06201,
+		-0.10101, -0.33899, 0.43900,
+		0.43902, -0.39900, -0.04001
+	};
+	float3 RGBToYCbCrVec = { 0.06302, 0.50198, 0.50203 };
+
+	float2 UV0 = InUV;
+	float2 UV1 = InUV + float2(1.0f/MillicastShaderUB.OutputWidth, 0.f);
+
+	if(all((UV0 >= float2(0,0)) && (UV0 < float2(1,1)) && (UV1 >= float2(0,0)) && (UV1 < float2(1,1))))
+	{
+		float4 RGBA0 = MillicastShaderUB.InputTarget.Sample(MillicastShaderUB.SamplerP, UV0);
+		float4 RGBA1 = MillicastShaderUB.InputTarget.Sample(MillicastShaderUB.SamplerP, UV1);
+		float3 RGB0 = MillicastShaderUB.LinearToSrgb ? LinearToSrgb(RGBA0.xyz) : RGBA0.xyz;
+		float3 RGB1 = MillicastShaderUB.LinearToSrgb ? LinearToSrgb(RGBA1.xyz) : RGBA1.xyz;
+
+		float3 YUV0 = mul(RGBToYCbCrMat, RGB0) + RGBToYCbCrVec;
+		float3 YUV1 = mul(RGBToYCbCrMat, RGB1) + RGBToYCbCrVec;
+
+		OutColor.xz = (YUV0.zy + YUV1.zy) / 2.f;
+		OutColor.y = YUV0.x;
+		OutColor.w = YUV1.x;
+	}
+	else
+	{
+		OutColor.xz = RGBToYCbCrVec.zy;
+		OutColor.y = RGBToYCbCrVec.x;
+		OutColor.w = RGBToYCbCrVec.x;
+	}
+}
+
+
+// shader from 8 bits UYVY to 8 bits RGB
+void MillicastUYVYtoBGRAPS(
+	float4 InPosition : SV_POSITION,
+	float2 InUV : TEXCOORD0,
+	out float4 OutColor : SV_Target0)
+{
+	float3x3 YCbCrToRGBMat =
+	{
+		1.164, 0., 1.596,
+		1.164, -0.391, -0.813,
+		1.164, 2.018, 0
+	};
+	float3 YCbCrToRGBVec = { -0.9726, 0.3018, -1.1342 };
+
+	if(all((InUV >= float2(0,0)) && (InUV < float2(1,1)) && (InUV >= float2(0,0)) && (InUV < float2(1,1))))
+	{
+		float4 UYVYB = MillicastShaderUB.InputTarget.Sample(MillicastShaderUB.SamplerB, InUV);
+		float4 UYVYP = MillicastShaderUB.InputTarget.Sample(MillicastShaderUB.SamplerP, InUV);
+
+		float PosX = 2.0f * InUV.x * MillicastShaderUB.InputWidth;
+		float4 YUVA;
+
+		float FracX = PosX % 2.0f;
+		YUVA.x = (1 - FracX) * UYVYP.y + FracX * UYVYP.w;
+		YUVA.yz = UYVYB.zx;
+		YUVA.w = 1;
+
+		OutColor.xyz = mul(YCbCrToRGBMat, YUVA.xyz) + YCbCrToRGBVec;
+		if(MillicastShaderUB.LinearToSrgb)
+			OutColor.xyz = sRGBToLinear(OutColor.xyz);
+		OutColor.w = 1.f;
+
+		// OutColor.xyz = float3(1.f,0.f,0.f);
+	}
+	else
+	{
+		OutColor.xyz = YCbCrToRGBVec;
+		if(MillicastShaderUB.LinearToSrgb)
+			OutColor.xyz = sRGBToLinear(OutColor.xyz);
+		OutColor.w = 1.f;
+		OutColor.y = 1.f - OutColor.y;
+	}
+}
