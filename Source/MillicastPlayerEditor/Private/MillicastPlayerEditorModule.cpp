@@ -9,7 +9,6 @@
 #include "Styling/SlateStyle.h"
 #include "Styling/SlateStyleRegistry.h"
 #include "Templates/UniquePtr.h"
-#include "MillicastPlayerActor.h"
 
 #define LOCTEXT_NAMESPACE "MillicastPlayerEditor"
 
@@ -64,10 +63,6 @@ private:
 				   new IMAGE_BRUSH("MillicastMediaSource_64x", Icon64x64));
 		StyleInstance->Set("ClassIcon.MillicastMediaSource",
 				   new IMAGE_BRUSH("MillicastMediaSource_20x", Icon20x20));
-		StyleInstance->Set("ClassThumbnail.MillicastPlayerActor",
-				   new IMAGE_BRUSH("MillicastMediaSource_64x", Icon64x64));
-		StyleInstance->Set("ClassIcon.MillicastPlayerActor",
-				   new IMAGE_BRUSH("MillicastMediaSource_20x", Icon20x20));
 		StyleInstance->Set("ClassThumbnail.MillicastMediaTexture2D",
 				   new IMAGE_BRUSH("MillicastMediaSource_64x", Icon64x64));
 		StyleInstance->Set("ClassIcon.MillicastMediaTexture2D",
@@ -84,22 +79,6 @@ private:
 				true
 			)
 		);
-
-		// Get the Registered Placement Category
-		if (const FPlacementCategoryInfo* PlacementCategoryInformation = PlacementModeModule.GetRegisteredPlacementCategory(CategoryName))
-		{
-			// Register the Millicast Player a placeable item within the editor
-			PlacementModeModule.RegisterPlaceableItem(PlacementCategoryInformation->UniqueHandle, MakeShareable(
-				new FPlaceableItem(
-					*UActorFactory::StaticClass(),
-					FAssetData(AMillicastPlayerActor::StaticClass()->ClassDefaultObject),
-					FName("ClassThumbnail.MillicastPlayerActor"),
-					TOptional<FLinearColor>(),
-					20,
-					NSLOCTEXT("Millicast", "MillicastPlayerActor", "Millicast Player Actor")
-				))
-			);
-		}
 	}
 
 	void UnregisterStyle()
