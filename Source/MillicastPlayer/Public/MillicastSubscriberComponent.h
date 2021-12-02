@@ -12,10 +12,7 @@
 
 class IWebSocket;
 
-namespace millicast
-{
-class PeerConnection;
-}
+class FWebRTCPeerConnection;
 
 /**
 	A component used to receive audio, video from a Millicast feed.
@@ -70,5 +67,5 @@ private:
 	FDelegateHandle OnClosedHandle;
 	FDelegateHandle OnMessageHandle;
 
-	millicast::PeerConnection* PeerConnection;
+	FWebRTCPeerConnection* PeerConnection;
 };

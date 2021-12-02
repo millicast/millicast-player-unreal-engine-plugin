@@ -5,9 +5,7 @@
 
 #include <api/peer_connection_interface.h>
 
-namespace millicast {
-
-class PeerConnection;
+class FWebRTCPeerConnection;
 
 namespace detail
 {
@@ -15,7 +13,7 @@ namespace detail
 template<typename T>
 class SessionDescriptionObserver : public rtc::RefCountedObject<T>
 {
-  friend class millicast::PeerConnection;
+  friend class ::FWebRTCPeerConnection;
   // friend class PeerConnection;
   std::function<void(const std::string&)> _on_failure;
 public:
@@ -38,7 +36,7 @@ template<>
 class SessionDescriptionObserver<webrtc::CreateSessionDescriptionObserver> :
     public detail::SessionDescriptionObserver<webrtc::CreateSessionDescriptionObserver>
 {
-  friend class PeerConnection;
+  friend class FWebRTCPeerConnection;
   // type, sdp
   std::function<void(const std::string&, const std::string&)> _on_success;
   
@@ -62,7 +60,7 @@ template<>
 class SessionDescriptionObserver<webrtc::SetSessionDescriptionObserver> :
     public detail::SessionDescriptionObserver<webrtc::SetSessionDescriptionObserver>
 {
-  friend class PeerConnection;
+  friend class FWebRTCPeerConnection;
   // type, sdp
   std::function<void()> _on_success;
   
@@ -75,7 +73,5 @@ public:
   template<typename Callback>
   void on_success(Callback&& c) { _on_success = std::forward<Callback>(c); }
 };
-
-}  // millicas
 
 #endif /* MILLICAST_SESSION_DESCRIPTION_OBSERVER_H */

@@ -8,7 +8,7 @@
 #include "Json.h"
 #include "WebSocketsModule.h"
 #include "IWebSocket.h"
-#include "peerconnection.h"
+#include "PeerConnection.h"
 
 inline std::string to_string(const FString& Str)
 {
@@ -98,15 +98,15 @@ bool UMillicastSubscriberComponent::SubscribeToMillicast()
   UE_LOG(LogMillicastPlayer, Log, TEXT("Subscribe to Millicast Stream"));
 
   PeerConnection =
-        millicast::PeerConnection::create(millicast::PeerConnection::get_default_config());
+		FWebRTCPeerConnection::Create(FWebRTCPeerConnection::GetDefaultConfig());
 
-  auto * create_sdo = PeerConnection->create_desc_observer();
-  auto * local_sdo  = PeerConnection->local_desc_observer();
-  auto * remote_sdo = PeerConnection->remote_desc_observer();
+  auto * create_sdo = PeerConnection->GetCreateDescriptionObserver();
+  auto * local_sdo  = PeerConnection->GetLocalDescriptionObserver();
+  auto * remote_sdo = PeerConnection->GetRemoteDescriptionObserver();
 
   create_sdo->on_success([this](const std::string& type, const std::string& sdp) {
       UE_LOG(LogMillicastPlayer, Log, TEXT("pc.createOffer() | sucess\nsdp : %s"), *ToString(sdp));
-      PeerConnection->set_local_desc(sdp, type);
+	  PeerConnection->SetLocalDescription(sdp, type);
     });
 
   create_sdo->on_failure([](const std::string& err) {
@@ -146,12 +146,12 @@ bool UMillicastSubscriberComponent::SubscribeToMillicast()
     UE_LOG(LogMillicastPlayer, Error, TEXT("Set remote description failed : %s"), *ToString(err));
   });
 
-  PeerConnection->oa_options.offer_to_receive_video = true;
-  PeerConnection->oa_options.offer_to_receive_audio = true;
-  PeerConnection->set_video_sink(MillicastMediaSource);
+  PeerConnection->OaOptions.offer_to_receive_video = true;
+  PeerConnection->OaOptions.offer_to_receive_audio = true;
+  PeerConnection->SetVideoSink(MillicastMediaSource);
 
   UE_LOG(LogMillicastPlayer, Log, TEXT("Creating offer ..."));
-  PeerConnection->create_offer();
+  PeerConnection->CreateOffer();
 
   return true;
 }
@@ -191,7 +191,7 @@ void UMillicastSubscriberComponent::OnMessage(const FString& Msg)
     if(Type == "response") {
       auto DataJson = ResponseJson->GetObjectField("data");
       FString Sdp = DataJson->GetStringField("sdp");
-      PeerConnection->set_remote_desc(to_string(Sdp));
+	  PeerConnection->SetRemoteDescription(to_string(Sdp));
     }
     else if(Type == "error") {
 
