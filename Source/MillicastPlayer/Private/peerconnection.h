@@ -1,5 +1,6 @@
-#ifndef MILLICAST_PEERCONNECTION_H
-#define MILLICAST_PEERCONNECTION_H
+// Copyright CoSMoSoftware 2021. All Rights Reserved.
+
+#pragma once
 
 #include <absl/base/config.h>
 #undef ABSL_USES_STD_OPTIONAL
@@ -90,7 +91,4 @@ public:
   webrtc::PeerConnectionInterface* operator->() { return _pc.get(); }
 };
 
-
 }  // millicast
-
-#endif /* MILLICAST_PEERCONNECTION_H */

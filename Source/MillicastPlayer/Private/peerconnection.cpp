@@ -1,3 +1,5 @@
+// Copyright CoSMoSoftware 2021. All Rights Reserved.
+
 #include "peerconnection.h"
 
 #include <sstream>
@@ -17,7 +19,7 @@
 
 #include <rtc_base/ssl_adapter.h>
 
-#include "PixelStreamingAudioDeviceModule.h"
+#include "AudioDeviceModule.h"
 
 using millicast::PeerConnection;
 
@@ -28,38 +30,16 @@ rtc::scoped_refptr<webrtc::AudioDeviceModule> PeerConnection::_adm = nullptr;
 
 void PeerConnection::create_peerconnection_factory()
 {
+  UE_LOG(LogMillicastPlayer, Log, TEXT("Creating PeerConnectionFactory"));
+
   rtc::InitializeSSL();
 
-  UE_LOG(LogMillicastPlayer, Log, TEXT("Creating PeerConnectionFactory"));
   _signaling_thread  = rtc::Thread::Create();
   _signaling_thread->SetName("WebRtcSignallingThread", nullptr);
   _signaling_thread->Start();
-  /*_working_thread = rtc::Thread::Create();
-  _working_thread->SetName("_working_thread", NULL);
-  if(!_working_thread->Start()){
-    RTC_LOG(LS_ERROR) << "Working thread failed to start";
-    return;
-  }*/
 
-  //Initialize things on working thread thread
-  /*auto ret = _working_thread->Invoke<bool>(RTC_FROM_HERE, []() {
-      //Create audio module
-      _adm = new rtc::RefCountedObject<FPixelStreamingAudioDeviceModule>();
+  _adm = new rtc::RefCountedObject<FAudioDeviceModule>();
 
-      if(!_adm) {
-        RTC_LOG(LS_ERROR) << "AudioDeviceModule creation failed";
-        return false;
-      }
-
-      RTC_LOG(LS_WARNING) << "AudioDeviceModule created with success";
-
-      return true;
-  });*/
-
-  UE_LOG(LogMillicastPlayer, Log, TEXT("Creating AudioDeviceModule"));
-  _adm = new rtc::RefCountedObject<FPixelStreamingAudioDeviceModule>();
-
-  UE_LOG(LogMillicastPlayer, Log, TEXT("Creating PCF"));
   _pcf = webrtc::CreatePeerConnectionFactory(
         nullptr, nullptr, _signaling_thread.get(), _adm,
         webrtc::CreateBuiltinAudioEncoderFactory(),
@@ -74,8 +54,6 @@ void PeerConnection::create_peerconnection_factory()
       UE_LOG(LogMillicastPlayer, Error, TEXT("Creating PeerConnectionFactory | Failed"));
       return;
   }
-
-  UE_LOG(LogMillicastPlayer, Log, TEXT("Creating PeerConnectionFactory | OK"));
 
   webrtc::PeerConnectionFactoryInterface::Options options;
   options.crypto_options.srtp.enable_gcm_crypto_suites = true;
@@ -180,9 +158,7 @@ void PeerConnection::OnAddTrack(rtc::scoped_refptr<webrtc::RtpReceiverInterface>
 
 void PeerConnection::OnTrack(rtc::scoped_refptr<webrtc::RtpTransceiverInterface> transceiver)
 {
-  UE_LOG(LogMillicastPlayer, Log, TEXT("OnTrack !"));
   if(_video_sink && transceiver->media_type() == cricket::MediaType::MEDIA_TYPE_VIDEO) {
-      UE_LOG(LogMillicastPlayer, Log, TEXT("Add Video Sink"));
       auto * track = static_cast<webrtc::VideoTrackInterface*>(transceiver->receiver()->track().get());
       track->AddOrUpdateSink(_video_sink, rtc::VideoSinkWants());
   }
