@@ -3,7 +3,6 @@
 #include "PeerConnection.h"
 
 #include <sstream>
-#include <thread>
 
 #include "api/video_codecs/builtin_video_decoder_factory.h"
 #include "api/video_codecs/builtin_video_encoder_factory.h"
@@ -15,7 +14,6 @@
 #include "api/audio_codecs/builtin_audio_encoder_factory.h"
 #include "api/create_peerconnection_factory.h"
 #include "api/rtp_receiver_interface.h"
-#include <api/task_queue/default_task_queue_factory.h>
 
 #include <rtc_base/ssl_adapter.h>
 
@@ -174,7 +172,7 @@ void FWebRTCPeerConnection::SetLocalDescription(const std::string& Sdp,
 {
 	  auto * SessionDescription = CreateDescription(Type,
 													 Sdp,
-													 std::ref(LocalSessionDescription->_on_failure));
+													 std::ref(LocalSessionDescription->OnFailureCallback));
 
 	  if(!SessionDescription) return;
 
@@ -187,7 +185,7 @@ void FWebRTCPeerConnection::SetRemoteDescription(const std::string& Sdp,
 {
 	auto * SessionDescription = CreateDescription(Type,
 												  Sdp,
-												  std::ref(RemoteSessionDescription->_on_failure));
+												  std::ref(RemoteSessionDescription->OnFailureCallback));
 
 	if(!SessionDescription) return;
 

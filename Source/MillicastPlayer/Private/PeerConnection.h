@@ -4,7 +4,7 @@
 
 #include <api/peer_connection_interface.h>
 
-#include "session_description_observer.h"
+#include "SessionDescriptionObserver.h"
 
 namespace webrtc {
 
@@ -25,8 +25,8 @@ class FWebRTCPeerConnection : public webrtc::PeerConnectionObserver
 	static TUniquePtr<rtc::Thread>                  SignalingThread;
 	static rtc::scoped_refptr<webrtc::AudioDeviceModule> AudioDeviceModule;
 
-	using FCreateSessionDescriptionObserver = SessionDescriptionObserver<webrtc::CreateSessionDescriptionObserver>;
-	using FSetSessionDescriptionObserver = SessionDescriptionObserver<webrtc::SetSessionDescriptionObserver>;
+	using FCreateSessionDescriptionObserver = TSessionDescriptionObserver<webrtc::CreateSessionDescriptionObserver>;
+	using FSetSessionDescriptionObserver = TSessionDescriptionObserver<webrtc::SetSessionDescriptionObserver>;
 
 	TUniquePtr<FCreateSessionDescriptionObserver> CreateSessionDescription;
 	TUniquePtr<FSetSessionDescriptionObserver>    LocalSessionDescription;

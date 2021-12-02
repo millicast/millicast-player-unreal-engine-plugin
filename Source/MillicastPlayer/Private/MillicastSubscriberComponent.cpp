@@ -104,16 +104,16 @@ bool UMillicastSubscriberComponent::SubscribeToMillicast()
   auto * local_sdo  = PeerConnection->GetLocalDescriptionObserver();
   auto * remote_sdo = PeerConnection->GetRemoteDescriptionObserver();
 
-  create_sdo->on_success([this](const std::string& type, const std::string& sdp) {
+  create_sdo->SetOnSuccessCallback([this](const std::string& type, const std::string& sdp) {
       UE_LOG(LogMillicastPlayer, Log, TEXT("pc.createOffer() | sucess\nsdp : %s"), *ToString(sdp));
 	  PeerConnection->SetLocalDescription(sdp, type);
     });
 
-  create_sdo->on_failure([](const std::string& err) {
+  create_sdo->SetOnFailureCallback([](const std::string& err) {
     UE_LOG(LogMillicastPlayer, Error, TEXT("pc.createOffer() | Error: %s"), *ToString(err));
   });
 
-  local_sdo->on_success([this]() {
+  local_sdo->SetOnSuccessCallback([this]() {
     UE_LOG(LogMillicastPlayer, Log, TEXT("pc.setLocalDescription() | sucess"));
     std::string sdp;
     (*PeerConnection)->local_description()->ToString(&sdp);
@@ -135,14 +135,14 @@ bool UMillicastSubscriberComponent::SubscribeToMillicast()
     WS->Send(StringStream);
   });
 
-  local_sdo->on_failure([](const std::string& err) {
+  local_sdo->SetOnFailureCallback([](const std::string& err) {
      UE_LOG(LogMillicastPlayer, Error, TEXT("Set local description failed : %s"), *ToString(err));
   });
 
-  remote_sdo->on_success([this]() {
+  remote_sdo->SetOnSuccessCallback([this]() {
      UE_LOG(LogMillicastPlayer, Log, TEXT("Set remote description suceeded"));
   });
-  remote_sdo->on_failure([](const std::string& err) {
+  remote_sdo->SetOnFailureCallback([](const std::string& err) {
     UE_LOG(LogMillicastPlayer, Error, TEXT("Set remote description failed : %s"), *ToString(err));
   });
 
