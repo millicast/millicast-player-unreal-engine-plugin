@@ -33,60 +33,56 @@ bool UMillicastDirectorComponent::Initialize(UMillicastMediaSource* InMediaSourc
 */
 bool UMillicastDirectorComponent::Authenticate()
 {
-  constexpr auto HTTP_OK = 200;
+	constexpr auto HTTP_OK = 200;
 
-  UE_LOG(LogMillicastPlayer, Log, TEXT("Authenticate"));
-  if(!IsValid(MillicastMediaSource)) return false;
+	if(!IsValid(MillicastMediaSource)) return false;
 
-  UE_LOG(LogMillicastPlayer, Log, TEXT("Calling director api"));
-  auto PostHttpRequest = FHttpModule::Get().CreateRequest();
-  PostHttpRequest->SetURL(MillicastMediaSource->GetUrl());
-  PostHttpRequest->SetVerb("POST");
-  PostHttpRequest->SetHeader("Content-Type", "application/json");
-  PostHttpRequest->SetHeader("Authorization", "NoAuth");
-  auto data = MakeShared<FJsonObject>();
+	auto PostHttpRequest = FHttpModule::Get().CreateRequest();
+	PostHttpRequest->SetURL(MillicastMediaSource->GetUrl());
+	PostHttpRequest->SetVerb("POST");
+	PostHttpRequest->SetHeader("Content-Type", "application/json");
+	PostHttpRequest->SetHeader("Authorization", "NoAuth");
+	auto RequestData = MakeShared<FJsonObject>();
 
-  data->SetStringField("streamAccountId", MillicastMediaSource->AccountId);
-  data->SetStringField("streamName", MillicastMediaSource->StreamName);
-  data->SetStringField("unauthorizedSubscribe", "true");
+	RequestData->SetStringField("streamAccountId", MillicastMediaSource->AccountId);
+	RequestData->SetStringField("streamName", MillicastMediaSource->StreamName);
+	RequestData->SetStringField("unauthorizedSubscribe", "true");
 
-  FString stream;
-  auto writer = TJsonWriterFactory<>::Create(&stream);
-  FJsonSerializer::Serialize(data, writer);
+	FString SerializedRequestData;
+	auto JsonWriter = TJsonWriterFactory<>::Create(&SerializedRequestData);
+	FJsonSerializer::Serialize(RequestData, JsonWriter);
 
-  PostHttpRequest->SetContentAsString(stream);
+	PostHttpRequest->SetContentAsString(SerializedRequestData);
 
-  PostHttpRequest->OnProcessRequestComplete()
-      .BindLambda([this, &PostHttpRequest](FHttpRequestPtr Request,
-                  FHttpResponsePtr Response,
-                  bool bConnectedSuccessfully) {
-    if(bConnectedSuccessfully && Response->GetResponseCode() == HTTP_OK) {
-          UE_LOG(LogMillicastPlayer, Log, TEXT("Director HTTP resquest successfull"));
-          FString DataString = Response->GetContentAsString();
-          TSharedPtr<FJsonObject> DataJson;
-          auto Reader = TJsonReaderFactory<>::Create(DataString);
+	PostHttpRequest->OnProcessRequestComplete()
+	  .BindLambda([this](FHttpRequestPtr Request,
+				  FHttpResponsePtr Response,
+				  bool bConnectedSuccessfully) {
+		if(bConnectedSuccessfully && Response->GetResponseCode() == HTTP_OK) {
+			FString ResponseDataString = Response->GetContentAsString();
+			TSharedPtr<FJsonObject> ResponseDataJson;
+			auto JsonReader = TJsonReaderFactory<>::Create(ResponseDataString);
 
-          if(FJsonSerializer::Deserialize(Reader, DataJson)) {
-              FMillicastSignalingData data;
-              TSharedPtr<FJsonObject> DataField = DataJson->GetObjectField("data");
-              data.Jwt = DataField->GetStringField("jwt");
-              auto ws = DataField->GetArrayField("urls")[0];
-              FString WsUrl;
-              ws->TryGetString(data.WsUrl);
+			if(FJsonSerializer::Deserialize(JsonReader, ResponseDataJson)) {
+				FMillicastSignalingData SignalingData;
+				TSharedPtr<FJsonObject> DataField = ResponseDataJson->GetObjectField("data");
+				SignalingData.Jwt = DataField->GetStringField("jwt");
+				auto WebSocketUrl = DataField->GetArrayField("urls")[0];
+				WebSocketUrl->TryGetString(SignalingData.WsUrl);
 
-              UE_LOG(LogMillicastPlayer, Log, TEXT("WsUrl : %s \njwt : %s"),
-                     *data.WsUrl, *data.Jwt);
+				UE_LOG(LogMillicastPlayer, Log, TEXT("WsUrl : %s \njwt : %s"),
+					 *SignalingData.WsUrl, *SignalingData.Jwt);
 
-              OnAuthenticated.Broadcast(data);
-          }
-    }
-    else {
-        UE_LOG(LogMillicastPlayer, Error, TEXT("Director HTTP request failed %d %s"), Response->GetResponseCode(), *Response->GetContentType());
-        FString ErrorMsg = Response->GetContentAsString();
-        OnAuthenticationFailure.Broadcast(Response->GetResponseCode(), ErrorMsg);
-    }
-  });
+				OnAuthenticated.Broadcast(SignalingData);
+			}
+		}
+		else {
+			UE_LOG(LogMillicastPlayer, Error, TEXT("Director HTTP request failed %d %s"), Response->GetResponseCode(), *Response->GetContentType());
+			FString ErrorMsg = Response->GetContentAsString();
+			OnAuthenticationFailure.Broadcast(Response->GetResponseCode(), ErrorMsg);
+		}
+	});
 
-  return PostHttpRequest->ProcessRequest();
+	return PostHttpRequest->ProcessRequest();
 }
 
