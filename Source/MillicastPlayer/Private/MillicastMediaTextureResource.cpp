@@ -1,9 +1,4 @@
-/*
-	All rights reserved. Copyright(c) 2018-2021, NewTek Inc.
-
-	This file and it's use within a Product is bound by the terms of NDI SDK license that was provided
-	as part of the NDI SDK. For more information, please review the license and the NDI SDK documentation.
-*/
+// Copyright CoSMoSoftware 2021. All Rights Reserved.
 
 #include "MillicastMediaTextureResource.h"
 
@@ -12,19 +7,14 @@
 #include <DeviceProfiles/DeviceProfileManager.h>
 #include "MillicastMediaTexture2D.h"
 
-/**
-	Constructs a new instance of this object specifying a media texture owner
-
-	@param Owner The media object used as the owner for this object
-*/
 FMillicastMediaTextureResource::FMillicastMediaTextureResource(UMillicastMediaTexture2D* Owner)
 {
-	this->MediaTexture = Owner;
+	MediaTexture = Owner;
 }
 
 void FMillicastMediaTextureResource::InitDynamicRHI()
 {
-	if (this->MediaTexture != nullptr)
+	if (MediaTexture != nullptr)
 	{
 		FSamplerStateInitializerRHI SamplerStateInitializer(
 			(ESamplerFilter)UDeviceProfileManager::Get().GetActiveProfile()->GetTextureLODSettings()->GetSamplerFilter(
@@ -37,13 +27,10 @@ void FMillicastMediaTextureResource::InitDynamicRHI()
 
 void FMillicastMediaTextureResource::ReleaseDynamicRHI()
 {
-	// Release the TextureRHI bound by this object
-	this->TextureRHI.SafeRelease();
+	TextureRHI.SafeRelease();
 
-	// Ensure that we have a owning media texture
-	if (this->MediaTexture != nullptr)
+	if (MediaTexture != nullptr)
 	{
-		// Remove the texture reference associated with the owner texture object
 		RHIUpdateTextureReference(MediaTexture->TextureReference.TextureReferenceRHI, nullptr);
 	}
 }
@@ -55,10 +42,10 @@ SIZE_T FMillicastMediaTextureResource::GetResourceSize()
 
 uint32 FMillicastMediaTextureResource::GetSizeX() const
 {
-	return this->TextureRHI.IsValid() ? TextureRHI->GetSizeXYZ().X : 0;
+	return TextureRHI.IsValid() ? TextureRHI->GetSizeXYZ().X : 0;
 }
 
 uint32 FMillicastMediaTextureResource::GetSizeY() const
 {
-	return this->TextureRHI.IsValid() ? TextureRHI->GetSizeXYZ().Y : 0;
+	return TextureRHI.IsValid() ? TextureRHI->GetSizeXYZ().Y : 0;
 }

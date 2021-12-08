@@ -3,7 +3,12 @@
 #include "MillicastDirectorComponent.h"
 
 #include "Http.h"
-#include "Json.h"
+
+#include "Dom/JsonValue.h"
+#include "Dom/JsonObject.h"
+#include "Serialization/JsonReader.h"
+#include "Serialization/JsonWriter.h"
+
 #include "MillicastPlayerPrivate.h"
 
 UMillicastDirectorComponent::UMillicastDirectorComponent(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer) {}
@@ -15,7 +20,6 @@ UMillicastDirectorComponent::UMillicastDirectorComponent(const FObjectInitialize
 */
 bool UMillicastDirectorComponent::Initialize(UMillicastMediaSource* InMediaSource)
 {
-  UE_LOG(LogMillicastPlayer, Log, TEXT("Initialize Director component"));
 	if (MillicastMediaSource == nullptr && InMediaSource != nullptr)
 	{
 		MillicastMediaSource = InMediaSource;

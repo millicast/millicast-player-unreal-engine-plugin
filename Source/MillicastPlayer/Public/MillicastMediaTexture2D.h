@@ -8,8 +8,7 @@
 #include "MillicastMediaTexture2D.generated.h"
 
 /**
-	A Texture Object used by an NDI Media Receiver object for capturing video from
-	a network source
+	A Texture Object to render a webrtc frame
 */
 UCLASS(NotBlueprintType, NotBlueprintable, HideDropdown,
 	   HideCategories = (ImportSettings, Compression, Texture, Adjustments, Compositing, LevelOfDetail, Object),

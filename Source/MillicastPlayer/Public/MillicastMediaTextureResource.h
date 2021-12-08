@@ -7,8 +7,7 @@
 #include <TextureResource.h>
 
 /**
-	A Texture Resource object used by the NDIMediaTexture2D object for capturing video
-	from a network source
+	A Texture Resource object used by the MillicastMediaTexture2D object
 */
 class MILLICASTPLAYER_API FMillicastMediaTextureResource : public FTextureResource
 {
@@ -36,5 +35,5 @@ public:
 	virtual uint32 GetSizeY() const override;
 
 private:
-	class UMillicastMediaTexture2D* MediaTexture = nullptr;
+	UMillicastMediaTexture2D* MediaTexture = nullptr;
 };
