@@ -7,7 +7,6 @@
 #include <common_video/libyuv/include/webrtc_libyuv.h>
 
 #include <RenderTargetPool.h>
-#include <XRThreadUtils.h>
 
 UMillicastMediaSource::UMillicastMediaSource()
 {
@@ -15,15 +14,23 @@ UMillicastMediaSource::UMillicastMediaSource()
 
 bool UMillicastMediaSource::Initialize(const FMillicastSignalingData& /*data*/)
 {
-  UE_LOG(LogMillicastPlayer, Log, TEXT("Initialize Media Source"));
-  Buffer = nullptr;
-  BufferSize = 0;
-  return true;
+	Buffer = nullptr;
+	BufferSize = 0;
+	return true;
 }
 
 void UMillicastMediaSource::BeginDestroy()
 {
-  Super::BeginDestroy();
+	delete [] Buffer;
+	Buffer = nullptr;
+	BufferSize = 0;
+
+	AsyncTask(ENamedThreads::ActualRenderingThread, [this]() {
+		FScopeLock Lock(&RenderSyncContext);
+		RenderTarget = nullptr;
+	});
+
+	Super::BeginDestroy();
 }
 
 /*
@@ -46,8 +53,7 @@ FString UMillicastMediaSource::GetMediaOption(const FName& Key, const FString& D
 bool UMillicastMediaSource::HasMediaOption(const FName& Key) const
 {
 
-	if (   Key == MillicastPlayerOption::StreamName
-		|| Key == MillicastPlayerOption::AccountId)
+	if (Key == MillicastPlayerOption::StreamName || Key == MillicastPlayerOption::AccountId)
 	{
 		return true;
 	}
@@ -61,16 +67,11 @@ bool UMillicastMediaSource::HasMediaOption(const FName& Key) const
 
 FString UMillicastMediaSource::GetUrl() const
 {
-        return StreamUrl;
+	return StreamUrl;
 }
 
 bool UMillicastMediaSource::Validate() const
 {
-	/*FString FailureReason;
-
-	UE_LOG(LogMillicastPlayer, Warning, TEXT("Not yet implemented but good to be there"));
-	return false;*/
-
 	// TODO : check if stream name and account id are not empty
 
 	return true;
@@ -81,15 +82,13 @@ bool UMillicastMediaSource::Validate() const
 */
 void UMillicastMediaSource::ChangeVideoTexture(UMillicastMediaTexture2D* InVideoTexture)
 {
-	// FScopeLock Lock(&RenderSyncContext);
+	FScopeLock Lock(&RenderSyncContext);
 
 	if (IsValid(VideoTexture))
 	{
-		// make sure that the old texture is not referencing the rendering of this texture
 		VideoTexture->UpdateTextureReference(FRHICommandListExecutor::GetImmediateCommandList(), nullptr);
 	}
 
-	// Just copy the new texture here.
 	VideoTexture = InVideoTexture;
 }
 
@@ -108,52 +107,66 @@ void UMillicastMediaSource::UpdateMaterialTexture(UMaterialInstanceDynamic* Mate
 
 void UMillicastMediaSource::OnFrame(const webrtc::VideoFrame& frame)
 {
-  AsyncTask(ENamedThreads::ActualRenderingThread, [=]() {
-      // code to execute on game thread here
-    FScopeLock Lock(&RenderSyncContext);
+	constexpr auto TEXTURE_PIXEL_FORMAT = PF_B8G8R8A8;
+	constexpr auto WEBRTC_PIXEL_FORMAT = webrtc::VideoType::kARGB;
 
-    uint32_t Size = webrtc::CalcBufferSize(webrtc::VideoType::kARGB,
-                                           frame.width(),
-                                           frame.height());
+	AsyncTask(ENamedThreads::ActualRenderingThread, [=]() {
+		FScopeLock Lock(&RenderSyncContext);
 
-    if(Size > BufferSize) {
-      delete [] Buffer;
-      Buffer = new uint8_t[Size];
-      BufferSize = Size;
-    }
+		uint32_t Size = webrtc::CalcBufferSize(WEBRTC_PIXEL_FORMAT,
+											   frame.width(),
+											   frame.height());
 
-    webrtc::ConvertFromI420(frame, webrtc::VideoType::kARGB, 0, Buffer);
+		if(Size > BufferSize)
+		{
+			delete [] Buffer;
+			Buffer = new uint8_t[Size];
+			BufferSize = Size;
+		}
 
-    FIntPoint FrameSize = FIntPoint(frame.width(), frame.height());
-    FRHICommandListImmediate& RHICmdList = FRHICommandListExecutor::GetImmediateCommandList();
+		webrtc::ConvertFromI420(frame, WEBRTC_PIXEL_FORMAT, 0, Buffer);
 
-    if (!RenderTargetDescriptor.IsValid() ||
-            RenderTargetDescriptor.GetSize() != FIntVector(FrameSize.X, FrameSize.Y, 0))
-    {
-            // Create the RenderTarget descriptor
-            RenderTargetDescriptor = FPooledRenderTargetDesc::Create2DDesc(
-                    FrameSize, PF_B8G8R8A8, FClearValueBinding::None, TexCreate_None, TexCreate_RenderTargetable, false);
+		FIntPoint FrameSize = FIntPoint(frame.width(), frame.height());
+		FRHICommandListImmediate& RHICmdList = FRHICommandListExecutor::GetImmediateCommandList();
 
-            // Update the shader resource for the 'SourceTexture'
-            FRHIResourceCreateInfo CreateInfo;
-            TRefCountPtr<FRHITexture2D> DummyTexture2DRHI;
-            RHICreateTargetableShaderResource2D(FrameSize.X, FrameSize.Y, PF_B8G8R8A8, 1, TexCreate_Dynamic,
-                                                                                    TexCreate_RenderTargetable, false, CreateInfo, SourceTexture,
-                                                                                    DummyTexture2DRHI);
+		if (!RenderTargetDescriptor.IsValid() ||
+				RenderTargetDescriptor.GetSize() != FIntVector(FrameSize.X, FrameSize.Y, 0))
+		{
+				// Create the RenderTarget descriptor
+				RenderTargetDescriptor = FPooledRenderTargetDesc::Create2DDesc(FrameSize,
+																			   TEXTURE_PIXEL_FORMAT,
+																			   FClearValueBinding::None,
+																			   TexCreate_None,
+																			   TexCreate_RenderTargetable,
+																			   false);
 
-            // Find a free target-able texture from the render pool
-            GRenderTargetPool.FindFreeElement(RHICmdList, RenderTargetDescriptor, RenderTarget,
-                                                                                  TEXT("MILLICASTPLAYER"));
-    }
+				// Update the shader resource for the 'SourceTexture'
+				FRHIResourceCreateInfo CreateInfo;
+				TRefCountPtr<FRHITexture2D> DummyTexture2DRHI;
+				RHICreateTargetableShaderResource2D(FrameSize.X, FrameSize.Y, TEXTURE_PIXEL_FORMAT,
+													1,
+													TexCreate_Dynamic,
+													TexCreate_RenderTargetable,
+													false,
+													CreateInfo,
+													SourceTexture,
+													DummyTexture2DRHI);
 
-    // Create the update region structure
-    FUpdateTextureRegion2D Region(0, 0, 0, 0, FrameSize.X, FrameSize.Y);
+				// Find a free target-able texture from the render pool
+				GRenderTargetPool.FindFreeElement(RHICmdList,
+												  RenderTargetDescriptor,
+												  RenderTarget,
+												  TEXT("MILLICASTPLAYER"));
+		}
 
-    // Set the Pixel data of the webrtc Frame to the SourceTexture
-    RHIUpdateTexture2D(SourceTexture, 0, Region, frame.width() * 4, (uint8*&)Buffer);
+		// Create the update region structure
+		FUpdateTextureRegion2D Region(0, 0, 0, 0, FrameSize.X, FrameSize.Y);
 
-    VideoTexture->UpdateTextureReference(RHICmdList, (FTexture2DRHIRef&)SourceTexture);
-  });
+		// Set the Pixel data of the webrtc Frame to the SourceTexture
+		RHIUpdateTexture2D(SourceTexture, 0, Region, frame.width() * 4, (uint8*&)Buffer);
+
+		VideoTexture->UpdateTextureReference(RHICmdList, (FTexture2DRHIRef&)SourceTexture);
+	});
 }
 
 #if WITH_EDITOR
