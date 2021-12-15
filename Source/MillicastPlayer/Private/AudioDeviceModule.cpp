@@ -5,70 +5,198 @@
 #include "AudioMixerDevice.h"
 #include "SampleBuffer.h"
 #include "Engine/GameEngine.h"
+#include "rtc_base/ref_counted_object.h"
+#include "rtc_base/time_utils.h"
+
+const char FAudioDeviceModule::kTimerQueueName[] = "FAudioDeviceModuleTimer";
+
+FAudioDeviceModule::FAudioDeviceModule(webrtc::TaskQueueFactory * queue_factory) noexcept
+  : audio_callback_(nullptr),
+	recording_(false),
+	playing_(false),
+	play_is_initialized_(false),
+	rec_is_initialized_(false),
+	current_mic_level_(kMaxVolume),
+	started_(false),
+	next_frame_time_(0),
+	task_queue_(queue_factory->CreateTaskQueue(kTimerQueueName,
+						   webrtc::TaskQueueFactory::Priority::NORMAL))
+{}
+
+rtc::scoped_refptr<FAudioDeviceModule>
+FAudioDeviceModule::Create(webrtc::TaskQueueFactory * queue_factory)
+{
+  rtc::scoped_refptr<FAudioDeviceModule>
+	adm(new rtc::RefCountedObject<FAudioDeviceModule>(queue_factory));
+
+  return adm;
+}
 
 int32 FAudioDeviceModule::ActiveAudioLayer(AudioLayer* audioLayer) const
 {
-	*audioLayer = AudioDeviceModule::kDummyAudio;
+	// audioLayer = webrtc::kAudioDummy;
 	return 0;
 }
 
-int32 FAudioDeviceModule::RegisterAudioCallback(webrtc::AudioTransport*)
+int32_t FAudioDeviceModule::RegisterAudioCallback(webrtc::AudioTransport* audio_callback)
 {
-	return 0;
+  // rtc::CritScope cs(&crit_callback_);
+
+  audio_callback_ = audio_callback;
+  return 0;
 }
 
-int32 FAudioDeviceModule::Init()
+int16_t FAudioDeviceModule::PlayoutDevices()
 {
-	return 0;
+  return 0;
 }
 
-int32 FAudioDeviceModule::Terminate()
+int16_t FAudioDeviceModule::RecordingDevices()
 {
-	return 0;
+  return 0;
 }
 
-bool FAudioDeviceModule::Initialized() const
+int32_t FAudioDeviceModule::PlayoutDeviceName(uint16_t,
+						 char[webrtc::kAdmMaxDeviceNameSize],
+						 char[webrtc::kAdmMaxGuidSize])
 {
-	return true;
+  return 0;
 }
 
-int16 FAudioDeviceModule::PlayoutDevices()
+int32_t FAudioDeviceModule::RecordingDeviceName(uint16_t ,
+						   char[webrtc::kAdmMaxDeviceNameSize],
+						   char[webrtc::kAdmMaxGuidSize])
 {
+  return 0;
+}
+
+int32_t FAudioDeviceModule::SetPlayoutDevice(uint16_t)
+{
+  return 0;
+}
+
+int32_t FAudioDeviceModule::SetPlayoutDevice(WindowsDeviceType)
+{
+  return ((play_is_initialized_) ? -1 : 0);
+}
+
+int32_t FAudioDeviceModule::SetRecordingDevice(uint16_t)
+{
+  return 0;
+}
+
+int32_t FAudioDeviceModule::SetRecordingDevice(WindowsDeviceType)
+{
+  return ((rec_is_initialized_) ? -1 : 0);
+}
+
+int32_t FAudioDeviceModule::InitPlayout()
+{
+  play_is_initialized_ = true;
+  return 0;
+}
+
+int32_t FAudioDeviceModule::InitRecording()
+{
+  rec_is_initialized_ = true;
+  return 0;
+}
+
+int32_t FAudioDeviceModule::StartPlayout()
+{
+	UE_LOG(LogMillicastPlayer, Log, TEXT("STARTPLAYOUT WSH"));
+  {
+	rtc::CritScope cs(&crit_);
+	playing_ = true;
+  }
+
+  bool start = true;
+  UpdateProcessing(start);
+
+  return 0;
+}
+
+int32_t FAudioDeviceModule::StopPlayout()
+{
+  bool start = false;
+  {
+	rtc::CritScope cs(&crit_);
+	playing_ = false;
+	start = ShouldStartProcessing();
+  }
+
+  UpdateProcessing(start);
+  return 0;
+}
+
+bool FAudioDeviceModule::Playing() const
+{
+  rtc::CritScope cs(&crit_);
+  return playing_;
+}
+
+int32_t FAudioDeviceModule::StartRecording()
+{
+  if (!rec_is_initialized_) {
 	return -1;
+  }
+  {
+	rtc::CritScope cs(&crit_);
+	recording_ = true;
+  }
+
+  bool start = true;
+  UpdateProcessing(start);
+  return 0;
 }
 
-int16 FAudioDeviceModule::RecordingDevices()
+int32_t FAudioDeviceModule::StopRecording()
 {
-	return -1;
+  bool start = false;
+  {
+	rtc::CritScope cs(&crit_);
+	recording_ = false;
+	start = ShouldStartProcessing();
+  }
+
+  UpdateProcessing(start);
+  return 0;
 }
 
-int32 FAudioDeviceModule::PlayoutDeviceName(uint16, char name[webrtc::kAdmMaxDeviceNameSize], char guid[webrtc::kAdmMaxGuidSize])
+bool FAudioDeviceModule::Recording() const
 {
-	return -1;
+  rtc::CritScope cs(&crit_);
+  return recording_;
 }
 
-int32 FAudioDeviceModule::RecordingDeviceName(uint16, char name[webrtc::kAdmMaxDeviceNameSize], char guid[webrtc::kAdmMaxGuidSize])
+int32 FAudioDeviceModule::RecordingIsAvailable(bool* available)
 {
-	return -1;
-}
-
-int32 FAudioDeviceModule::SetPlayoutDevice(uint16)
-{
+	*available = false;
 	return 0;
 }
 
-int32 FAudioDeviceModule::SetPlayoutDevice(WindowsDeviceType)
+int32_t FAudioDeviceModule::SetMicrophoneVolume(uint32_t volume)
 {
-	return 0;
+  current_mic_level_ = volume;
+  return 0;
 }
 
-int32 FAudioDeviceModule::SetRecordingDevice(uint16)
+int32_t FAudioDeviceModule::MicrophoneVolume(uint32_t* volume) const
 {
-	return 0;
+  *volume = current_mic_level_;
+  return 0;
 }
 
-int32 FAudioDeviceModule::SetRecordingDevice(WindowsDeviceType)
+int32_t FAudioDeviceModule::MaxMicrophoneVolume(
+						   uint32_t* max_volume) const
 {
+  *max_volume = kMaxVolume;
+  return 0;
+}
+
+int32 RecordingIsAvailable(bool* available)
+{
+	*available = false;
 	return 0;
 }
 
@@ -78,104 +206,21 @@ int32 FAudioDeviceModule::PlayoutIsAvailable(bool* available)
 	return 0;
 }
 
-int32 FAudioDeviceModule::InitPlayout()
-{
-	return 0;
-}
-
-bool FAudioDeviceModule::PlayoutIsInitialized() const
-{
-	return true;
-}
-
-int32 FAudioDeviceModule::StartPlayout()
-{
-	return 0;
-}
-
-int32 FAudioDeviceModule::StopPlayout()
-{
-	return 0;
-}
-
-bool FAudioDeviceModule::Playing() const
-{
-	return false;
-}
-
-int32 FAudioDeviceModule::RecordingIsAvailable(bool* available)
-{
-	*available = false;
-	return 0;
-}
-
-int32 FAudioDeviceModule::InitRecording()
-{
-	return 0;
-}
-
-bool FAudioDeviceModule::RecordingIsInitialized() const
-{
-	return false;
-}
-
-int32 FAudioDeviceModule::StartRecording()
-{
-	return 0;
-}
-
-int32 FAudioDeviceModule::StopRecording()
-{
-	return 0;
-}
-
-bool FAudioDeviceModule::Recording() const
-{
-	return false;
-}
-
-int32 FAudioDeviceModule::InitSpeaker()
-{
-	return -1;
-}
-
-bool FAudioDeviceModule::SpeakerIsInitialized() const
-{
-	return false;
-}
-
-int32 FAudioDeviceModule::InitMicrophone()
-{
-	return 0;
-}
-
-bool FAudioDeviceModule::MicrophoneIsInitialized() const
-{
-	return true;
-}
-
 int32 FAudioDeviceModule::StereoPlayoutIsAvailable(bool* available) const
 {
 	*available = true;
 	return 0;
 }
 
-int32 FAudioDeviceModule::SetStereoPlayout(bool enable)
+int32 FAudioDeviceModule::StereoPlayout(bool* available) const
 {
-	FString AudioChannelStr = enable ? TEXT("stereo") : TEXT("mono");
-	UE_LOG(LogMillicastPlayer, Verbose, TEXT("WebRTC has requested browser audio playout in UE be: %s"), *AudioChannelStr);
-	return 0;
-}
-
-int32 FAudioDeviceModule::StereoPlayout(bool* enabled) const
-{
-	*enabled = true;
+	*available = true;
 	return 0;
 }
 
 int32 FAudioDeviceModule::StereoRecordingIsAvailable(bool* available) const
 {
-	*available = true;
+	*available = false;
 	return 0;
 }
 
@@ -186,6 +231,94 @@ int32 FAudioDeviceModule::SetStereoRecording(bool enable)
 
 int32 FAudioDeviceModule::StereoRecording(bool* enabled) const
 {
-	*enabled = true;
+	*enabled = false;
 	return 0;
 }
+
+int32_t FAudioDeviceModule::PlayoutDelay(uint16_t* delay_ms) const
+{
+  // No delay since audio frames are dropped.
+  *delay_ms = 0;
+  return 0;
+}
+
+void FAudioDeviceModule::OnMessage(TaskMessage msg)
+{
+  switch (msg) {
+  case MSG_START_PROCESS:
+	StartProcessP();
+	break;
+  case MSG_RUN_PROCESS:
+	ProcessFrameP();
+	break;
+  case MSG_STOP_PROCESS:
+	started_ = false;
+	break;
+  default:
+	// All existing messages should be caught. Getting here should never happen.
+	RTC_NOTREACHED();
+  }
+}
+
+bool FAudioDeviceModule::ShouldStartProcessing()
+{
+  return recording_ || playing_;
+}
+
+void FAudioDeviceModule::UpdateProcessing(bool start)
+{
+  if (start) {
+	task_queue_.PostTask(std::bind(&FAudioDeviceModule::OnMessage,
+				   this, MSG_START_PROCESS));
+  }
+  else {
+	task_queue_.PostTask(std::bind(&FAudioDeviceModule::OnMessage,
+				   this, MSG_STOP_PROCESS));
+  }
+}
+
+void FAudioDeviceModule::StartProcessP()
+{
+  RTC_DCHECK_RUN_ON(&task_queue_);
+  if (started_) return;
+  ProcessFrameP();
+}
+
+void FAudioDeviceModule::ProcessFrameP()
+{
+  RTC_DCHECK_RUN_ON(&task_queue_);
+  if (!started_) {
+	next_frame_time_ = rtc::TimeMillis();
+	started_ = true;
+  }
+
+  {
+	rtc::CritScope cs(&crit_);
+	// Receive and send frames every kTimePerFrameMs.
+	if (playing_) ReceiveFrameP();
+  }
+
+  next_frame_time_ += kTimePerFrameMs;
+  const int64_t current_time = rtc::TimeMillis();
+  const int64_t wait_time =
+	(next_frame_time_ > current_time) ? next_frame_time_ - current_time : 0;
+  task_queue_.PostDelayedTask(std::bind(&FAudioDeviceModule::OnMessage,
+					this,
+					MSG_RUN_PROCESS),
+				  int32_t(wait_time));
+}
+
+void FAudioDeviceModule::ReceiveFrameP()
+{
+	RTC_DCHECK_RUN_ON(&task_queue_);
+
+	// rtc::CritScope cs(&_crit_callback);
+
+	int64_t elapsed, ntp;
+	size_t  out;
+
+	audio_callback_->NeedMorePlayData(kNumberSamples, sizeof(Sample), kNumberOfChannels,
+					kSamplesPerSecond, _rec_buffer, out, &elapsed, &ntp);
+
+}
+

@@ -143,7 +143,9 @@ bool UMillicastSubscriberComponent::SubscribeToMillicast()
 
 	PeerConnection->OaOptions.offer_to_receive_video = true;
 	PeerConnection->OaOptions.offer_to_receive_audio = true;
+
 	PeerConnection->SetVideoSink(MillicastMediaSource);
+	PeerConnection->SetAudioSink(MillicastMediaSource);
 
 	PeerConnection->CreateOffer();
 

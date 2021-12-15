@@ -8,6 +8,8 @@
 
 #include "api/media_stream_interface.h"
 
+#include "Sound/SoundWaveProcedural.h"
+
 #include "MillicastMediaSource.generated.h"
 
 
@@ -17,16 +19,13 @@
 UCLASS(BlueprintType, hideCategories=(Platforms,Object),
        META = (DisplayName = "Millicast Media Source"))
 class MILLICASTPLAYER_API UMillicastMediaSource : public UStreamMediaSource,
-                                                  public rtc::VideoSinkInterface<webrtc::VideoFrame>
+												  public rtc::VideoSinkInterface<webrtc::VideoFrame>,
+												  public webrtc::AudioTrackSinkInterface
 {
-        GENERATED_BODY()
-
+	GENERATED_BODY()
 public:
 
-	/** Default constructor. */
 	UMillicastMediaSource();
-
-public:
 
 	/** The Millicast Stream name. */
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category=Stream, AssetRegistrySearchable)
@@ -91,6 +90,10 @@ protected:
 	//~ VideoSink interface
 	void OnFrame(const webrtc::VideoFrame& frame) override;
 
+	//~ AudioSink interface
+	void OnData(const void * AudioData, int BitsPerSample, int SampleRate,
+				size_t NumChannels, size_t NumFrames) override;
+
 private:
 	uint8_t * Buffer;
 	size_t    BufferSize;
@@ -99,4 +102,7 @@ private:
 	FTexture2DRHIRef SourceTexture;
 	FPooledRenderTargetDesc RenderTargetDescriptor;
 	TRefCountPtr<IPooledRenderTarget> RenderTarget;
+
+	USoundWaveProcedural* SoundStreaming;
+	UAudioComponent * AudioComponent;
 };

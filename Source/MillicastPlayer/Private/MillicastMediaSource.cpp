@@ -3,17 +3,43 @@
 #include "MillicastMediaSource.h"
 #include "MillicastPlayerPrivate.h"
 
+#include <new>
+
 #include <api/video/i420_buffer.h>
 #include <common_video/libyuv/include/webrtc_libyuv.h>
 
 #include <RenderTargetPool.h>
 
+constexpr auto DEFAULT_SAMPLE_RATE = 48000u;
+constexpr auto DEFAULT_NUM_CHANNELS = 2u;
+
 UMillicastMediaSource::UMillicastMediaSource()
+	: Buffer(nullptr), SoundStreaming(nullptr), AudioComponent(nullptr)
 {
 }
 
 bool UMillicastMediaSource::Initialize(const FMillicastSignalingData& /*data*/)
 {
+	SoundStreaming = NewObject<USoundWaveProcedural>();
+	SoundStreaming->SetSampleRate(DEFAULT_SAMPLE_RATE);
+	SoundStreaming->NumChannels = DEFAULT_NUM_CHANNELS;
+	SoundStreaming->Duration = INDEFINITELY_LOOPING_DURATION;
+	SoundStreaming->SoundGroup = SOUNDGROUP_Voice;
+	SoundStreaming->bLooping = false;
+
+	auto AudioDevice = GEngine->GetMainAudioDevice();
+
+	AudioComponent = AudioDevice->CreateComponent(SoundStreaming);
+	AudioComponent->bIsUISound = true;
+	AudioComponent->bAllowSpatialization = false;
+	AudioComponent->SetVolumeMultiplier(1.2f);
+
+	const FSoftObjectPath VoiPSoundClassName = GetDefault<UAudioSettings>()->VoiPSoundClass;
+	if (VoiPSoundClassName.IsValid())
+	{
+		AudioComponent->SoundClassOverride = LoadObject<USoundClass>(nullptr, *VoiPSoundClassName.ToString());
+	}
+
 	Buffer = nullptr;
 	BufferSize = 0;
 	return true;
@@ -24,6 +50,9 @@ void UMillicastMediaSource::BeginDestroy()
 	delete [] Buffer;
 	Buffer = nullptr;
 	BufferSize = 0;
+
+	delete SoundStreaming;
+	SoundStreaming = nullptr;
 
 	AsyncTask(ENamedThreads::ActualRenderingThread, [this]() {
 		FScopeLock Lock(&RenderSyncContext);
@@ -167,6 +196,18 @@ void UMillicastMediaSource::OnFrame(const webrtc::VideoFrame& frame)
 
 		VideoTexture->UpdateTextureReference(RHICmdList, (FTexture2DRHIRef&)SourceTexture);
 	});
+}
+
+void UMillicastMediaSource::OnData(const void * AudioData,
+								   int BitsPerSample,
+								   int SampleRate,
+								   size_t NumChannels,
+								   size_t NumFrames)
+{
+	const int BytesPerSample = BitsPerSample >> 3;
+	const size_t AudioBufferSize = BytesPerSample * NumFrames * NumChannels;
+
+	SoundStreaming->QueueAudio((uint8*)AudioData, AudioBufferSize);
 }
 
 #if WITH_EDITOR

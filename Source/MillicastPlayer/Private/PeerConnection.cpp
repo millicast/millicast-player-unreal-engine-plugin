@@ -14,6 +14,7 @@
 #include "api/audio_codecs/builtin_audio_encoder_factory.h"
 #include "api/create_peerconnection_factory.h"
 #include "api/rtp_receiver_interface.h"
+#include "api/task_queue/default_task_queue_factory.h"
 
 #include <rtc_base/ssl_adapter.h>
 
@@ -22,6 +23,7 @@
 rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> FWebRTCPeerConnection::PeerConnectionFactory = nullptr;
 TUniquePtr<rtc::Thread> FWebRTCPeerConnection::SignalingThread = nullptr;
 rtc::scoped_refptr<webrtc::AudioDeviceModule> FWebRTCPeerConnection::AudioDeviceModule = nullptr;
+std::unique_ptr<webrtc::TaskQueueFactory> FWebRTCPeerConnection::TaskQueueFactory = nullptr;
 
 void FWebRTCPeerConnection::CreatePeerConnectionFactory()
 {
@@ -33,7 +35,8 @@ void FWebRTCPeerConnection::CreatePeerConnectionFactory()
 	SignalingThread->SetName("WebRTCSignalingThread", nullptr);
 	SignalingThread->Start();
 
-	AudioDeviceModule = new rtc::RefCountedObject<FAudioDeviceModule>();
+	TaskQueueFactory = webrtc::CreateDefaultTaskQueueFactory();
+	AudioDeviceModule = FAudioDeviceModule::Create(TaskQueueFactory.get());
 
 	PeerConnectionFactory = webrtc::CreatePeerConnectionFactory(
 				nullptr, nullptr, SignalingThread.Get(), AudioDeviceModule,
@@ -197,6 +200,11 @@ void FWebRTCPeerConnection::SetVideoSink(rtc::VideoSinkInterface<webrtc::VideoFr
 	VideoSink = Sink;
 }
 
+void FWebRTCPeerConnection::SetAudioSink(webrtc::AudioTrackSinkInterface* Sink)
+{
+	AudioSink = Sink;
+}
+
 void FWebRTCPeerConnection::OnSignalingChange(webrtc::PeerConnectionInterface::SignalingState)
 {}
 
@@ -216,6 +224,11 @@ void FWebRTCPeerConnection::OnTrack(rtc::scoped_refptr<webrtc::RtpTransceiverInt
 	{
 		auto * VideoTrack = static_cast<webrtc::VideoTrackInterface*>(Transceiver->receiver()->track().get());
 		VideoTrack->AddOrUpdateSink(VideoSink, rtc::VideoSinkWants());
+	}
+	else if(AudioSink && Transceiver->media_type() == cricket::MediaType::MEDIA_TYPE_AUDIO)
+	{
+		auto * AudioTrack = static_cast<webrtc::AudioTrackInterface*>(Transceiver->receiver()->track().get());
+		AudioTrack->AddSink(AudioSink);
 	}
 }
 
