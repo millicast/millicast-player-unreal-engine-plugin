@@ -21,7 +21,28 @@ FAudioDeviceModule::FAudioDeviceModule(webrtc::TaskQueueFactory * queue_factory)
 	next_frame_time_(0),
 	task_queue_(queue_factory->CreateTaskQueue(kTimerQueueName,
 						   webrtc::TaskQueueFactory::Priority::NORMAL))
-{}
+{
+	SoundStreaming = NewObject<USoundWaveProcedural>();
+	SoundStreaming->SetSampleRate(kSamplesPerSecond);
+	SoundStreaming->NumChannels = kNumberOfChannels;
+	SoundStreaming->SampleByteSize = kNumberBytesPerSample;
+	SoundStreaming->Duration = INDEFINITELY_LOOPING_DURATION;
+	SoundStreaming->SoundGroup = SOUNDGROUP_Voice;
+	SoundStreaming->bLooping = false;
+
+	auto AudioDevice = GEngine->GetMainAudioDevice();
+
+	AudioComponent = AudioDevice->CreateComponent(SoundStreaming);
+	AudioComponent->bIsUISound = true;
+	AudioComponent->bAllowSpatialization = false;
+	AudioComponent->SetVolumeMultiplier(1.2f);
+
+	const FSoftObjectPath VoiPSoundClassName = GetDefault<UAudioSettings>()->VoiPSoundClass;
+	if (VoiPSoundClassName.IsValid())
+	{
+		AudioComponent->SoundClassOverride = LoadObject<USoundClass>(nullptr, *VoiPSoundClassName.ToString());
+	}
+}
 
 rtc::scoped_refptr<FAudioDeviceModule>
 FAudioDeviceModule::Create(webrtc::TaskQueueFactory * queue_factory)
@@ -34,7 +55,7 @@ FAudioDeviceModule::Create(webrtc::TaskQueueFactory * queue_factory)
 
 int32 FAudioDeviceModule::ActiveAudioLayer(AudioLayer* audioLayer) const
 {
-	// audioLayer = webrtc::kAudioDummy;
+	*audioLayer = AudioLayer::kDummyAudio;
 	return 0;
 }
 
@@ -111,6 +132,11 @@ int32_t FAudioDeviceModule::StartPlayout()
   }
 
   bool start = true;
+
+  AsyncTask(ENamedThreads::GameThread, [this]() {
+	  AudioComponent->Play(0.0f);
+  });
+
   UpdateProcessing(start);
 
   return 0;
@@ -310,6 +336,7 @@ void FAudioDeviceModule::ProcessFrameP()
 
 void FAudioDeviceModule::ReceiveFrameP()
 {
+	// constexpr float PI = 3.1415926355;
 	RTC_DCHECK_RUN_ON(&task_queue_);
 
 	// rtc::CritScope cs(&_crit_callback);
@@ -319,6 +346,12 @@ void FAudioDeviceModule::ReceiveFrameP()
 
 	audio_callback_->NeedMorePlayData(kNumberSamples, sizeof(Sample), kNumberOfChannels,
 					kSamplesPerSecond, _rec_buffer, out, &elapsed, &ntp);
+	/*static int sini = 0;
+	auto buf = reinterpret_cast<Sample*>(_rec_buffer);
+	for(int i = 0; i < kNumberSamples * kNumberOfChannels; ++i) {
+		if((i & 0x01) == 0) buf[i] = static_cast<Sample>(sin(sini++ * 2.f * PI * 440.f / kSamplesPerSecond) * 10000);
+	}*/
 
+	SoundStreaming->QueueAudio((uint8*)_rec_buffer, kNumberSamples * kNumberBytesPerSample);
 }
 

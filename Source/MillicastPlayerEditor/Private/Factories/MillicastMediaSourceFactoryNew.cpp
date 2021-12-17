@@ -24,24 +24,24 @@ UMillicastMediaSourceFactoryNew::UMillicastMediaSourceFactoryNew(const FObjectIn
 
 FText UMillicastMediaSourceFactoryNew::GetDisplayName() const
 {
-        return LOCTEXT("MillicastMediaSourceFactory", "Millicast Media Source");
+	return LOCTEXT("MillicastMediaSourceFactory", "Millicast Media Source");
 }
 
 UObject* UMillicastMediaSourceFactoryNew::FactoryCreateNew(UClass* InClass, UObject* InParent, FName InName, EObjectFlags Flags, UObject* Context, FFeedbackContext* Warn)
 {
-        return NewObject<UMillicastMediaSource>(InParent, InClass, InName, Flags);
+	return NewObject<UMillicastMediaSource>(InParent, InClass, InName, Flags);
 }
 
 
 uint32 UMillicastMediaSourceFactoryNew::GetMenuCategories() const
 {
-        return EAssetTypeCategories::Media;
+	return EAssetTypeCategories::Media;
 }
 
 
 bool UMillicastMediaSourceFactoryNew::ShouldShowInNewMenu() const
 {
-        return true;
+	return true;
 }
 
 #undef LOCTEXT_NAMESPACE

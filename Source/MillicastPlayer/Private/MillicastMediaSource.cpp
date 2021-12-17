@@ -20,26 +20,6 @@ UMillicastMediaSource::UMillicastMediaSource()
 
 bool UMillicastMediaSource::Initialize(const FMillicastSignalingData& /*data*/)
 {
-	SoundStreaming = NewObject<USoundWaveProcedural>();
-	SoundStreaming->SetSampleRate(DEFAULT_SAMPLE_RATE);
-	SoundStreaming->NumChannels = DEFAULT_NUM_CHANNELS;
-	SoundStreaming->Duration = INDEFINITELY_LOOPING_DURATION;
-	SoundStreaming->SoundGroup = SOUNDGROUP_Voice;
-	SoundStreaming->bLooping = false;
-
-	auto AudioDevice = GEngine->GetMainAudioDevice();
-
-	AudioComponent = AudioDevice->CreateComponent(SoundStreaming);
-	AudioComponent->bIsUISound = true;
-	AudioComponent->bAllowSpatialization = false;
-	AudioComponent->SetVolumeMultiplier(1.2f);
-
-	const FSoftObjectPath VoiPSoundClassName = GetDefault<UAudioSettings>()->VoiPSoundClass;
-	if (VoiPSoundClassName.IsValid())
-	{
-		AudioComponent->SoundClassOverride = LoadObject<USoundClass>(nullptr, *VoiPSoundClassName.ToString());
-	}
-
 	Buffer = nullptr;
 	BufferSize = 0;
 	return true;
@@ -81,7 +61,6 @@ FString UMillicastMediaSource::GetMediaOption(const FName& Key, const FString& D
 
 bool UMillicastMediaSource::HasMediaOption(const FName& Key) const
 {
-
 	if (Key == MillicastPlayerOption::StreamName || Key == MillicastPlayerOption::AccountId)
 	{
 		return true;
@@ -204,10 +183,17 @@ void UMillicastMediaSource::OnData(const void * AudioData,
 								   size_t NumChannels,
 								   size_t NumFrames)
 {
-	const int BytesPerSample = BitsPerSample >> 3;
+	/*const int BytesPerSample = BitsPerSample >> 3;
 	const size_t AudioBufferSize = BytesPerSample * NumFrames * NumChannels;
 
-	SoundStreaming->QueueAudio((uint8*)AudioData, AudioBufferSize);
+	auto * d = (const uint8_t *)AudioData;
+
+	UE_LOG(LogMillicastPlayer, Log, TEXT("Info : %d %d %d"), BitsPerSample, SampleRate, AudioBufferSize)
+	for(int i = 0; i < AudioBufferSize; ++i) {
+		UE_LOG(LogMillicastPlayer, Log, TEXT("%d"), d[i])
+	}
+
+	SoundStreaming->QueueAudio((uint8*)AudioData, AudioBufferSize);*/
 }
 
 #if WITH_EDITOR

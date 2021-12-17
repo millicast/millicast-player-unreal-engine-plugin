@@ -13,6 +13,8 @@
 #include <rtc_base/task_queue.h>
 #include "rtc_base/critical_section.h"
 
+#include "Sound/SoundWaveProcedural.h"
+
 // A custom audio device module for WebRTC.
 class FAudioDeviceModule : public webrtc::AudioDeviceModule
 {
@@ -232,4 +234,7 @@ private:
 	// Protects |audio_callback_| that is accessed from process_thread_ and
 	// the main thread.
 	// mutable webrtc::Mutex crit_callback_;
+
+	USoundWaveProcedural* SoundStreaming;
+	UAudioComponent * AudioComponent;
 };
