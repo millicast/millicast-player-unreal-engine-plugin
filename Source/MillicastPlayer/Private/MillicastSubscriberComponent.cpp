@@ -78,6 +78,11 @@ void UMillicastSubscriberComponent::Unsubscribe()
 bool UMillicastSubscriberComponent::StartWebSocketConnection(const FString& Url,
                                                      const FString& Jwt)
 {
+	if (!FModuleManager::Get().IsModuleLoaded("WebSockets"))
+	{
+		FModuleManager::Get().LoadModule("WebSockets");
+	}
+
 	WS = FWebSocketsModule::Get().CreateWebSocket(Url + "?token=" + Jwt);
 
 	OnConnectedHandle = WS->OnConnected().AddLambda([this]() { OnConnected(); });
@@ -114,7 +119,7 @@ bool UMillicastSubscriberComponent::SubscribeToMillicast()
 		(*PeerConnection)->local_description()->ToString(&sdp);
 
 		auto DataJson = MakeShared<FJsonObject>();
-		DataJson->SetStringField("streamId", "kaqs278x");
+		DataJson->SetStringField("streamId", MillicastMediaSource->StreamName);
 		DataJson->SetStringField("sdp", ToString(sdp));
 
 		auto Payload = MakeShared<FJsonObject>();

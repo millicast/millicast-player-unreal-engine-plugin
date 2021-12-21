@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <api/peer_connection_interface.h>
+#include <WebRTCInc.h>
 
 class FWebRTCPeerConnection;
 

@@ -5,8 +5,6 @@
 #include "AudioMixerDevice.h"
 #include "SampleBuffer.h"
 #include "Engine/GameEngine.h"
-#include "rtc_base/ref_counted_object.h"
-#include "rtc_base/time_utils.h"
 
 const char FAudioDeviceModule::kTimerQueueName[] = "FAudioDeviceModuleTimer";
 
@@ -125,7 +123,7 @@ int32_t FAudioDeviceModule::InitRecording()
 
 int32_t FAudioDeviceModule::StartPlayout()
 {
-	UE_LOG(LogMillicastPlayer, Log, TEXT("STARTPLAYOUT WSH"));
+	UE_LOG(LogMillicastPlayer, Log, TEXT("Start Playout"));
   {
 	rtc::CritScope cs(&crit_);
 	playing_ = true;
@@ -144,12 +142,18 @@ int32_t FAudioDeviceModule::StartPlayout()
 
 int32_t FAudioDeviceModule::StopPlayout()
 {
+	UE_LOG(LogMillicastPlayer, Log, TEXT("Start Playout"));
   bool start = false;
   {
 	rtc::CritScope cs(&crit_);
 	playing_ = false;
 	start = ShouldStartProcessing();
   }
+
+  AsyncTask(ENamedThreads::GameThread, [this]() {
+	  AudioComponent->Stop();
+	  SoundStreaming->ResetAudio();
+  });
 
   UpdateProcessing(start);
   return 0;

@@ -11,6 +11,8 @@
 
 #include "MillicastPlayerPrivate.h"
 
+constexpr auto HTTP_OK = 200;
+
 UMillicastDirectorComponent::UMillicastDirectorComponent(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer) {}
 
 /**
@@ -33,8 +35,6 @@ bool UMillicastDirectorComponent::Initialize(UMillicastMediaSource* InMediaSourc
 */
 bool UMillicastDirectorComponent::Authenticate()
 {
-	constexpr auto HTTP_OK = 200;
-
 	if(!IsValid(MillicastMediaSource)) return false;
 
 	auto PostHttpRequest = FHttpModule::Get().CreateRequest();

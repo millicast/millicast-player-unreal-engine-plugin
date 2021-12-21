@@ -2,6 +2,7 @@
 #pragma once
 
 #include "UObject/ObjectMacros.h"
+#include "Materials/MaterialInstanceDynamic.h"
 #include "StreamMediaSource.h"
 #include "MillicastMediaTexture2D.h"
 #include "MillicastSignalingData.h"

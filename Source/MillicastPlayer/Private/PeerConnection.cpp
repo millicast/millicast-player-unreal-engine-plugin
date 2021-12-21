@@ -4,20 +4,6 @@
 
 #include <sstream>
 
-#include "api/video_codecs/builtin_video_decoder_factory.h"
-#include "api/video_codecs/builtin_video_encoder_factory.h"
-#include "api/video_codecs/video_decoder_factory.h"
-#include "api/video_codecs/video_encoder_factory.h"
-#include "api/audio_codecs/audio_decoder_factory.h"
-#include "api/audio_codecs/audio_encoder_factory.h"
-#include "api/audio_codecs/builtin_audio_decoder_factory.h"
-#include "api/audio_codecs/builtin_audio_encoder_factory.h"
-#include "api/create_peerconnection_factory.h"
-#include "api/rtp_receiver_interface.h"
-#include "api/task_queue/default_task_queue_factory.h"
-
-#include <rtc_base/ssl_adapter.h>
-
 #include "AudioDeviceModule.h"
 
 rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> FWebRTCPeerConnection::PeerConnectionFactory = nullptr;

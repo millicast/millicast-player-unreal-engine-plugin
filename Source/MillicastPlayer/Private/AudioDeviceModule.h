@@ -2,16 +2,13 @@
 
 #pragma once
 
-#include "modules/audio_device/include/audio_device.h"
 #include "AudioMixerDevice.h"
 #include "HAL/CriticalSection.h"
 #include "GenericPlatform/GenericPlatformMisc.h"
 #include "Templates/Function.h"
 #include "Templates/SharedPointer.h"
 
-#include "api/scoped_refptr.h"
-#include <rtc_base/task_queue.h>
-#include "rtc_base/critical_section.h"
+#include <WebRTCInc.h>
 
 #include "Sound/SoundWaveProcedural.h"
 

@@ -11,6 +11,8 @@ namespace UnrealBuildTool.Rules
 		public MillicastPlayer(ReadOnlyTargetRules Target) : base(Target)
 		{
 			PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
+			PrivatePCHHeaderFile = "Private/PCH.h";
+
 
 			DynamicallyLoadedModuleNames.AddRange(
 				new string[] {
@@ -38,6 +40,7 @@ namespace UnrealBuildTool.Rules
 					"WebSockets",
 					"HTTP",
 					"Json",
+					"SSL",
 					"RHI",
 					"HeadMountedDisplay"
 		});

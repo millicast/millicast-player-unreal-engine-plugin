@@ -106,7 +106,7 @@ void UMillicastMediaSource::ChangeVideoTexture(UMillicastMediaTexture2D* InVideo
 void UMillicastMediaSource::UpdateMaterialTexture(UMaterialInstanceDynamic* MaterialInstance, FString ParameterName)
 {
 	// Ensure that both the material instance and the video texture are valid
-	if (IsValid(MaterialInstance) && IsValid(VideoTexture))
+	if (IsValid(std::as_const(MaterialInstance)) && IsValid(VideoTexture))
 	{
 		// Call the function to set the texture parameter with the proper texture
 		MaterialInstance->SetTextureParameterValue(FName(*ParameterName), this->VideoTexture);
