@@ -12,7 +12,7 @@
 #include "HAL/IConsoleManager.h"
 #include "HAL/CriticalSection.h"
 
-#include "WebRTCInc.h"
+#include "WebRTC/WebRTCInc.h"
 
 // Engine
 

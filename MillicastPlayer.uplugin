@@ -11,19 +11,22 @@
 	"MarketplaceURL": "",
 	"SupportURL": "",
 	"CanContainContent": true,
+	"SupportedTargetPlatforms": [ "Win64", "Linux" ],
 	"IsBetaVersion": true,
-        "IsExperimentalVersion": true,
-        "Installed": false,
-        "Modules": [
-                {
-                        "Name": "MillicastPlayer",
-                        "Type": "Runtime",
-                        "LoadingPhase": "PreLoadingScreen"
-                },
-                {
-                        "Name": "MillicastPlayerEditor",
-                        "Type": "Editor",
-                        "LoadingPhase": "PostEngineInit"
-                }
-        ]
+	"IsExperimentalVersion": true,
+	"Installed": false,
+	"Modules": [
+		{
+			"Name": "MillicastPlayer",
+			"Type": "Runtime",
+			"LoadingPhase": "PreLoadingScreen",
+			"WhitelistPlatforms": [ "Win64", "Linux" ]
+		},
+		{
+			"Name": "MillicastPlayerEditor",
+			"Type": "Editor",
+			"LoadingPhase": "PostEngineInit",
+			"WhitelistPlatforms": [ "Win64", "Linux" ]
+		}
+	]
 }
