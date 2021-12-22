@@ -29,12 +29,6 @@ class FAudioDeviceModule : public webrtc::AudioDeviceModule
 	static const char kTimerQueueName[];
 
 public:
-	enum TaskMessage {
-		MSG_START_PROCESS,
-		MSG_RUN_PROCESS,
-		MSG_STOP_PROCESS
-	};
-
 	explicit FAudioDeviceModule(webrtc::TaskQueueFactory * queue_factory) noexcept;
 
 	~FAudioDeviceModule() = default;
@@ -194,46 +188,28 @@ public:
 	}
 
 private:
-	void ReceiveFrameP();
-	void ProcessFrameP();
-	void StartProcessP();
-	void UpdateProcessing(bool);
-	bool ShouldStartProcessing();
-	void OnMessage(TaskMessage msg);
+	void PullAudioData();
+	void Process();
 
 	// Callback for playout and recording.
-	webrtc::AudioTransport* audio_callback_;
+	webrtc::AudioTransport* AudioCallback;
 
-	bool recording_;  // True when audio is being pushed from the instance.
-	bool playing_;    // True when audio is being pulled by the instance.
+	bool bIsPlaying;    // True when audio is being pulled by the instance.
+	bool bIsPlayInitialized;  // True when the instance is ready to pull audio.
 
-	bool play_is_initialized_;  // True when the instance is ready to pull audio.
-	bool rec_is_initialized_;   // True when the instance is ready to push audio.
+	bool bIsStarted;
+	int64_t NextFrameTime;
 
-	// Input to and output from RecordedDataIsAvailable(..) makes it possible to
-	// modify the current mic level. The implementation does not care about the
-	// mic level so it just feeds back what it receives.
-	uint32_t current_mic_level_;
-
-	// next_frame_time_ is updated in a non-drifting manner to indicate the next
-	// wall clock time the next frame should be generated and received. started_
-	// ensures that next_frame_time_ can be initialized properly on first call.
-	bool started_;
-	int64_t next_frame_time_;
-
-	rtc::TaskQueue task_queue_;
+	rtc::TaskQueue TaskQueue;
 
 	// Buffer for samples to send to the webrtc::AudioTransport.
-	char _rec_buffer[kNumberSamples * kNumberBytesPerSample];
+	uint8 AudioBuffer[kNumberSamples * kNumberBytesPerSample];
 
 
 	// Protects variables that are accessed from process_thread_ and
 	// the main thread.
-	mutable rtc::CriticalSection crit_;
-	// Protects |audio_callback_| that is accessed from process_thread_ and
-	// the main thread.
-	// mutable webrtc::Mutex crit_callback_;
+	mutable rtc::CriticalSection CriticalSection;
 
-	USoundWaveProcedural* SoundStreaming;
-	UAudioComponent * AudioComponent;
+	USoundWaveProcedural * SoundStreaming;
+	UAudioComponent      * AudioComponent;
 };
