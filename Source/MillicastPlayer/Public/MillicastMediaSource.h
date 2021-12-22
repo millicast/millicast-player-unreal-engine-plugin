@@ -20,8 +20,7 @@
 UCLASS(BlueprintType, hideCategories=(Platforms,Object),
        META = (DisplayName = "Millicast Media Source"))
 class MILLICASTPLAYER_API UMillicastMediaSource : public UStreamMediaSource,
-												  public rtc::VideoSinkInterface<webrtc::VideoFrame>,
-												  public webrtc::AudioTrackSinkInterface
+												  public rtc::VideoSinkInterface<webrtc::VideoFrame>
 {
 	GENERATED_BODY()
 public:
@@ -90,10 +89,6 @@ public:
 protected:
 	//~ VideoSink interface
 	void OnFrame(const webrtc::VideoFrame& frame) override;
-
-	//~ AudioSink interface
-	void OnData(const void * AudioData, int BitsPerSample, int SampleRate,
-				size_t NumChannels, size_t NumFrames) override;
 
 private:
 	uint8_t * Buffer;

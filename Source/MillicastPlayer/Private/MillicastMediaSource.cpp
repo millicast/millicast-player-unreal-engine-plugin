@@ -177,25 +177,6 @@ void UMillicastMediaSource::OnFrame(const webrtc::VideoFrame& frame)
 	});
 }
 
-void UMillicastMediaSource::OnData(const void * AudioData,
-								   int BitsPerSample,
-								   int SampleRate,
-								   size_t NumChannels,
-								   size_t NumFrames)
-{
-	/*const int BytesPerSample = BitsPerSample >> 3;
-	const size_t AudioBufferSize = BytesPerSample * NumFrames * NumChannels;
-
-	auto * d = (const uint8_t *)AudioData;
-
-	UE_LOG(LogMillicastPlayer, Log, TEXT("Info : %d %d %d"), BitsPerSample, SampleRate, AudioBufferSize)
-	for(int i = 0; i < AudioBufferSize; ++i) {
-		UE_LOG(LogMillicastPlayer, Log, TEXT("%d"), d[i])
-	}
-
-	SoundStreaming->QueueAudio((uint8*)AudioData, AudioBufferSize);*/
-}
-
 #if WITH_EDITOR
 bool UMillicastMediaSource::CanEditChange(const FProperty* InProperty) const
 {

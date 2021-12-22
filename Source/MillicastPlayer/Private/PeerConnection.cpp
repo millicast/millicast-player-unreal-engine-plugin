@@ -49,7 +49,7 @@ webrtc::PeerConnectionInterface::RTCConfiguration FWebRTCPeerConnection::GetDefa
 {
 	FRTCConfig Config(webrtc::PeerConnectionInterface::RTCConfigurationType::kAggressive);
 
-	Config.set_cpu_adaptation(true);
+	Config.set_cpu_adaptation(false);
 	Config.combined_audio_video_bwe.emplace(true);
 	Config.sdp_semantics = webrtc::SdpSemantics::kUnifiedPlan;
 
@@ -186,11 +186,6 @@ void FWebRTCPeerConnection::SetVideoSink(rtc::VideoSinkInterface<webrtc::VideoFr
 	VideoSink = Sink;
 }
 
-void FWebRTCPeerConnection::SetAudioSink(webrtc::AudioTrackSinkInterface* Sink)
-{
-	AudioSink = Sink;
-}
-
 void FWebRTCPeerConnection::OnSignalingChange(webrtc::PeerConnectionInterface::SignalingState)
 {}
 
@@ -210,11 +205,6 @@ void FWebRTCPeerConnection::OnTrack(rtc::scoped_refptr<webrtc::RtpTransceiverInt
 	{
 		auto * VideoTrack = static_cast<webrtc::VideoTrackInterface*>(Transceiver->receiver()->track().get());
 		VideoTrack->AddOrUpdateSink(VideoSink, rtc::VideoSinkWants());
-	}
-	else if(AudioSink && Transceiver->media_type() == cricket::MediaType::MEDIA_TYPE_AUDIO)
-	{
-		auto * AudioTrack = static_cast<webrtc::AudioTrackInterface*>(Transceiver->receiver()->track().get());
-		AudioTrack->AddSink(AudioSink);
 	}
 }
 
