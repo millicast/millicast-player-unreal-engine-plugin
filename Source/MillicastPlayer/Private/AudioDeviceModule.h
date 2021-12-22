@@ -69,120 +69,120 @@ public:
 	bool RecordingIsInitialized() const override { return true; }
 
 	// Audio transport control
-	virtual int32 StartPlayout() override;
-	virtual int32 StopPlayout() override;
+	int32 StartPlayout() override;
+	int32 StopPlayout() override;
 
 	// True when audio is being pulled by the instance.
-	virtual bool Playing() const override;
+	bool Playing() const override;
 
-	virtual int32 StartRecording() override;
-	virtual int32 StopRecording() override;
-	virtual bool Recording() const override;
+	int32 StartRecording() override;
+	int32 StopRecording() override;
+	bool Recording() const override;
 
 	// Audio mixer initialization
-	virtual int32 InitSpeaker() override { return 0; }
-	virtual bool SpeakerIsInitialized() const override { return true; }
-	virtual int32 InitMicrophone() override { return 0; }
-	virtual bool MicrophoneIsInitialized() const override { return true; }
+	int32 InitSpeaker() override { return 0; }
+	bool SpeakerIsInitialized() const override { return true; }
+	int32 InitMicrophone() override { return 0; }
+	bool MicrophoneIsInitialized() const override { return true; }
 
 	// Speaker volume controls
-	virtual int32 SpeakerVolumeIsAvailable(bool* available) override
+	int32 SpeakerVolumeIsAvailable(bool* available) override
 	{
 		return -1;
 	}
-	virtual int32 SetSpeakerVolume(uint32 volume) override
+	int32 SetSpeakerVolume(uint32 volume) override
 	{
 		return -1;
 	}
-	virtual int32 SpeakerVolume(uint32* volume) const override
+	int32 SpeakerVolume(uint32* volume) const override
 	{
 		return -1;
 	}
-	virtual int32 MaxSpeakerVolume(uint32* maxVolume) const override
+	int32 MaxSpeakerVolume(uint32* maxVolume) const override
 	{
 		return -1;
 	}
-	virtual int32 MinSpeakerVolume(uint32* minVolume) const override
+	int32 MinSpeakerVolume(uint32* minVolume) const override
 	{
 		return -1;
 	}
 
 	// Microphone volume controls
-	virtual int32 MicrophoneVolumeIsAvailable(bool* available) override
+	int32 MicrophoneVolumeIsAvailable(bool* available) override
 	{
 		return 0;
 	}
-	virtual int32 SetMicrophoneVolume(uint32 volume) override;
-	virtual int32 MicrophoneVolume(uint32* volume) const override;
-	virtual int32 MaxMicrophoneVolume(uint32* maxVolume) const override;
-	virtual int32 MinMicrophoneVolume(uint32* minVolume) const override
+	int32 SetMicrophoneVolume(uint32 volume) override;
+	int32 MicrophoneVolume(uint32* volume) const override;
+	int32 MaxMicrophoneVolume(uint32* maxVolume) const override;
+	int32 MinMicrophoneVolume(uint32* minVolume) const override
 	{
 		return 0;
 	}
 
 	// Speaker mute control
-	virtual int32 SpeakerMuteIsAvailable(bool* available) override
+	int32 SpeakerMuteIsAvailable(bool* available) override
 	{
 		return -1;
 	}
-	virtual int32 SetSpeakerMute(bool enable) override
+	int32 SetSpeakerMute(bool enable) override
 	{
 		return -1;
 	}
-	virtual int32 SpeakerMute(bool* enabled) const override
+	int32 SpeakerMute(bool* enabled) const override
 	{
 		return -1;
 	}
 
 	// Microphone mute control
-	virtual int32 MicrophoneMuteIsAvailable(bool* available) override
+	int32 MicrophoneMuteIsAvailable(bool* available) override
 	{
 		*available = false;
 		return -1;
 	}
-	virtual int32 SetMicrophoneMute(bool enable) override
+	int32 SetMicrophoneMute(bool enable) override
 	{
 		return -1;
 	}
-	virtual int32 MicrophoneMute(bool* enabled) const override
+	int32 MicrophoneMute(bool* enabled) const override
 	{
 		return -1;
 	}
 
 	// Stereo support
-	virtual int32 StereoPlayoutIsAvailable(bool* available) const override;
-	virtual int32 SetStereoPlayout(bool enable) override { return 0; }
-	virtual int32 StereoPlayout(bool* enabled) const override;
-	virtual int32 StereoRecordingIsAvailable(bool* available) const override;
-	virtual int32 SetStereoRecording(bool enable) override;
-	virtual int32 StereoRecording(bool* enabled) const override;
+	int32 StereoPlayoutIsAvailable(bool* available) const override;
+	int32 SetStereoPlayout(bool enable) override { return 0; }
+	int32 StereoPlayout(bool* enabled) const override;
+	int32 StereoRecordingIsAvailable(bool* available) const override;
+	int32 SetStereoRecording(bool enable) override;
+	int32 StereoRecording(bool* enabled) const override;
 
 	// Playout delay
-	virtual int32 PlayoutDelay(uint16* delayMS) const override;
+	int32 PlayoutDelay(uint16* delayMS) const override;
 
-	virtual bool BuiltInAECIsAvailable() const override
+	bool BuiltInAECIsAvailable() const override
 	{
 		return false;
 	}
-	virtual bool BuiltInAGCIsAvailable() const override
+	bool BuiltInAGCIsAvailable() const override
 	{
 		return false;
 	}
-	virtual bool BuiltInNSIsAvailable() const override
+	bool BuiltInNSIsAvailable() const override
 	{
 		return false;
 	}
 
 	// Enables the built-in audio effects. Only supported on Android.
-	virtual int32 EnableBuiltInAEC(bool enable) override
+	int32 EnableBuiltInAEC(bool enable) override
 	{
 		return -1;
 	}
-	virtual int32 EnableBuiltInAGC(bool enable) override
+	int32 EnableBuiltInAGC(bool enable) override
 	{
 		return -1;
 	}
-	virtual int32 EnableBuiltInNS(bool enable) override
+	int32 EnableBuiltInNS(bool enable) override
 	{
 		return -1;
 	}

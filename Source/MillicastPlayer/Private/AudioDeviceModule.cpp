@@ -30,14 +30,16 @@ void FAudioDeviceModule::InitSoundWave()
 	SoundStreaming->SampleByteSize = kNumberBytesPerSample;
 	SoundStreaming->Duration = INDEFINITELY_LOOPING_DURATION;
 	SoundStreaming->SoundGroup = SOUNDGROUP_Voice;
-	SoundStreaming->bLooping = false;
+	SoundStreaming->bLooping = true;
 
-	if (AudioComponent == nullptr) {
+	if (AudioComponent == nullptr) 
+	{
 		auto AudioDevice = GEngine->GetMainAudioDevice();
 		AudioComponent = AudioDevice->CreateComponent(SoundStreaming);
 		AudioComponent->bIsUISound = false;
 		AudioComponent->bAllowSpatialization = false;
 		AudioComponent->SetVolumeMultiplier(1.0f);
+		AudioComponent->AddToRoot();
 	}
 	else
 	{
@@ -55,9 +57,9 @@ rtc::scoped_refptr<FAudioDeviceModule>
 FAudioDeviceModule::Create(webrtc::TaskQueueFactory* queue_factory)
 {
 	rtc::scoped_refptr<FAudioDeviceModule>
-		adm(new rtc::RefCountedObject<FAudioDeviceModule>(queue_factory));
+		AudioDeviceModule(new rtc::RefCountedObject<FAudioDeviceModule>(queue_factory));
 
-	return adm;
+	return AudioDeviceModule;
 }
 
 int32 FAudioDeviceModule::ActiveAudioLayer(AudioLayer* audioLayer) const
@@ -68,8 +70,6 @@ int32 FAudioDeviceModule::ActiveAudioLayer(AudioLayer* audioLayer) const
 
 int32_t FAudioDeviceModule::RegisterAudioCallback(webrtc::AudioTransport* audio_callback)
 {
-	// rtc::CritScope cs(&CriticalSectioncallback_);
-
 	AudioCallback = audio_callback;
 	return 0;
 }
@@ -166,7 +166,11 @@ int32_t FAudioDeviceModule::StopPlayout()
 
 	TaskQueue.PostTask([this]() {
 		AsyncTask(ENamedThreads::GameThread, [this]() {
-			AudioComponent->Stop();
+			if (AudioComponent->IsPlaying())
+			{
+				AudioComponent->Stop();
+			}
+			AudioComponent = nullptr;
 			SoundStreaming = nullptr;
 		});
 	});
