@@ -42,7 +42,9 @@ public:
 	static rtc::scoped_refptr<FAudioDeviceModule> Create(webrtc::TaskQueueFactory * queue_factory);
 
 private:
+	void InitSoundWave();
 
+public:
 	// webrtc::AudioDeviceModule interface
 	int32 ActiveAudioLayer(AudioLayer* audioLayer) const override;
 	int32 RegisterAudioCallback(webrtc::AudioTransport* audioCallback) override;

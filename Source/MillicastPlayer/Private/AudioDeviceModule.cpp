@@ -18,7 +18,14 @@ FAudioDeviceModule::FAudioDeviceModule(webrtc::TaskQueueFactory * queue_factory)
 	started_(false),
 	next_frame_time_(0),
 	task_queue_(queue_factory->CreateTaskQueue(kTimerQueueName,
-						   webrtc::TaskQueueFactory::Priority::NORMAL))
+						   webrtc::TaskQueueFactory::Priority::NORMAL)),
+	SoundStreaming(nullptr),
+	AudioComponent(nullptr)
+{
+		
+}
+
+void FAudioDeviceModule::InitSoundWave()
 {
 	SoundStreaming = NewObject<USoundWaveProcedural>();
 	SoundStreaming->SetSampleRate(kSamplesPerSecond);
@@ -28,12 +35,17 @@ FAudioDeviceModule::FAudioDeviceModule(webrtc::TaskQueueFactory * queue_factory)
 	SoundStreaming->SoundGroup = SOUNDGROUP_Voice;
 	SoundStreaming->bLooping = false;
 
-	auto AudioDevice = GEngine->GetMainAudioDevice();
-
-	AudioComponent = AudioDevice->CreateComponent(SoundStreaming);
-	AudioComponent->bIsUISound = true;
-	AudioComponent->bAllowSpatialization = false;
-	AudioComponent->SetVolumeMultiplier(1.2f);
+	if (AudioComponent == nullptr) {
+		auto AudioDevice = GEngine->GetMainAudioDevice();
+		AudioComponent = AudioDevice->CreateComponent(SoundStreaming);
+		AudioComponent->bIsUISound = false;
+		AudioComponent->bAllowSpatialization = false;
+		AudioComponent->SetVolumeMultiplier(1.0f);
+	}
+	else 
+	{
+		AudioComponent->Sound = SoundStreaming;
+	}
 
 	const FSoftObjectPath VoiPSoundClassName = GetDefault<UAudioSettings>()->VoiPSoundClass;
 	if (VoiPSoundClassName.IsValid())
@@ -129,20 +141,26 @@ int32_t FAudioDeviceModule::StartPlayout()
 	playing_ = true;
   }
 
-  bool start = true;
-
   AsyncTask(ENamedThreads::GameThread, [this]() {
-	  AudioComponent->Play(0.0f);
-  });
+	  if (SoundStreaming == nullptr)
+	  {
+		  InitSoundWave();
+	  }
+	  else
+	  {
+		  SoundStreaming->ResetAudio();
+	  }
 
-  UpdateProcessing(start);
+	  AudioComponent->Play(0.0f);
+	  UpdateProcessing(true);
+  });
 
   return 0;
 }
 
 int32_t FAudioDeviceModule::StopPlayout()
 {
-	UE_LOG(LogMillicastPlayer, Log, TEXT("Start Playout"));
+	UE_LOG(LogMillicastPlayer, Log, TEXT("Stop Playout"));
   bool start = false;
   {
 	rtc::CritScope cs(&crit_);
@@ -150,12 +168,17 @@ int32_t FAudioDeviceModule::StopPlayout()
 	start = ShouldStartProcessing();
   }
 
-  AsyncTask(ENamedThreads::GameThread, [this]() {
-	  AudioComponent->Stop();
-	  SoundStreaming->ResetAudio();
+  task_queue_.PostTask([this]() {
+	  OnMessage(TaskMessage::MSG_STOP_PROCESS);
   });
 
-  UpdateProcessing(start);
+  task_queue_.PostTask([this]() {
+	  AsyncTask(ENamedThreads::GameThread, [this]() {
+		  AudioComponent->Stop();
+		  SoundStreaming = nullptr;
+	  });
+  });
+
   return 0;
 }
 
@@ -267,7 +290,6 @@ int32 FAudioDeviceModule::StereoRecording(bool* enabled) const
 
 int32_t FAudioDeviceModule::PlayoutDelay(uint16_t* delay_ms) const
 {
-  // No delay since audio frames are dropped.
   *delay_ms = 0;
   return 0;
 }
