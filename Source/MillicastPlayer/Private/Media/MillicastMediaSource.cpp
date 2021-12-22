@@ -79,7 +79,7 @@ FString UMillicastMediaSource::GetUrl() const
 bool UMillicastMediaSource::Validate() const
 {
 	return !StreamName.IsEmpty() && !AccountId.IsEmpty() && 
-		(!bUseSubscribeToken || bUseSubscribeToken && !SubscribeToken.IsEmpty());
+		(!bUseSubscribeToken || (bUseSubscribeToken && !SubscribeToken.IsEmpty()));
 }
 
 /**
@@ -97,13 +97,19 @@ void UMillicastMediaSource::ChangeVideoTexture(UMillicastMediaTexture2D* InVideo
 	VideoTexture = InVideoTexture;
 }
 
+template<typename T>
+constexpr std::add_const_t<T>& TAsConst(T& t) noexcept
+{
+	return t;
+}
+
 /**
 	Updates the DynamicMaterial with the VideoTexture of this object
 */
 void UMillicastMediaSource::UpdateMaterialTexture(UMaterialInstanceDynamic* MaterialInstance, FString ParameterName)
 {
 	// Ensure that both the material instance and the video texture are valid
-	if (IsValid(std::as_const(MaterialInstance)) && IsValid(VideoTexture))
+	if (IsValid(TAsConst(MaterialInstance)) && IsValid(VideoTexture))
 	{
 		// Call the function to set the texture parameter with the proper texture
 		MaterialInstance->SetTextureParameterValue(FName(*ParameterName), this->VideoTexture);
