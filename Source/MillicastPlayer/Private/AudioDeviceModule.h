@@ -2,12 +2,6 @@
 
 #pragma once
 
-#include "AudioMixerDevice.h"
-#include "HAL/CriticalSection.h"
-#include "GenericPlatform/GenericPlatformMisc.h"
-#include "Templates/Function.h"
-#include "Templates/SharedPointer.h"
-
 #include <WebRTCInc.h>
 
 #include "Sound/SoundWaveProcedural.h"

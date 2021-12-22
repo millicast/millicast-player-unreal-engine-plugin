@@ -1,3 +1,5 @@
+// Copyright CoSMoSoftware 2021. All Rights Reserved.
+
 #pragma once
 
 #include "CoreMinimal.h"
@@ -40,18 +42,9 @@ THIRD_PARTY_INCLUDES_START
 #include "rtc_base/thread.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/ssl_adapter.h"
-#include "rtc_base/arraysize.h"
-#include "rtc_base/net_helpers.h"
-#include "rtc_base/string_utils.h"
-#include "rtc_base/signal_thread.h"
 
-#include "pc/session_description.h"
-#include "pc/video_track_source.h"
-
-#include "modules/video_capture/video_capture_factory.h"
 #include "modules/audio_device/include/audio_device.h"
 #include "modules/audio_device/audio_device_buffer.h"
-#include "modules/audio_processing/include/audio_processing.h"
 
 // because WebRTC uses STL
 #include <string>

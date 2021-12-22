@@ -9,8 +9,6 @@
 
 #include "api/media_stream_interface.h"
 
-#include "Sound/SoundWaveProcedural.h"
-
 #include "MillicastMediaSource.generated.h"
 
 
@@ -98,7 +96,4 @@ private:
 	FTexture2DRHIRef SourceTexture;
 	FPooledRenderTargetDesc RenderTargetDescriptor;
 	TRefCountPtr<IPooledRenderTarget> RenderTarget;
-
-	USoundWaveProcedural* SoundStreaming;
-	UAudioComponent * AudioComponent;
 };

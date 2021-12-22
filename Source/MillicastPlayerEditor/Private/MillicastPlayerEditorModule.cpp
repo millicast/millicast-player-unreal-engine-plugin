@@ -1,4 +1,4 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
+// Copyright CoSMoSoftware 2021. All Rights Reserved.
 
 #include <IPlacementModeModule.h>
 #include "CoreMinimal.h"

@@ -2,7 +2,6 @@
 
 #pragma once
 
-
 #include "HAL/Thread.h"
 #include "HAL/Platform.h"
 #include "HAL/PlatformProcess.h"
@@ -15,18 +14,11 @@
 
 #include "WebRTCInc.h"
 
-// #include "WebRTCLogging.h"
-// #include "Utils.h"
-
 // Engine
 
 #include "Logging/LogMacros.h"
 #include "Misc/AssertionMacros.h"
 #include "Misc/Optional.h"
-#include "Misc/CoreDelegates.h"
-#include "Misc/ScopeLock.h"
-#include "Misc/CoreDelegates.h"
-#include "Misc/Timespan.h"
 
 #include "Async/Async.h"
 
@@ -34,19 +26,6 @@
 
 #include "IWebSocket.h"
 #include "WebSocketsModule.h"
-
-#include "RHI.h"
-#include "RHIResources.h"
-#include "DynamicRHI.h"
-#include "RHIStaticStates.h"
-#include "ShaderCore.h"
-#include "RendererInterface.h"
-#include "PipelineStateCache.h"
-#include "ScreenRendering.h"
-#include "CommonRenderResources.h"
-#include "RenderingThread.h"
-#include "RHICommandList.h"
-#include "RendererInterface.h"
 
 #include "Dom/JsonObject.h"
 #include "Policies/CondensedJsonPrintPolicy.h"
@@ -56,7 +35,6 @@
 
 #include "Containers/StringConv.h"
 #include "Containers/UnrealString.h"
-#include "Containers/Queue.h"
 #include "Containers/Array.h"
 
 #include "Templates/UniquePtr.h"
@@ -68,7 +46,6 @@
 
 #include "AudioMixerDevice.h"
 
-#include "Sockets.h"
 #include "Engine/Engine.h"
 #include "Framework/Application/SlateUser.h"
 
@@ -77,19 +54,3 @@
 #elif PLATFORM_LINUX
 #include "Linux/LinuxPlatformMisc.h"
 #endif
-
-#include "Internationalization/Internationalization.h"
-#include "Delegates/IDelegateInstance.h"
-#include "Stats/Stats.h"
-#include "Math/UnrealMathUtility.h"
-
-#include "IMediaTracks.h"
-#include "IMediaCache.h"
-#include "IMediaPlayer.h"
-#include "IMediaView.h"
-#include "IMediaControls.h"
-#include "IMediaEventSink.h"
-#include "IMediaOptions.h"
-#include "MediaSamples.h"
-#include "IMediaAudioSample.h"
-#include "IMediaTextureSample.h"

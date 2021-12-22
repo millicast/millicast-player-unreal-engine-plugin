@@ -3,18 +3,13 @@
 #include "MillicastMediaSource.h"
 #include "MillicastPlayerPrivate.h"
 
-#include <new>
-
 #include <api/video/i420_buffer.h>
 #include <common_video/libyuv/include/webrtc_libyuv.h>
 
 #include <RenderTargetPool.h>
 
-constexpr auto DEFAULT_SAMPLE_RATE = 48000u;
-constexpr auto DEFAULT_NUM_CHANNELS = 2u;
-
 UMillicastMediaSource::UMillicastMediaSource()
-	: Buffer(nullptr), SoundStreaming(nullptr), AudioComponent(nullptr)
+	: Buffer(nullptr)
 {
 }
 
@@ -30,9 +25,6 @@ void UMillicastMediaSource::BeginDestroy()
 	delete [] Buffer;
 	Buffer = nullptr;
 	BufferSize = 0;
-
-	delete SoundStreaming;
-	SoundStreaming = nullptr;
 
 	AsyncTask(ENamedThreads::ActualRenderingThread, [this]() {
 		FScopeLock Lock(&RenderSyncContext);
