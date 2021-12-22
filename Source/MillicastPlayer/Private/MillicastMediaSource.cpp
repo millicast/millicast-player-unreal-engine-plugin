@@ -48,12 +48,18 @@ FString UMillicastMediaSource::GetMediaOption(const FName& Key, const FString& D
 	{
 		return AccountId;
 	}
+	if (Key == MillicastPlayerOption::SubscribeToken)
+	{
+		return SubscribeToken;
+	}
 	return Super::GetMediaOption(Key, DefaultValue);
 }
 
 bool UMillicastMediaSource::HasMediaOption(const FName& Key) const
 {
-	if (Key == MillicastPlayerOption::StreamName || Key == MillicastPlayerOption::AccountId)
+	if (Key == MillicastPlayerOption::StreamName || 
+		Key == MillicastPlayerOption::AccountId ||
+		Key == MillicastPlayerOption::SubscribeToken)
 	{
 		return true;
 	}
@@ -72,9 +78,8 @@ FString UMillicastMediaSource::GetUrl() const
 
 bool UMillicastMediaSource::Validate() const
 {
-	// TODO : check if stream name and account id are not empty
-
-	return true;
+	return !StreamName.IsEmpty() && !AccountId.IsEmpty() && 
+		(!bUseSubscribeToken || bUseSubscribeToken && !SubscribeToken.IsEmpty());
 }
 
 /**
@@ -175,6 +180,14 @@ bool UMillicastMediaSource::CanEditChange(const FProperty* InProperty) const
 	if (!Super::CanEditChange(InProperty))
 	{
 		return false;
+	}
+
+	FString Name;
+	InProperty->GetName(Name);
+
+	if (Name == MillicastPlayerOption::SubscribeToken.ToString())
+	{
+		return bUseSubscribeToken;
 	}
 
 	return true;

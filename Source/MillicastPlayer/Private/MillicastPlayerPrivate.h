@@ -9,4 +9,5 @@ namespace MillicastPlayerOption
     static const FName StreamName("StreamName");
     static const FName AccountId("AccountId");
     static const FName StreamUrl("StreamUrl");
+	static const FName SubscribeToken("SubscribeToken");
 }

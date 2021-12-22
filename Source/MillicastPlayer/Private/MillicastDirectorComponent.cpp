@@ -41,12 +41,22 @@ bool UMillicastDirectorComponent::Authenticate()
 	PostHttpRequest->SetURL(MillicastMediaSource->GetUrl());
 	PostHttpRequest->SetVerb("POST");
 	PostHttpRequest->SetHeader("Content-Type", "application/json");
-	PostHttpRequest->SetHeader("Authorization", "NoAuth");
 	auto RequestData = MakeShared<FJsonObject>();
 
 	RequestData->SetStringField("streamAccountId", MillicastMediaSource->AccountId);
 	RequestData->SetStringField("streamName", MillicastMediaSource->StreamName);
-	RequestData->SetStringField("unauthorizedSubscribe", "true");
+
+	if (MillicastMediaSource->bUseSubscribeToken)
+	{
+		UE_LOG(LogMillicastPlayer, Log, TEXT("Using secure viewer"));
+		PostHttpRequest->SetHeader("Authorization", "Bearer " + MillicastMediaSource->SubscribeToken);
+	}
+	else
+	{
+		UE_LOG(LogMillicastPlayer, Log, TEXT("Using unsecure viewer"));
+		PostHttpRequest->SetHeader("Authorization", "NoAuth");
+		RequestData->SetStringField("unauthorizedSubscribe", "true");
+	}
 
 	FString SerializedRequestData;
 	auto JsonWriter = TJsonWriterFactory<>::Create(&SerializedRequestData);

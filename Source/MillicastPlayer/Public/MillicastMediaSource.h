@@ -33,6 +33,14 @@ public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category=Stream, AssetRegistrySearchable)
 	FString AccountId;
 
+	/** Whether to use the subscribe token or not. */
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Stream, AssetRegistrySearchable)
+	bool bUseSubscribeToken = false;
+
+	/** Subscribe token (optional). */
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Stream, AssetRegistrySearchable)
+	FString SubscribeToken;
+
 	/**
 		Provides an Millicast Video Texture object to render videos frames.
 	*/
