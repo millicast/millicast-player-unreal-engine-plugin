@@ -24,6 +24,7 @@ namespace UnrealBuildTool.Rules
 					"Core",
 					"CoreUObject",
 					"MediaAssets",
+					"OpenSSL",
 					"TimeManagement",
 					"WebRTC",
 					"RenderCore"
