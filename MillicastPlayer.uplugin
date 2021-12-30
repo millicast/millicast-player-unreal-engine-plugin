@@ -20,13 +20,15 @@
 			"Name": "MillicastPlayer",
 			"Type": "Runtime",
 			"LoadingPhase": "PreLoadingScreen",
-			"WhitelistPlatforms": [ "Win64", "Linux" ]
+			"WhitelistPlatforms": [ "Win64", "Linux" ],
+			"EngineVersion": "4.27.0"
 		},
 		{
 			"Name": "MillicastPlayerEditor",
 			"Type": "Editor",
 			"LoadingPhase": "PostEngineInit",
-			"WhitelistPlatforms": [ "Win64", "Linux" ]
+			"WhitelistPlatforms": [ "Win64", "Linux" ],
+			"EngineVersion": "4.27.0"
 		}
 	]
 }
