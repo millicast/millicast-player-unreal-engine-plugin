@@ -5,8 +5,10 @@
 #include <CoreMinimal.h>
 
 #include <Components/ActorComponent.h>
+#include "IMillicastExternalAudioConsumer.h"
 #include "MillicastSignalingData.h"
 #include "MillicastMediaSource.h"
+#include "UObject/WeakInterfacePtr.h"
 
 #include "MillicastSubscriberComponent.generated.h"
 
@@ -40,10 +42,11 @@ public:
 	bool Initialize(UMillicastMediaSource* InMediaSource = nullptr);
 
 	/**
-		Begin receiving video from Millicast
+		Begin receiving video from Millicast. The optional ExternalAudioConsumer allows to perform custom audio handling.
+		If nullptr is passed in, the default Unreal audio device is used.
 	*/
 	UFUNCTION(BlueprintCallable, Category = "MillicastPlayer", META = (DisplayName = "Subscribe"))
-	bool Subscribe(const FMillicastSignalingData& InConnectionInformation);
+	bool Subscribe(const FMillicastSignalingData& InConnectionInformation, TScriptInterface<IMillicastExternalAudioConsumer> ExternalAudioConsumer);
 
 	/**
 		Attempts to stop receiving video from the Millicast feed
@@ -70,4 +73,6 @@ private:
 	FDelegateHandle OnMessageHandle;
 
 	FWebRTCPeerConnection* PeerConnection;
+
+    TWeakInterfacePtr<IMillicastExternalAudioConsumer> ExternalAudioConsumer;
 };

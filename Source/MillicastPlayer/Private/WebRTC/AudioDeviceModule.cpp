@@ -12,42 +12,9 @@ FAudioDeviceModule::FAudioDeviceModule(webrtc::TaskQueueFactory* queue_factory) 
 	bIsStarted(false),
 	NextFrameTime(0),
 	TaskQueue(queue_factory->CreateTaskQueue(kTimerQueueName,
-		webrtc::TaskQueueFactory::Priority::NORMAL)),
-	SoundStreaming(nullptr),
-	AudioComponent(nullptr)
+		webrtc::TaskQueueFactory::Priority::NORMAL))
 {
 
-}
-
-void FAudioDeviceModule::InitSoundWave()
-{
-	SoundStreaming = NewObject<USoundWaveProcedural>();
-	SoundStreaming->SetSampleRate(kSamplesPerSecond);
-	SoundStreaming->NumChannels = kNumberOfChannels;
-	SoundStreaming->SampleByteSize = kNumberBytesPerSample;
-	SoundStreaming->Duration = INDEFINITELY_LOOPING_DURATION;
-	SoundStreaming->SoundGroup = SOUNDGROUP_Voice;
-	SoundStreaming->bLooping = true;
-
-	if (AudioComponent == nullptr)
-	{
-		auto AudioDevice = GEngine->GetMainAudioDevice();
-		AudioComponent = AudioDevice->CreateComponent(SoundStreaming);
-		AudioComponent->bIsUISound = false;
-		AudioComponent->bAllowSpatialization = false;
-		AudioComponent->SetVolumeMultiplier(1.0f);
-		AudioComponent->AddToRoot();
-	}
-	else
-	{
-		AudioComponent->Sound = SoundStreaming;
-	}
-
-	const FSoftObjectPath VoiPSoundClassName = GetDefault<UAudioSettings>()->VoiPSoundClass;
-	if (VoiPSoundClassName.IsValid())
-	{
-		AudioComponent->SoundClassOverride = LoadObject<USoundClass>(nullptr, *VoiPSoundClassName.ToString());
-	}
 }
 
 rtc::scoped_refptr<FAudioDeviceModule>
@@ -135,17 +102,13 @@ int32_t FAudioDeviceModule::StartPlayout()
 	}
 
 	AsyncTask(ENamedThreads::GameThread, [this]() {
-		if (SoundStreaming == nullptr)
-		{
-			InitSoundWave();
-		}
-		else
-		{
-			SoundStreaming->ResetAudio();
-		}
-
-		AudioComponent->Play(0.0f);
-		TaskQueue.PostTask([this]() { Process(); });
+	    if (IMillicastExternalAudioConsumer* Consumer = AudioConsumer.Get())
+	    {
+            AudioParameters = Consumer->GetAudioParameters();
+	        AudioBuffer.SetNumUninitialized(AudioParameters.GetNumberSamples() * AudioParameters.GetNumberBytesPerSample());
+	        Consumer->Initialize();
+		    TaskQueue.PostTask([this]() { Process(); });
+	    }
 	});
 
 	return 0;
@@ -163,12 +126,10 @@ int32_t FAudioDeviceModule::StopPlayout()
 
 	TaskQueue.PostTask([this]() {
 		AsyncTask(ENamedThreads::GameThread, [this]() {
-			if (AudioComponent->IsPlaying())
-			{
-				AudioComponent->Stop();
-			}
-			AudioComponent = nullptr;
-			SoundStreaming = nullptr;
+		    if (IMillicastExternalAudioConsumer* Consumer = AudioConsumer.Get())
+		    {
+		        Consumer->Shutdown();
+		    }
 		});
 	});
 
@@ -267,6 +228,11 @@ int32_t FAudioDeviceModule::PlayoutDelay(uint16_t* delay_ms) const
 	return 0;
 }
 
+void FAudioDeviceModule::SetAudioConsumer(TWeakInterfacePtr<IMillicastExternalAudioConsumer> Consumer)
+{
+    AudioConsumer = Consumer;
+}
+
 void FAudioDeviceModule::Process()
 {
 	RTC_DCHECK_RUN_ON(&TaskQueue);
@@ -282,7 +248,7 @@ void FAudioDeviceModule::Process()
 		if (bIsPlaying)
 		{
 			PullAudioData();
-			NextFrameTime += kTimePerFrameMs;
+			NextFrameTime += AudioParameters.TimePerFrameMs;
 			const int64_t current_time = rtc::TimeMillis();
 			const int64_t wait_time =
 				(NextFrameTime > current_time) ? NextFrameTime - current_time : 0;
@@ -296,13 +262,17 @@ void FAudioDeviceModule::PullAudioData()
 	int64_t elapsed, ntp;
 	size_t  out;
 
-	AudioCallback->NeedMorePlayData(kNumberSamples, sizeof(Sample), kNumberOfChannels,
-		kSamplesPerSecond, AudioBuffer, out, &elapsed, &ntp);
+	AudioCallback->NeedMorePlayData(AudioParameters.GetNumberSamples(), AudioParameters.SampleSize,
+	    AudioParameters.NumberOfChannels, AudioParameters.SamplesPerSecond, AudioBuffer.GetData(),
+	    out, &elapsed, &ntp);
 
     // Before the stream actually started playing, elapsed == -1 and all samples are silent. Don't queue those
     if (elapsed >= 0)
     {
-        SoundStreaming->QueueAudio(AudioBuffer, kNumberSamples * kNumberBytesPerSample);
+        if (IMillicastExternalAudioConsumer* Consumer = AudioConsumer.Get())
+        {
+            Consumer->QueueAudioData(AudioBuffer, out);
+        }
     }
 }
 

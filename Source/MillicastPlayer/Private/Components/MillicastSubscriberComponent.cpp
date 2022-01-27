@@ -58,8 +58,10 @@ bool UMillicastSubscriberComponent::Initialize(UMillicastMediaSource* InMediaSou
 /**
 	Begin receiving audio, video.
 */
-bool UMillicastSubscriberComponent::Subscribe(const FMillicastSignalingData& InSignalingData)
+bool UMillicastSubscriberComponent::Subscribe(const FMillicastSignalingData& InSignalingData, TScriptInterface<IMillicastExternalAudioConsumer> InExternalAudioConsumer)
 {
+    ExternalAudioConsumer = InExternalAudioConsumer;
+
 	return IsValid(MillicastMediaSource) &&
 	    MillicastMediaSource->Initialize(InSignalingData) &&
 	    StartWebSocketConnection(InSignalingData.WsUrl, InSignalingData.Jwt);
@@ -103,7 +105,7 @@ bool UMillicastSubscriberComponent::StartWebSocketConnection(const FString& Url,
 bool UMillicastSubscriberComponent::SubscribeToMillicast()
 {
 	PeerConnection =
-		FWebRTCPeerConnection::Create(FWebRTCPeerConnection::GetDefaultConfig());
+		FWebRTCPeerConnection::Create(FWebRTCPeerConnection::GetDefaultConfig(), ExternalAudioConsumer);
 
 	auto * CreateSessionDescriptionObserver = PeerConnection->GetCreateDescriptionObserver();
 	auto * LocalDescriptionObserver  = PeerConnection->GetLocalDescriptionObserver();
