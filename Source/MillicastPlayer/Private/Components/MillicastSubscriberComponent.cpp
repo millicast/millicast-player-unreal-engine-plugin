@@ -35,6 +35,11 @@ UMillicastSubscriberComponent::UMillicastSubscriberComponent(const FObjectInitia
 	PeerConnection = nullptr;
 }
 
+UMillicastSubscriberComponent::~UMillicastSubscriberComponent()
+{
+    Unsubscribe();
+}
+
 /**
 	Initialize this component with the media source required for receiving Millicast audio, video.
 	Returns false, if the MediaSource is already been set. This is usually the case when this component is
