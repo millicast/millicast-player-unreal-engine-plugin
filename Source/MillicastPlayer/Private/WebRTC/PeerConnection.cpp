@@ -5,6 +5,7 @@
 #include <sstream>
 
 #include "AudioDeviceModule.h"
+#include "MillicastPlayerPrivate.h"
 
 rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> FWebRTCPeerConnection::PeerConnectionFactory = nullptr;
 TUniquePtr<rtc::Thread> FWebRTCPeerConnection::SignalingThread = nullptr;
@@ -55,7 +56,7 @@ webrtc::PeerConnectionInterface::RTCConfiguration FWebRTCPeerConnection::GetDefa
 
 	return Config;
 }
-  
+
 FWebRTCPeerConnection* FWebRTCPeerConnection::Create(const FRTCConfig& Config)
 {
 	if(PeerConnectionFactory == nullptr)
