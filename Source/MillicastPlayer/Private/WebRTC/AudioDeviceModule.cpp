@@ -29,7 +29,7 @@ void FAudioDeviceModule::InitSoundWave()
 	SoundStreaming->SoundGroup = SOUNDGROUP_Voice;
 	SoundStreaming->bLooping = true;
 
-	if (AudioComponent == nullptr) 
+	if (AudioComponent == nullptr)
 	{
 		auto AudioDevice = GEngine->GetMainAudioDevice();
 		AudioComponent = AudioDevice->CreateComponent(SoundStreaming);
@@ -299,6 +299,10 @@ void FAudioDeviceModule::PullAudioData()
 	AudioCallback->NeedMorePlayData(kNumberSamples, sizeof(Sample), kNumberOfChannels,
 		kSamplesPerSecond, AudioBuffer, out, &elapsed, &ntp);
 
-	SoundStreaming->QueueAudio(AudioBuffer, kNumberSamples * kNumberBytesPerSample);
+    // Before the stream actually started playing, elapsed == -1 and all samples are silent. Don't queue those
+    if (elapsed >= 0)
+    {
+        SoundStreaming->QueueAudio(AudioBuffer, kNumberSamples * kNumberBytesPerSample);
+    }
 }
 
