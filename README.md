@@ -31,4 +31,4 @@ If that is the case, create an empty C++ class in your project. This will force 
 
 ## Documentation
 
-You can find the documentation for the plugin here: [https://docs.millicast.com/docs/millicast-player-plugin](https://docs.millicast.com/docs/millicast-player-plugin)
+You can find the documentation for the plugin here: [https://docs.millicast.com/docs/millicast-player-plugin](https://docs.millicast.com/docs/millicast-player-plugin) 
