@@ -22,3 +22,4 @@ jobs:
           path-to-document: 'https://github.com/millicast/millicast-player-unreal-engine-plugin/blob/main/LICENSE'
           branch: 'main'
           allowlist: bot*
+
