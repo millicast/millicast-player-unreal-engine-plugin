@@ -23,7 +23,7 @@ You are now in the editor and can build your game using MillicastPlayer.
 
 Note: After you package your game, it is possible that you will get an error when launching the game :  
 
-> "Plugin MillicastPlayer could not be load because module MillicastPlayer has not been found"
+> "Plugin MillicastPlayer could not be load because module sdfMillicastPlayer has not been found"
 
 And then the game fails to launch.
 That is because Unreal has excluded the plugin.
