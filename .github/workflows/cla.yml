@@ -18,8 +18,7 @@ jobs:
         with:
           remote-organization-name: 'millicast'
           remote-repository-name: 'clas'
-          path-to-signatures: 'unreal-engine-plugin-signatures/signatures.json'
-          path-to-document: 'https://github.com/millicast/millicast-player-unreal-engine-plugin/blob/main/LICENSE'
+          path-to-signatures: 'signatures/signatures.json'
+          path-to-document: 'https://github.com/millicast/millicast-cli/blob/main/LICENSE'
           branch: 'main'
           allowlist: bot*
-
