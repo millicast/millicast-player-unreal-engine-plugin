@@ -28,7 +28,7 @@ Note: After you package your game, it is possible that you will get an error whe
 And then the game fails to launch.
 That is because Unreal has excluded the plugin.
 If that is the case, create an empty C++ class in your project. This will force Unreal to include the plugin. Then, re-package the game, launch it, and it should be fixed.
-
+ 
 ## Documentation
 
 You can find the documentation for the plugin here: [https://docs.millicast.com/docs/millicast-player-plugin](https://docs.millicast.com/docs/millicast-player-plugin)
