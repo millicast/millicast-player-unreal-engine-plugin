@@ -14,7 +14,7 @@ DECLARE_DYNAMIC_MULTICAST_SPARSE_DELEGATE_OneParam(FMillicastDirectorComponentAu
 DECLARE_DYNAMIC_MULTICAST_SPARSE_DELEGATE_TwoParams(FMillicastDirectorComponentAuthenticationFailure, UMillicastDirectorComponent, OnAuthenticationFailure, int, Code, const FString&, Msg);
 
 /**
-	A component make request to the Millicast director API
+	A component to make request to the Millicast director API
 	in order to get the WebSocket url and the JsonWebToken
 	of the corresponding stream
 */
@@ -32,7 +32,7 @@ private:
 
 public:
 	/**
-		Initialize this component with the media source required for receiving NDI audio, video, and metadata.
+		Initialize this component with the media source required for receiving Millicast audio and video.
 		Returns false, if the MediaSource is already been set. This is usually the case when this component is
 		initialized in Blueprints.
 	*/

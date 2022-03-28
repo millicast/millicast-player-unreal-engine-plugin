@@ -31,7 +31,7 @@ private:
 
 public:
 	/**
-		Initialize this component with the media source required for receiving NDI audio, video, and metadata.
+		Initialize this component with the media source required for receiving Millicast audio, video, and metadata.
 		Returns false, if the MediaSource is already been set. This is usually the case when this component is
 		initialized in Blueprints.
 	*/

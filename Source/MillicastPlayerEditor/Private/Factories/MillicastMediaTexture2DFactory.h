@@ -1,4 +1,4 @@
-// Copyright CoSMoSOftware 2021. All Rights Reserved.
+// Copyright CoSMoSoftware 2021. All Rights Reserved.
 
 #pragma once
 
@@ -9,7 +9,7 @@
 #include "MillicastMediaTexture2DFactory.generated.h"
 
 /**
-	Factory Class used to create assets via content browser for NDI Texture2D objects
+	Factory Class used to create assets via content browser for Millicast Texture2D objects
 */
 UCLASS()
 class UMillicastMediaTexture2DFactory : public UFactory
