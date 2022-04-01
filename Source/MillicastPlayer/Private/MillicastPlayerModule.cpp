@@ -13,7 +13,7 @@ DEFINE_LOG_CATEGORY(LogMillicastPlayer);
 #define LOCTEXT_NAMESPACE "MillicastPlayerModule"
 
 /**
- * Implements the NdiMedia module.
+ * Implements the MillicastPlayer module.
  */
 class FMillicastPlayerModule : public IMillicastPlayerModule
 {
