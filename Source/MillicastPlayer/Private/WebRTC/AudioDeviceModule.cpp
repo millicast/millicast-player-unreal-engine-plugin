@@ -102,13 +102,13 @@ int32_t FAudioDeviceModule::StartPlayout()
 	}
 
 	AsyncTask(ENamedThreads::GameThread, [this]() {
-	    if (IMillicastExternalAudioConsumer* Consumer = AudioConsumer.Get())
-	    {
-            AudioParameters = Consumer->GetAudioParameters();
-	        AudioBuffer.SetNumUninitialized(AudioParameters.GetNumberSamples() * AudioParameters.GetNumberBytesPerSample());
-	        Consumer->Initialize();
-		    TaskQueue.PostTask([this]() { Process(); });
-	    }
+		if (IMillicastExternalAudioConsumer* Consumer = AudioConsumer.Get())
+		{
+			AudioParameters = Consumer->GetAudioParameters();
+			AudioBuffer.SetNumUninitialized(AudioParameters.GetNumberSamples() * AudioParameters.GetNumberBytesPerSample());
+			Consumer->Initialize();
+			TaskQueue.PostTask([this]() { Process(); });
+		}
 	});
 
 	return 0;
@@ -126,10 +126,10 @@ int32_t FAudioDeviceModule::StopPlayout()
 
 	TaskQueue.PostTask([this]() {
 		AsyncTask(ENamedThreads::GameThread, [this]() {
-		    if (IMillicastExternalAudioConsumer* Consumer = AudioConsumer.Get())
-		    {
-		        Consumer->Shutdown();
-		    }
+			if (IMillicastExternalAudioConsumer* Consumer = AudioConsumer.Get())
+			{
+				Consumer->Shutdown();
+			}
 		});
 	});
 
@@ -230,7 +230,7 @@ int32_t FAudioDeviceModule::PlayoutDelay(uint16_t* delay_ms) const
 
 void FAudioDeviceModule::SetAudioConsumer(TWeakInterfacePtr<IMillicastExternalAudioConsumer> Consumer)
 {
-    AudioConsumer = Consumer;
+	AudioConsumer = Consumer;
 }
 
 void FAudioDeviceModule::Process()
@@ -263,16 +263,16 @@ void FAudioDeviceModule::PullAudioData()
 	size_t  out;
 
 	AudioCallback->NeedMorePlayData(AudioParameters.GetNumberSamples(), AudioParameters.SampleSize,
-	    AudioParameters.NumberOfChannels, AudioParameters.SamplesPerSecond, AudioBuffer.GetData(),
-	    out, &elapsed, &ntp);
+		AudioParameters.NumberOfChannels, AudioParameters.SamplesPerSecond, AudioBuffer.GetData(),
+		out, &elapsed, &ntp);
 
-    // Before the stream actually started playing, elapsed == -1 and all samples are silent. Don't queue those
-    if (elapsed >= 0)
-    {
-        if (IMillicastExternalAudioConsumer* Consumer = AudioConsumer.Get())
-        {
-            Consumer->QueueAudioData(AudioBuffer, out);
-        }
-    }
+	// Before the stream actually started playing, elapsed == -1 and all samples are silent. Don't queue those
+	if (elapsed >= 0)
+	{
+		if (IMillicastExternalAudioConsumer* Consumer = AudioConsumer.Get())
+		{
+			Consumer->QueueAudioData(AudioBuffer, out);
+		}
+	}
 }
 

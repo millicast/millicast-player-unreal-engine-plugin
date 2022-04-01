@@ -175,7 +175,7 @@ public:
 		return -1;
 	}
 
-    void SetAudioConsumer(TWeakInterfacePtr<IMillicastExternalAudioConsumer> Consumer);
+	void SetAudioConsumer(TWeakInterfacePtr<IMillicastExternalAudioConsumer> Consumer);
 
 private:
 	void PullAudioData();
@@ -193,13 +193,13 @@ private:
 	rtc::TaskQueue TaskQueue;
 
 	// Buffer for samples to send to the webrtc::AudioTransport.
-    TArray<uint8> AudioBuffer;
+	TArray<uint8> AudioBuffer;
 
 
 	// Protects variables that are accessed from process_thread_ and
 	// the main thread.
 	mutable rtc::CriticalSection CriticalSection;
 
-    TWeakInterfacePtr<IMillicastExternalAudioConsumer> AudioConsumer;
-    FMillicastAudioParameters AudioParameters;
+	TWeakInterfacePtr<IMillicastExternalAudioConsumer> AudioConsumer;
+	FMillicastAudioParameters AudioParameters;
 };

@@ -32,7 +32,7 @@ private:
 	UMillicastMediaSource* MillicastMediaSource = nullptr;
 
 public:
-    virtual ~UMillicastSubscriberComponent() override;
+	virtual ~UMillicastSubscriberComponent() override;
 
 	/**
 		Initialize this component with the media source required for receiving Millicast audio, video, and metadata.
@@ -74,5 +74,5 @@ private:
 
 	FWebRTCPeerConnection* PeerConnection;
 
-    TWeakInterfacePtr<IMillicastExternalAudioConsumer> ExternalAudioConsumer;
+	TWeakInterfacePtr<IMillicastExternalAudioConsumer> ExternalAudioConsumer;
 };
