@@ -1,7 +1,7 @@
 {
 	"FileVersion": 3,
 	"Version": 1,
-	"VersionName": "1.0",
+	"VersionName": "1.1",
 	"FriendlyName": "MillicastPlayer",
 	"Description": "Play a millicast stream in texture 2D",
 	"Category": "Media Players",
