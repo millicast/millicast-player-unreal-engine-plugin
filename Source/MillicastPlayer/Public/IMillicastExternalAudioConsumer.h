@@ -9,7 +9,7 @@
 
 struct FMillicastAudioParameters
 {
-    int32 SampleSize = 16;
+    int32 SampleSize = sizeof(int16_t);
     int32 SamplesPerSecond = 48000;
     int32 NumberOfChannels = 2;
     int32 TimePerFrameMs = 10;

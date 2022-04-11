@@ -69,8 +69,12 @@ FWebRTCPeerConnection* FWebRTCPeerConnection::Create(const FRTCConfig& Config, T
     {
         UMillicastDefaultAudioConsumer* DefaultAudioConsumer = NewObject<UMillicastDefaultAudioConsumer>();
         DefaultAudioConsumer->AddToRoot();
+        AudioDeviceModule->SetAudioConsumer(DefaultAudioConsumer);
 	}
-    AudioDeviceModule->SetAudioConsumer(ExternalAudioConsumer);
+    else
+    {
+        AudioDeviceModule->SetAudioConsumer(ExternalAudioConsumer);      
+    }
 
 	FWebRTCPeerConnection * PeerConnectionInstance = new FWebRTCPeerConnection();
 	webrtc::PeerConnectionDependencies deps(PeerConnectionInstance);
