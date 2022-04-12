@@ -5,11 +5,12 @@
 #include <sstream>
 
 #include "AudioDeviceModule.h"
+#include "DefaultAudioConsumer.h"
 #include "MillicastPlayerPrivate.h"
 
 rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> FWebRTCPeerConnection::PeerConnectionFactory = nullptr;
 TUniquePtr<rtc::Thread> FWebRTCPeerConnection::SignalingThread = nullptr;
-rtc::scoped_refptr<webrtc::AudioDeviceModule> FWebRTCPeerConnection::AudioDeviceModule = nullptr;
+rtc::scoped_refptr<FAudioDeviceModule> FWebRTCPeerConnection::AudioDeviceModule = nullptr;
 std::unique_ptr<webrtc::TaskQueueFactory> FWebRTCPeerConnection::TaskQueueFactory = nullptr;
 
 void FWebRTCPeerConnection::CreatePeerConnectionFactory()
@@ -57,12 +58,23 @@ webrtc::PeerConnectionInterface::RTCConfiguration FWebRTCPeerConnection::GetDefa
 	return Config;
 }
 
-FWebRTCPeerConnection* FWebRTCPeerConnection::Create(const FRTCConfig& Config)
+FWebRTCPeerConnection* FWebRTCPeerConnection::Create(const FRTCConfig& Config, TWeakInterfacePtr<IMillicastExternalAudioConsumer> ExternalAudioConsumer)
 {
 	if(PeerConnectionFactory == nullptr)
 	{
 		CreatePeerConnectionFactory();
 	}
+
+    if (!ExternalAudioConsumer.IsValid())
+    {
+        UMillicastDefaultAudioConsumer* DefaultAudioConsumer = NewObject<UMillicastDefaultAudioConsumer>();
+        DefaultAudioConsumer->AddToRoot();
+        AudioDeviceModule->SetAudioConsumer(DefaultAudioConsumer);
+	}
+    else
+    {
+        AudioDeviceModule->SetAudioConsumer(ExternalAudioConsumer);      
+    }
 
 	FWebRTCPeerConnection * PeerConnectionInstance = new FWebRTCPeerConnection();
 	webrtc::PeerConnectionDependencies deps(PeerConnectionInstance);

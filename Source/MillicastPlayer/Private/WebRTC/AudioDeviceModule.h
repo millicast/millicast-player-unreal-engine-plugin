@@ -4,21 +4,18 @@
 
 #include "WebRTC/WebRTCInc.h"
 
+#include "IMillicastExternalAudioConsumer.h"
 #include "Sound/SoundWaveProcedural.h"
+#include "UObject/WeakInterfacePtr.h"
 
 // A custom audio device module for WebRTC.
 class FAudioDeviceModule : public webrtc::AudioDeviceModule
 {
 	typedef uint16_t Sample;
 
-	static constexpr int kTimePerFrameMs = 10;
-	static constexpr uint8_t kNumberOfChannels = 2;
-	static constexpr int kSamplesPerSecond = 48000;
 	static constexpr int kTotalDelayMs = 0;
 	static constexpr int kClockDriftMs = 0;
 	static constexpr uint32_t kMaxVolume = 14392;
-	static constexpr size_t kNumberSamples = kTimePerFrameMs * kSamplesPerSecond / 1000;
-	static constexpr size_t kNumberBytesPerSample = sizeof(Sample) * kNumberOfChannels;
 
 	static const char kTimerQueueName[];
 
@@ -28,9 +25,6 @@ public:
 	~FAudioDeviceModule() = default;
 
 	static rtc::scoped_refptr<FAudioDeviceModule> Create(webrtc::TaskQueueFactory * queue_factory);
-
-private:
-	void InitSoundWave();
 
 public:
 	// webrtc::AudioDeviceModule interface
@@ -181,6 +175,8 @@ public:
 		return -1;
 	}
 
+	void SetAudioConsumer(TWeakInterfacePtr<IMillicastExternalAudioConsumer> Consumer);
+
 private:
 	void PullAudioData();
 	void Process();
@@ -197,13 +193,13 @@ private:
 	rtc::TaskQueue TaskQueue;
 
 	// Buffer for samples to send to the webrtc::AudioTransport.
-	uint8 AudioBuffer[kNumberSamples * kNumberBytesPerSample];
+	TArray<uint8> AudioBuffer;
 
 
 	// Protects variables that are accessed from process_thread_ and
 	// the main thread.
 	mutable rtc::CriticalSection CriticalSection;
 
-	USoundWaveProcedural * SoundStreaming;
-	UAudioComponent      * AudioComponent;
+	TWeakInterfacePtr<IMillicastExternalAudioConsumer> AudioConsumer;
+	FMillicastAudioParameters AudioParameters;
 };

@@ -2,9 +2,11 @@
 
 #pragma once
 
+#include "IMillicastExternalAudioConsumer.h"
 #include "WebRTC/WebRTCInc.h"
 
 #include "SessionDescriptionObserver.h"
+#include "UObject/WeakInterfacePtr.h"
 
 namespace webrtc {
 
@@ -13,18 +15,20 @@ class TaskQueueFactory;
 
 }  // webrtc
 
+class FAudioDeviceModule;
+
 /*
  * Small wrapper for the WebRTC peerconnection
  */
 class FWebRTCPeerConnection : public webrtc::PeerConnectionObserver
 {
-	using FMediaStreamVector = std::vector<rtc::scoped_refptr<webrtc::MediaStreamInterface>>;
+    using FMediaStreamVector = std::vector<rtc::scoped_refptr<webrtc::MediaStreamInterface>>;
 	using FRTCConfig = webrtc::PeerConnectionInterface::RTCConfiguration;
 
 	rtc::scoped_refptr<webrtc::PeerConnectionInterface> PeerConnection;
 
 	static TUniquePtr<rtc::Thread>                  SignalingThread;
-	static rtc::scoped_refptr<webrtc::AudioDeviceModule> AudioDeviceModule;
+	static rtc::scoped_refptr<FAudioDeviceModule> AudioDeviceModule;
 	static std::unique_ptr<webrtc::TaskQueueFactory> TaskQueueFactory;
 
 	using FCreateSessionDescriptionObserver = TSessionDescriptionObserver<webrtc::CreateSessionDescriptionObserver>;
@@ -43,7 +47,7 @@ class FWebRTCPeerConnection : public webrtc::PeerConnectionObserver
 
 	static rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> PeerConnectionFactory;
 	static void CreatePeerConnectionFactory();
-  
+
 public:
 
 	webrtc::PeerConnectionInterface::RTCOfferAnswerOptions OaOptions;
@@ -51,7 +55,7 @@ public:
 	FWebRTCPeerConnection() = default;
 
 	static FRTCConfig GetDefaultConfig();
-	static FWebRTCPeerConnection* Create(const FRTCConfig& config);
+	static FWebRTCPeerConnection* Create(const FRTCConfig& config, TWeakInterfacePtr<IMillicastExternalAudioConsumer> ExternalAudioConsumer);
 
 	FSetSessionDescriptionObserver* GetLocalDescriptionObserver();
 	FSetSessionDescriptionObserver* GetRemoteDescriptionObserver();
