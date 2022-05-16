@@ -16,6 +16,9 @@ class IWebSocket;
 
 class FWebRTCPeerConnection;
 
+DECLARE_DYNAMIC_MULTICAST_SPARSE_DELEGATE(FMillicastSubscriberComponentSubscribed, UMillicastSubscriberComponent, OnSubscribed);
+DECLARE_DYNAMIC_MULTICAST_SPARSE_DELEGATE_OneParam(FMillicastSubscriberComponentSubscribedFailure, UMillicastSubscriberComponent, OnSubscribedFailure, const FString&, Msg);
+
 /**
 	A component used to receive audio, video from a Millicast feed.
 */
@@ -53,6 +56,15 @@ public:
 	*/
 	UFUNCTION(BlueprintCallable, Category = "MillicastPlayer", META = (DisplayName = "Unsubscribe"))
 	void Unsubscribe();
+
+public:
+	/** Called when the response from the director api is successfull */
+	UPROPERTY(BlueprintAssignable, Category = "Components|Activation")
+	FMillicastSubscriberComponentSubscribed OnSubscribed;
+
+	/** Called when the response from the director api is an error */
+	UPROPERTY(BlueprintAssignable, Category = "Components|Activation")
+	FMillicastSubscriberComponentSubscribedFailure OnSubscribedFailure;
 
 private:
 	/** Websocket Connection */

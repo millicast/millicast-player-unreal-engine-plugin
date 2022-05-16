@@ -122,8 +122,9 @@ bool UMillicastSubscriberComponent::SubscribeToMillicast()
 		if(PeerConnection) PeerConnection->SetLocalDescription(sdp, type);
 	});
 
-	CreateSessionDescriptionObserver->SetOnFailureCallback([](const std::string& err) {
+	CreateSessionDescriptionObserver->SetOnFailureCallback([this](const std::string& err) {
 		UE_LOG(LogMillicastPlayer, Error, TEXT("pc.createOffer() | Error: %s"), *ToString(err));
+		OnSubscribedFailure.Broadcast(FString{ err.c_str() });
 	});
 
 	LocalDescriptionObserver->SetOnSuccessCallback([this]() {
@@ -151,15 +152,18 @@ bool UMillicastSubscriberComponent::SubscribeToMillicast()
 		if(WS) WS->Send(StringStream);
 	});
 
-	LocalDescriptionObserver->SetOnFailureCallback([](const std::string& err) {
+	LocalDescriptionObserver->SetOnFailureCallback([this](const std::string& err) {
 		UE_LOG(LogMillicastPlayer, Error, TEXT("Set local description failed : %s"), *ToString(err));
+		OnSubscribedFailure.Broadcast(FString{ err.c_str() });
 	});
 
 	RemoteDescriptionObserver->SetOnSuccessCallback([this]() {
 		UE_LOG(LogMillicastPlayer, Log, TEXT("Set remote description suceeded"));
+		OnSubscribed.Broadcast();
 	});
-	RemoteDescriptionObserver->SetOnFailureCallback([](const std::string& err) {
+	RemoteDescriptionObserver->SetOnFailureCallback([this](const std::string& err) {
 		UE_LOG(LogMillicastPlayer, Error, TEXT("Set remote description failed : %s"), *ToString(err));
+		OnSubscribedFailure.Broadcast(FString{ err.c_str()});
 	});
 
 	PeerConnection->OaOptions.offer_to_receive_video = true;
