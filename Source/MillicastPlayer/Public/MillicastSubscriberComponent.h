@@ -75,4 +75,5 @@ private:
 	FWebRTCPeerConnection* PeerConnection;
 
 	TWeakInterfacePtr<IMillicastExternalAudioConsumer> ExternalAudioConsumer;
+	FCriticalSection CriticalPcSection;
 };

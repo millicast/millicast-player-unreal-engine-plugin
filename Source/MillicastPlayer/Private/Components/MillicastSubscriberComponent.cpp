@@ -72,13 +72,18 @@ bool UMillicastSubscriberComponent::Subscribe(const FMillicastSignalingData& InS
 */
 void UMillicastSubscriberComponent::Unsubscribe()
 {
+	FScopeLock Lock(&CriticalPcSection);
+	
+	if (WS)
+	{
+		WS->Close();
+		WS = nullptr;
+	}
+
 	if(PeerConnection)
 	{
 		delete PeerConnection;
 		PeerConnection = nullptr;
-
-		WS->Close();
-		WS = nullptr;
 	}
 }
 
@@ -112,8 +117,9 @@ bool UMillicastSubscriberComponent::SubscribeToMillicast()
 	auto * RemoteDescriptionObserver = PeerConnection->GetRemoteDescriptionObserver();
 
 	CreateSessionDescriptionObserver->SetOnSuccessCallback([this](const std::string& type, const std::string& sdp) {
+		FScopeLock Lock(&CriticalPcSection);
 		UE_LOG(LogMillicastPlayer, Log, TEXT("pc.createOffer() | sucess\nsdp : %s"), *ToString(sdp));
-		PeerConnection->SetLocalDescription(sdp, type);
+		if(PeerConnection) PeerConnection->SetLocalDescription(sdp, type);
 	});
 
 	CreateSessionDescriptionObserver->SetOnFailureCallback([](const std::string& err) {
@@ -121,6 +127,9 @@ bool UMillicastSubscriberComponent::SubscribeToMillicast()
 	});
 
 	LocalDescriptionObserver->SetOnSuccessCallback([this]() {
+		FScopeLock Lock(&CriticalPcSection);
+		if (!PeerConnection) return;
+
 		UE_LOG(LogMillicastPlayer, Log, TEXT("pc.setLocalDescription() | sucess"));
 		std::string sdp;
 		(*PeerConnection)->local_description()->ToString(&sdp);
@@ -139,7 +148,7 @@ bool UMillicastSubscriberComponent::SubscribeToMillicast()
 		auto Writer = TJsonWriterFactory<>::Create(&StringStream);
 		FJsonSerializer::Serialize(Payload, Writer);
 
-		WS->Send(StringStream);
+		if(WS) WS->Send(StringStream);
 	});
 
 	LocalDescriptionObserver->SetOnFailureCallback([](const std::string& err) {
@@ -186,6 +195,8 @@ void UMillicastSubscriberComponent::OnClosed(int32 StatusCode,
 
 void UMillicastSubscriberComponent::OnMessage(const FString& Msg)
 {
+	FScopeLock Lock(&CriticalPcSection);
+
 	UE_LOG(LogMillicastPlayer, Log, TEXT("Millicast WebSocket new Message : %s"), *Msg);
 
 	TSharedPtr<FJsonObject> ResponseJson;
