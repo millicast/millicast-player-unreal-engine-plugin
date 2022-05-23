@@ -1,14 +1,25 @@
 ﻿// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "DefaultAudioConsumer.h"
+#include "MillicastAudioActor.h"
 
 
-FMillicastAudioParameters UMillicastDefaultAudioConsumer::GetAudioParameters() const
+AMillicastAudioActor::AMillicastAudioActor(const FObjectInitializer& ObjectInitializer)
+    : Super(ObjectInitializer), SoundStreaming(nullptr)
+{
+    AudioComponent = ObjectInitializer.CreateDefaultSubobject<UAudioComponent>(
+        this,
+        TEXT("UAudioComponent")
+        );
+    AudioComponent->SetSound(SoundStreaming);
+    AudioComponent->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform); 
+}
+
+FMillicastAudioParameters AMillicastAudioActor::GetAudioParameters() const
 {
     return AudioParameters;
 }
 
-void UMillicastDefaultAudioConsumer::Initialize()
+void AMillicastAudioActor::Initialize()
 {
     if (SoundStreaming == nullptr)
     {
@@ -25,23 +36,25 @@ void UMillicastDefaultAudioConsumer::Initialize()
     }    
 }
 
-void UMillicastDefaultAudioConsumer::Shutdown()
+void AMillicastAudioActor::Shutdown()
 {
     if (AudioComponent && AudioComponent->IsPlaying())
     {
         AudioComponent->Stop();
     }
-    AudioComponent = nullptr;
-    SoundStreaming = nullptr;    
+    /*AudioComponent = nullptr;
+    SoundStreaming = nullptr;*/
 }
 
-void UMillicastDefaultAudioConsumer::QueueAudioData(TArray<uint8>& AudioData, int32 NumSamples)
+void AMillicastAudioActor::QueueAudioData(TArray<uint8>& AudioData, int32 NumSamples)
 {
     SoundStreaming->QueueAudio(AudioData.GetData(), AudioParameters.GetNumberSamples() * AudioParameters.GetNumberBytesPerSample());    
 }
 
-void UMillicastDefaultAudioConsumer::InitSoundWave()
+void AMillicastAudioActor::InitSoundWave()
 {
+    UE_LOG(LogMillicastPlayer, Log, TEXT("InitSoundWave"));
+
     SoundStreaming = NewObject<USoundWaveProcedural>(this);
     SoundStreaming->SetSampleRate(AudioParameters.SamplesPerSecond);
     SoundStreaming->NumChannels = AudioParameters.NumberOfChannels;
@@ -59,7 +72,7 @@ void UMillicastDefaultAudioConsumer::InitSoundWave()
             AudioComponent->bIsUISound = false;
             AudioComponent->bAllowSpatialization = false;
             AudioComponent->SetVolumeMultiplier(1.0f);
-            AudioComponent->AddToRoot();
+            // AudioComponent->AddToRoot();
         }
     }
     else

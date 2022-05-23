@@ -5,7 +5,7 @@
 #include <sstream>
 
 #include "AudioDeviceModule.h"
-#include "DefaultAudioConsumer.h"
+#include "MillicastAudioActor.h"
 #include "MillicastPlayerPrivate.h"
 
 rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> FWebRTCPeerConnection::PeerConnectionFactory = nullptr;
@@ -67,7 +67,7 @@ FWebRTCPeerConnection* FWebRTCPeerConnection::Create(const FRTCConfig& Config, T
 
     if (!ExternalAudioConsumer.IsValid())
     {
-        UMillicastDefaultAudioConsumer* DefaultAudioConsumer = NewObject<UMillicastDefaultAudioConsumer>();
+		AMillicastAudioActor* DefaultAudioConsumer = NewObject<AMillicastAudioActor>();
         DefaultAudioConsumer->AddToRoot();
         AudioDeviceModule->SetAudioConsumer(DefaultAudioConsumer);
 	}

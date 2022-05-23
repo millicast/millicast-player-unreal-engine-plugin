@@ -5,7 +5,7 @@
 #include <AssetTypeCategories.h>
 #include "MillicastMediaTexture2D.h"
 
-#define LOCTEXT_NAMESPACE "MillicastPlayerEditorMediaSoundWaveFactory"
+#define LOCTEXT_NAMESPACE "MillicastPlayerEditorMediaTextureFactory"
 
 UMillicastMediaTexture2DFactory::UMillicastMediaTexture2DFactory(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer) {

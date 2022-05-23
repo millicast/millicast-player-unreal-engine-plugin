@@ -5,7 +5,7 @@
 #include "AssetTypeCategories.h"
 #include "MillicastMediaSource.h"
 
-#define LOCTEXT_NAMESPACE "MillicastPlayerEditorMediaSenderFactory"
+#define LOCTEXT_NAMESPACE "MillicastPlayerEditorMediaSourceFactory"
 
 /* UMillicastMediaSourceFactoryNew structors
  *****************************************************************************/
