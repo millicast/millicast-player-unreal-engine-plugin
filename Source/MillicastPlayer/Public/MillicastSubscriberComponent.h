@@ -3,6 +3,7 @@
 #pragma once
 
 #include <CoreMinimal.h>
+#include <Misc/Optional.h>
 
 #include <Components/ActorComponent.h>
 #include "IMillicastExternalAudioConsumer.h"
@@ -16,8 +17,43 @@ class IWebSocket;
 
 class FWebRTCPeerConnection;
 
+USTRUCT(BlueprintType, Blueprintable, Category = "MillicastPlayer")
+struct MILLICASTPLAYER_API FMillicastTrackInfo
+{
+	GENERATED_BODY();
+
+	UPROPERTY(BlueprintReadOnly, EditAnywhere)
+	FString Media;
+
+	UPROPERTY(BlueprintReadOnly, EditAnywhere)
+	FString TrackId;
+};
+
+USTRUCT(BlueprintType, Blueprintable, Category = "MillicastPlayer")
+struct MILLICASTPLAYER_API FMillicastLayerData
+{
+	GENERATED_BODY();
+
+	UPROPERTY(BlueprintReadOnly, EditAnywhere)
+	FString EncodingId;
+
+	UPROPERTY(BlueprintReadOnly, EditAnywhere)
+	int SpatialLayerId;
+
+	UPROPERTY(BlueprintReadOnly, EditAnywhere)
+	int TemporalLayerId;
+};
+
 DECLARE_DYNAMIC_MULTICAST_SPARSE_DELEGATE(FMillicastSubscriberComponentSubscribed, UMillicastSubscriberComponent, OnSubscribed);
 DECLARE_DYNAMIC_MULTICAST_SPARSE_DELEGATE_OneParam(FMillicastSubscriberComponentSubscribedFailure, UMillicastSubscriberComponent, OnSubscribedFailure, const FString&, Msg);
+
+// Broadcast event
+DECLARE_DYNAMIC_MULTICAST_SPARSE_DELEGATE_ThreeParams(FMillicastSubscriberComponentActive, UMillicastSubscriberComponent, OnActive, const FString&, StreamId, const TArray<FMillicastTrackInfo>&, Tracks, const FString&, SourceId);
+DECLARE_DYNAMIC_MULTICAST_SPARSE_DELEGATE_TwoParams(FMillicastSubscriberComponentInactive, UMillicastSubscriberComponent, OnInactive, const FString&, StreamId, const FString&, SourceId);
+DECLARE_DYNAMIC_MULTICAST_SPARSE_DELEGATE(FMillicastSubscriberComponentStopped, UMillicastSubscriberComponent, OnStopped);
+DECLARE_DYNAMIC_MULTICAST_SPARSE_DELEGATE_TwoParams(FMillicastSubscriberComponentVad, UMillicastSubscriberComponent, OnVad, const FString&, Mid, const FString&, SourceId);
+DECLARE_DYNAMIC_MULTICAST_SPARSE_DELEGATE_ThreeParams(FMillicastSubscriberComponentLayers, UMillicastSubscriberComponent, OnLayers, const FString&, Mid, const TArray<FMillicastLayerData>&, ActiveLayers, const TArray<FMillicastLayerData>&, InactiveLayers);
+DECLARE_DYNAMIC_MULTICAST_SPARSE_DELEGATE_OneParam(FMillicastSubscriberComponentViewerCount, UMillicastSubscriberComponent, OnViewerCount, int, Count);
 
 /**
 	A component used to receive audio, video from a Millicast feed.
@@ -29,10 +65,20 @@ class MILLICASTPLAYER_API UMillicastSubscriberComponent : public UActorComponent
 	GENERATED_UCLASS_BODY()
 
 private:
+	TMap <FString, TFunction<void(TSharedPtr<FJsonObject>)>> EventBroadcaster;
+
 	/** The Millicast Media Source representing the configuration of the network source */
 	UPROPERTY(EditDefaultsOnly, Category = "Properties",
 			  META = (DisplayName = "Millicast Media Source", AllowPrivateAccess = true))
 	UMillicastMediaSource* MillicastMediaSource = nullptr;
+
+private:
+	void ParseActiveEvent(TSharedPtr<FJsonObject> JsonMsg);
+	void ParseInactiveEvent(TSharedPtr<FJsonObject> JsonMsg);
+	void ParseStoppedEvent(TSharedPtr<FJsonObject> JsonMsg);
+	void ParseVadEvent(TSharedPtr<FJsonObject> JsonMsg);
+	void ParseLayersEvent(TSharedPtr<FJsonObject> JsonMsg);
+	void ParseViewerCountEvent(TSharedPtr<FJsonObject> JsonMsg);
 
 public:
 	virtual ~UMillicastSubscriberComponent() override;
@@ -65,6 +111,24 @@ public:
 	/** Called when the response from the director api is an error */
 	UPROPERTY(BlueprintAssignable, Category = "Components|Activation")
 	FMillicastSubscriberComponentSubscribedFailure OnSubscribedFailure;
+
+	UPROPERTY(BlueprintAssignable, Category = "Components|Activation")
+	FMillicastSubscriberComponentActive OnActive;
+
+	UPROPERTY(BlueprintAssignable, Category = "Components|Activation")
+	FMillicastSubscriberComponentInactive OnInactive;
+
+	UPROPERTY(BlueprintAssignable, Category = "Components|Activation")
+	FMillicastSubscriberComponentStopped OnStopped;
+
+	UPROPERTY(BlueprintAssignable, Category = "Components|Activation")
+	FMillicastSubscriberComponentVad OnVad;
+
+	UPROPERTY(BlueprintAssignable, Category = "Components|Activation")
+	FMillicastSubscriberComponentLayers OnLayers;
+
+	UPROPERTY(BlueprintAssignable, Category = "Components|Activation")
+	FMillicastSubscriberComponentViewerCount OnViewerCount;
 
 private:
 	/** Websocket Connection */

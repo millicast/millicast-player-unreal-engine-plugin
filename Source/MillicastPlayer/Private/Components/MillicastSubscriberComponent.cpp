@@ -23,6 +23,14 @@ UMillicastSubscriberComponent::UMillicastSubscriberComponent(const FObjectInitia
 	WS = nullptr;
 
 	PeerConnectionConfig = FWebRTCPeerConnection::GetDefaultConfig();
+
+	// Event received from websocket signaling
+	EventBroadcaster.Emplace("active", [this](TSharedPtr<FJsonObject> Msg) { ParseActiveEvent(Msg); });
+	EventBroadcaster.Emplace("inactive", [this](TSharedPtr<FJsonObject> Msg) { ParseInactiveEvent(Msg); });
+	EventBroadcaster.Emplace("stopped", [this](TSharedPtr<FJsonObject> Msg) { ParseStoppedEvent(Msg); });
+	EventBroadcaster.Emplace("vad", [this](TSharedPtr<FJsonObject> Msg) { ParseVadEvent(Msg); });
+	EventBroadcaster.Emplace("layers", [this](TSharedPtr<FJsonObject> Msg) { ParseLayersEvent(Msg); });
+	EventBroadcaster.Emplace("viewercount", [this](TSharedPtr<FJsonObject> Msg) { ParseViewerCountEvent(Msg); });
 }
 
 UMillicastSubscriberComponent::~UMillicastSubscriberComponent()
@@ -130,9 +138,21 @@ bool UMillicastSubscriberComponent::SubscribeToMillicast()
 		std::string sdp;
 		(*PeerConnection)->local_description()->ToString(&sdp);
 
+		// Add events we want to receive from millicast
+		TArray<TSharedPtr<FJsonValue>> eventsJson;
+		TArray<FString> EvKeys;
+		EventBroadcaster.GetKeys(EvKeys);
+
+		for (auto& ev : EvKeys)
+		{
+			eventsJson.Add(MakeShared<FJsonValueString>(ev));
+		}
+
+		// Fill Signaling data
 		auto DataJson = MakeShared<FJsonObject>();
 		DataJson->SetStringField("streamId", MillicastMediaSource->StreamName);
 		DataJson->SetStringField("sdp", ToString(sdp));
+		DataJson->SetArrayField("events", eventsJson);
 
 		auto Payload = MakeShared<FJsonObject>();
 		Payload->SetStringField("type", "cmd");
@@ -201,23 +221,125 @@ void UMillicastSubscriberComponent::OnMessage(const FString& Msg)
 	TSharedPtr<FJsonObject> ResponseJson;
 	auto Reader = TJsonReaderFactory<>::Create(Msg);
 
-	if(FJsonSerializer::Deserialize(Reader, ResponseJson)) {
+	if(FJsonSerializer::Deserialize(Reader, ResponseJson)) 
+	{
 		FString Type;
 		if(!ResponseJson->TryGetStringField("type", Type)) return;
 
-		if(Type == "response") {
+		if(Type == "response") 
+		{
 			auto DataJson = ResponseJson->GetObjectField("data");
 			FString Sdp = DataJson->GetStringField("sdp");
 			PeerConnection->SetRemoteDescription(to_string(Sdp));
 		}
-		else if(Type == "error") {
-			// TODO: Parse error and fire an event
+		else if(Type == "error")
+		{
+			FString errorMessage;
+			auto dataJson = ResponseJson->TryGetStringField("data", errorMessage);
+
+			UE_LOG(LogMillicastPlayer, Error, TEXT("WebSocket error : %s"), *errorMessage);
 		}
-		else if(Type == "event") {
-			// TODO: Parse broadcaster event and a blueprint event for each
+		else if(Type == "event") 
+		{
+			FString eventName;
+			ResponseJson->TryGetStringField("name", eventName);
+
+			UE_LOG(LogMillicastPlayer, Log, TEXT("Received event : %s"), *eventName);
+
+			EventBroadcaster[eventName](ResponseJson);
 		}
-		else {
-			// TODO: Unknown answer
+		else 
+		{
+			UE_LOG(LogMillicastPlayer, Warning, TEXT("WebSocket response type not handled (yet?) %s"), *Type);
 		}
 	}
+}
+
+void UMillicastSubscriberComponent::ParseActiveEvent(TSharedPtr<FJsonObject> JsonMsg)
+{
+	auto DataJson = JsonMsg->GetObjectField("data");
+
+	FString StreamId = DataJson->GetStringField("streamId");
+	FString SourceId;
+	TArray<FMillicastTrackInfo> Tracks;
+	const TArray<TSharedPtr<FJsonValue>>* TracksJson;
+
+	DataJson->TryGetStringField("sourceId", SourceId);
+
+	if (DataJson->TryGetArrayField("tracks", TracksJson))
+	{
+		for (auto& t : *TracksJson)
+		{
+			FMillicastTrackInfo TrackInfo;
+			TrackInfo.Media = t->AsObject()->GetStringField("media");
+			TrackInfo.TrackId = t->AsObject()->GetStringField("trackId");
+
+			Tracks.Emplace(MoveTemp(TrackInfo));
+		}
+	}
+
+	OnActive.Broadcast(StreamId, Tracks, SourceId);
+}
+
+void UMillicastSubscriberComponent::ParseInactiveEvent(TSharedPtr<FJsonObject> JsonMsg)
+{
+	auto DataJson = JsonMsg->GetObjectField("data");
+
+	FString StreamId = DataJson->GetStringField("streamId");
+	FString SourceId;
+	DataJson->TryGetStringField("sourceId", SourceId);
+
+	OnInactive.Broadcast(StreamId, SourceId);
+}
+
+void UMillicastSubscriberComponent::ParseStoppedEvent(TSharedPtr<FJsonObject>)
+{
+	OnStopped.Broadcast();
+}
+void UMillicastSubscriberComponent::ParseVadEvent(TSharedPtr<FJsonObject> JsonMsg)
+{
+	auto DataJson = JsonMsg->GetObjectField("data");
+
+	FString Mid = DataJson->GetStringField("mediaId");
+	FString SourceId;
+	DataJson->TryGetStringField("sourceId", SourceId);
+
+	OnVad.Broadcast(Mid, SourceId);
+}
+
+void UMillicastSubscriberComponent::ParseLayersEvent(TSharedPtr<FJsonObject> JsonMsg)
+{
+	auto DataJson = JsonMsg->GetObjectField("data");
+	auto MediaJson = DataJson->GetObjectField("medias");
+
+	for (auto& it : MediaJson->Values)
+	{
+		TArray<FMillicastLayerData> ActiveLayers;
+		TArray<FMillicastLayerData> InactiveLayers;
+
+		const TArray<TSharedPtr<FJsonValue>>* layers;
+		if (it.Value->AsObject()->TryGetArrayField("layers", layers))
+		{
+			for (auto& l : *layers)
+			{
+				FMillicastLayerData data;
+				data.EncodingId = l->AsObject()->GetStringField("encodingId");
+				data.TemporalLayerId = l->AsObject()->GetIntegerField("temporalLayerId");
+				data.SpatialLayerId = l->AsObject()->GetIntegerField("spatialLayerId");
+
+				ActiveLayers.Push(MoveTemp(data));
+			}
+		}
+
+		OnLayers.Broadcast(it.Key, ActiveLayers, InactiveLayers);
+	}
+}
+
+void UMillicastSubscriberComponent::ParseViewerCountEvent(TSharedPtr<FJsonObject> JsonMsg)
+{
+	auto DataJson = JsonMsg->GetObjectField("data");
+
+	int Count = DataJson->GetIntegerField("viewercount");
+
+	OnViewerCount.Broadcast(Count);
 }

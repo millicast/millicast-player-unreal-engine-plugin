@@ -45,7 +45,7 @@ public:
 		Provides an Millicast Video Texture object to render videos frames.
 	*/
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, BlueprintSetter = "ChangeVideoTexture", Category = "Content",
-			  META = (DisplayName = "Video Texture", AllowPrivateAccess = true))
+			  META = (DisplayName = "Video Texture"))
 	UMillicastMediaTexture2D* VideoTexture = nullptr;
 
 	/**
