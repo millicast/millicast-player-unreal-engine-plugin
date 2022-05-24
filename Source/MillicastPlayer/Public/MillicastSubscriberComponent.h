@@ -85,6 +85,7 @@ private:
 	FDelegateHandle OnMessageHandle;
 
 	FWebRTCPeerConnection* PeerConnection;
+	webrtc::PeerConnectionInterface::RTCConfiguration PeerConnectionConfig;
 
 	TWeakInterfacePtr<IMillicastExternalAudioConsumer> ExternalAudioConsumer;
 	FCriticalSection CriticalPcSection;

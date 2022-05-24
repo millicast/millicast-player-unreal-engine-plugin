@@ -13,6 +13,8 @@
 DECLARE_DYNAMIC_MULTICAST_SPARSE_DELEGATE_OneParam(FMillicastDirectorComponentAuthenticated, UMillicastDirectorComponent, OnAuthenticated, const FMillicastSignalingData&, SignalingData);
 DECLARE_DYNAMIC_MULTICAST_SPARSE_DELEGATE_TwoParams(FMillicastDirectorComponentAuthenticationFailure, UMillicastDirectorComponent, OnAuthenticationFailure, int, Code, const FString&, Msg);
 
+class IHttpResponse;
+
 /**
 	A component to make request to the Millicast director API
 	in order to get the WebSocket url and the JsonWebToken
@@ -51,4 +53,9 @@ public:
 	/** Called when the response from the director api is an error */
 	UPROPERTY(BlueprintAssignable, Category = "Components|Activation")
 	FMillicastDirectorComponentAuthenticationFailure OnAuthenticationFailure;
+
+private:
+	void ParseIceServers(const TArray<TSharedPtr<FJsonValue>>& IceServersField,
+		FMillicastSignalingData& SignalingData);
+	void ParseDirectorResponse(TSharedPtr<IHttpResponse, ESPMode::ThreadSafe> Response);
 };

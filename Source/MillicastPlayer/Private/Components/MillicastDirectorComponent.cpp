@@ -9,6 +9,8 @@
 #include "Serialization/JsonReader.h"
 #include "Serialization/JsonWriter.h"
 
+#include "Util.h"
+
 #include "MillicastPlayerPrivate.h"
 
 constexpr auto HTTP_OK = 200;
@@ -28,6 +30,78 @@ bool UMillicastDirectorComponent::Initialize(UMillicastMediaSource* InMediaSourc
 	}
 
 	return InMediaSource != nullptr && InMediaSource == MillicastMediaSource;
+}
+
+void UMillicastDirectorComponent::ParseIceServers(const TArray<TSharedPtr<FJsonValue>>& IceServersField,
+	FMillicastSignalingData& SignalingData)
+{
+	SignalingData.IceServers.Empty();
+	for (auto& elt : IceServersField)
+	{
+		const TSharedPtr<FJsonObject>* IceServerJson;
+		bool ok = elt->TryGetObject(IceServerJson);
+
+		if (!ok)
+		{
+			UE_LOG(LogMillicastPlayer, Warning, TEXT("Could not read ice server json"));
+			continue;
+		}
+
+		TArray<FString> iceServerUrls;
+		FString iceServerPassword, iceServerUsername;
+
+		bool hasUrls = (*IceServerJson)->TryGetStringArrayField("urls", iceServerUrls);
+		bool hasUsername = (*IceServerJson)->TryGetStringField("username", iceServerUsername);
+		bool hasPassword = (*IceServerJson)->TryGetStringField("credential", iceServerPassword);
+
+		webrtc::PeerConnectionInterface::IceServer iceServer;
+		if (hasUrls)
+		{
+			for (auto& url : iceServerUrls)
+			{
+				iceServer.urls.push_back(to_string(url));
+			}
+		}
+		if (hasUsername)
+		{
+			iceServer.username = to_string(iceServerUsername);
+		}
+		if (hasPassword)
+		{
+			iceServer.password = to_string(iceServerPassword);
+		}
+
+		SignalingData.IceServers.Emplace(MoveTemp(iceServer));
+	}
+}
+
+void UMillicastDirectorComponent::ParseDirectorResponse(FHttpResponsePtr Response)
+{
+	FString ResponseDataString = Response->GetContentAsString();
+	UE_LOG(LogMillicastPlayer, Log, TEXT("Director response : \n %s \n"), *ResponseDataString);
+
+	TSharedPtr<FJsonObject> ResponseDataJson;
+	auto JsonReader = TJsonReaderFactory<>::Create(ResponseDataString);
+
+	// Deserialize received JSON message
+	if (FJsonSerializer::Deserialize(JsonReader, ResponseDataJson))
+	{
+		FMillicastSignalingData SignalingData;
+		TSharedPtr<FJsonObject> DataField = ResponseDataJson->GetObjectField("data");
+
+		// Extract JSON WebToken, Websocket URL and ice servers configuration
+		SignalingData.Jwt = DataField->GetStringField("jwt");
+		auto WebSocketUrlField = DataField->GetArrayField("urls")[0];
+		auto IceServersField = DataField->GetArrayField("iceServers");
+
+		WebSocketUrlField->TryGetString(SignalingData.WsUrl);
+
+		UE_LOG(LogMillicastPlayer, Log, TEXT("WsUrl : %s \njwt : %s"), *SignalingData.WsUrl, *SignalingData.Jwt);
+
+		ParseIceServers(IceServersField, SignalingData);
+
+		OnAuthenticated.Broadcast(SignalingData);
+	}
 }
 
 /**
@@ -68,25 +142,12 @@ bool UMillicastDirectorComponent::Authenticate()
 	  .BindLambda([this](FHttpRequestPtr Request,
 				  FHttpResponsePtr Response,
 				  bool bConnectedSuccessfully) {
-		if(bConnectedSuccessfully && Response->GetResponseCode() == HTTP_OK) {
-			FString ResponseDataString = Response->GetContentAsString();
-			TSharedPtr<FJsonObject> ResponseDataJson;
-			auto JsonReader = TJsonReaderFactory<>::Create(ResponseDataString);
-
-			if(FJsonSerializer::Deserialize(JsonReader, ResponseDataJson)) {
-				FMillicastSignalingData SignalingData;
-				TSharedPtr<FJsonObject> DataField = ResponseDataJson->GetObjectField("data");
-				SignalingData.Jwt = DataField->GetStringField("jwt");
-				auto WebSocketUrl = DataField->GetArrayField("urls")[0];
-				WebSocketUrl->TryGetString(SignalingData.WsUrl);
-
-				UE_LOG(LogMillicastPlayer, Log, TEXT("WsUrl : %s \njwt : %s"),
-					 *SignalingData.WsUrl, *SignalingData.Jwt);
-
-				OnAuthenticated.Broadcast(SignalingData);
-			}
+		if(bConnectedSuccessfully && Response->GetResponseCode() == HTTP_OK) 
+		{
+			ParseDirectorResponse(Response);
 		}
-		else {
+		else 
+		{
 			UE_LOG(LogMillicastPlayer, Error, TEXT("Director HTTP request failed %d %s"), Response->GetResponseCode(), *Response->GetContentType());
 			FString ErrorMsg = Response->GetContentAsString();
 			OnAuthenticationFailure.Broadcast(Response->GetResponseCode(), ErrorMsg);

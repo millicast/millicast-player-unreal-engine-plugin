@@ -15,24 +15,14 @@
 #include "IWebSocket.h"
 #include "WebRTC/PeerConnection.h"
 
-inline std::string to_string(const FString& Str)
-{
-	auto Ansi = StringCast<ANSICHAR>(*Str, Str.Len());
-	std::string Res{ Ansi.Get(), static_cast<SIZE_T>(Ansi.Length()) };
-	return Res;
-}
-
-inline FString ToString(const std::string& Str)
-{
-	auto Conv = StringCast<TCHAR>(Str.c_str(), Str.size());
-	FString Res{ Conv.Length(), Conv.Get() };
-	return Res;
-}
-
+#include "Util.h"
 
 UMillicastSubscriberComponent::UMillicastSubscriberComponent(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
 	PeerConnection = nullptr;
+	WS = nullptr;
+
+	PeerConnectionConfig = FWebRTCPeerConnection::GetDefaultConfig();
 }
 
 UMillicastSubscriberComponent::~UMillicastSubscriberComponent()
@@ -61,6 +51,11 @@ bool UMillicastSubscriberComponent::Initialize(UMillicastMediaSource* InMediaSou
 bool UMillicastSubscriberComponent::Subscribe(const FMillicastSignalingData& InSignalingData, TScriptInterface<IMillicastExternalAudioConsumer> InExternalAudioConsumer)
 {
     ExternalAudioConsumer = InExternalAudioConsumer;
+
+	for (auto& s : InSignalingData.IceServers) 
+	{
+		PeerConnectionConfig.servers.push_back(s);
+	}
 
 	return IsValid(MillicastMediaSource) &&
 	    MillicastMediaSource->Initialize(InSignalingData) &&
