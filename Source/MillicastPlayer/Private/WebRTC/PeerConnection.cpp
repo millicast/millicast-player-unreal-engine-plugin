@@ -194,11 +194,6 @@ void FWebRTCPeerConnection::SetRemoteDescription(const std::string& Sdp,
 	PeerConnection->SetRemoteDescription(RemoteSessionDescription.Release(), SessionDescription);
 }
 
-void FWebRTCPeerConnection::SetVideoSink(rtc::VideoSinkInterface<webrtc::VideoFrame>* Sink)
-{
-	VideoSink = Sink;
-}
-
 void FWebRTCPeerConnection::OnSignalingChange(webrtc::PeerConnectionInterface::SignalingState)
 {}
 
@@ -214,10 +209,13 @@ void FWebRTCPeerConnection::OnAddTrack(rtc::scoped_refptr<webrtc::RtpReceiverInt
 
 void FWebRTCPeerConnection::OnTrack(rtc::scoped_refptr<webrtc::RtpTransceiverInterface> Transceiver)
 {
-	if(VideoSink && Transceiver->media_type() == cricket::MediaType::MEDIA_TYPE_VIDEO)
+	if(OnVideoTrack && Transceiver->media_type() == cricket::MediaType::MEDIA_TYPE_VIDEO)
 	{
-		auto * VideoTrack = static_cast<webrtc::VideoTrackInterface*>(Transceiver->receiver()->track().get());
-		VideoTrack->AddOrUpdateSink(VideoSink, rtc::VideoSinkWants());
+		OnVideoTrack(*Transceiver->mid(), Transceiver->receiver()->track());
+	}
+	else if (OnAudioTrack && Transceiver->media_type() == cricket::MediaType::MEDIA_TYPE_AUDIO)
+	{
+		OnAudioTrack(*Transceiver->mid(), Transceiver->receiver()->track());
 	}
 }
 

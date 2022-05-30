@@ -3,13 +3,14 @@
 #pragma once
 
 #include <CoreMinimal.h>
-#include <Misc/Optional.h>
 
 #include <Components/ActorComponent.h>
 #include "IMillicastExternalAudioConsumer.h"
 #include "MillicastSignalingData.h"
 #include "MillicastMediaSource.h"
 #include "UObject/WeakInterfacePtr.h"
+
+#include "IMillicastMediaTrack.h"
 
 #include "MillicastSubscriberComponent.generated.h"
 
@@ -44,8 +45,27 @@ struct MILLICASTPLAYER_API FMillicastLayerData
 	int TemporalLayerId;
 };
 
+USTRUCT(BlueprintType, Blueprintable, Category = "MillicastPlayer", META=(BlueprintSpawnableComponent))
+struct MILLICASTPLAYER_API FMillicastProjectionData
+{
+	GENERATED_BODY();
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	FString TrackId;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	FString Mid;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	FString Media;
+};
+
 DECLARE_DYNAMIC_MULTICAST_SPARSE_DELEGATE(FMillicastSubscriberComponentSubscribed, UMillicastSubscriberComponent, OnSubscribed);
 DECLARE_DYNAMIC_MULTICAST_SPARSE_DELEGATE_OneParam(FMillicastSubscriberComponentSubscribedFailure, UMillicastSubscriberComponent, OnSubscribedFailure, const FString&, Msg);
+
+// On Tracks
+DECLARE_DYNAMIC_MULTICAST_SPARSE_DELEGATE_OneParam(FMillicastSubscriberComponentVideoTrack, UMillicastSubscriberComponent, OnVideoTrack, UMillicastVideoTrack*, VideoTrack);
+DECLARE_DYNAMIC_MULTICAST_SPARSE_DELEGATE_OneParam(FMillicastSubscriberComponentAudioTrack, UMillicastSubscriberComponent, OnAudioTrack, UMillicastAudioTrack*, AudioTrack);
 
 // Broadcast event
 DECLARE_DYNAMIC_MULTICAST_SPARSE_DELEGATE_ThreeParams(FMillicastSubscriberComponentActive, UMillicastSubscriberComponent, OnActive, const FString&, StreamId, const TArray<FMillicastTrackInfo>&, Tracks, const FString&, SourceId);
@@ -73,13 +93,14 @@ private:
 	UMillicastMediaSource* MillicastMediaSource = nullptr;
 
 private:
+	void SendCommand(const FString& Name, TSharedPtr<FJsonObject> Data);
+
 	void ParseActiveEvent(TSharedPtr<FJsonObject> JsonMsg);
 	void ParseInactiveEvent(TSharedPtr<FJsonObject> JsonMsg);
 	void ParseStoppedEvent(TSharedPtr<FJsonObject> JsonMsg);
 	void ParseVadEvent(TSharedPtr<FJsonObject> JsonMsg);
 	void ParseLayersEvent(TSharedPtr<FJsonObject> JsonMsg);
 	void ParseViewerCountEvent(TSharedPtr<FJsonObject> JsonMsg);
-
 public:
 	virtual ~UMillicastSubscriberComponent() override;
 
@@ -102,6 +123,18 @@ public:
 	*/
 	UFUNCTION(BlueprintCallable, Category = "MillicastPlayer", META = (DisplayName = "Unsubscribe"))
 	void Unsubscribe();
+
+	/**
+	* Project a media track into a given transceiver mid
+	*/
+	UFUNCTION(BlueprintCallable, Category = "MillicastPlayer", META = (DisplayName = "Project"))
+	void Project(const FString& SourceId, const TArray<FMillicastProjectionData>& ProjectionData);
+
+	/**
+	* Unproject a track from a given transceiver mid
+	*/
+	UFUNCTION(BlueprintCallable, Category = "MillicastPlayer", META = (DislpayName = "Unproject"))
+	void Unproject(const TArray<FString>& Mids);
 
 public:
 	/** Called when the response from the director api is successfull */
@@ -129,6 +162,12 @@ public:
 
 	UPROPERTY(BlueprintAssignable, Category = "Components|Activation")
 	FMillicastSubscriberComponentViewerCount OnViewerCount;
+
+	UPROPERTY(BlueprintAssignable, Category = "Components|Activation")
+	FMillicastSubscriberComponentVideoTrack OnVideoTrack;
+
+	UPROPERTY(BlueprintAssignable, Category = "Components|Activation")
+	FMillicastSubscriberComponentAudioTrack OnAudioTrack;
 
 private:
 	/** Websocket Connection */

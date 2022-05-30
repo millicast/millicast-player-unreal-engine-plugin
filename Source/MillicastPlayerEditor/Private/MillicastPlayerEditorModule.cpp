@@ -67,9 +67,9 @@ private:
 				   new IMAGE_BRUSH("MillicastMediaSource_64x", Icon64x64));
 		StyleInstance->Set("ClassIcon.MillicastMediaTexture2D",
 				   new IMAGE_BRUSH("MillicastMediaSource_20x", Icon20x20));
-		StyleInstance->Set("ClassThumbnail.MillicastAudioConsumer",
+		StyleInstance->Set("ClassThumbnail.MillicastTexture2DPlayer",
 			new IMAGE_BRUSH("MillicastMediaSource_64x", Icon64x64));
-		StyleInstance->Set("ClassIcon.MillicastAudioConsumer",
+		StyleInstance->Set("ClassIcon.MillicastTexture2DPlayer",
 			new IMAGE_BRUSH("MillicastMediaSource_20x", Icon20x20));
 
 		FSlateStyleRegistry::RegisterSlateStyle(*StyleInstance.Get());

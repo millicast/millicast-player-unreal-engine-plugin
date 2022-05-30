@@ -29,14 +29,14 @@ class IMillicastExternalAudioConsumer
     GENERATED_BODY()
 
 public:
-    virtual FMillicastAudioParameters GetAudioParameters() const { return {}; }
+    virtual FMillicastAudioParameters GetAudioParameters() const = 0;
 
     // Called when an audio track is added and playback is about to start
-    virtual void Initialize() {}
+    virtual void Initialize() = 0;
     // Called when the subscription to a stream ends
-    virtual void Shutdown() {}
+    virtual void Shutdown() = 0;
 
     // Called from a WebRTC thread when new audio samples are available.
     // The consumer is encouraged to move the data out of this array
-    virtual void QueueAudioData(TArray<uint8>& AudioData, int32 NumSamples) {}
+    virtual void QueueAudioData(TArray<uint8>& AudioData, int32 NumSamples) = 0;
 };

@@ -14,6 +14,7 @@
 #include "WebSocketsModule.h"
 #include "IWebSocket.h"
 #include "WebRTC/PeerConnection.h"
+#include "WebRTC/MillicastMediaTracks.h"
 
 #include "Util.h"
 
@@ -90,6 +91,43 @@ void UMillicastSubscriberComponent::Unsubscribe()
 	}
 }
 
+void UMillicastSubscriberComponent::Project(const FString& SourceId, const TArray<FMillicastProjectionData>& ProjectionData)
+{
+	auto DataJson = MakeShared<FJsonObject>();
+	TArray<TSharedPtr<FJsonValue>> ProjectionJson;
+
+	for (auto& d : ProjectionData)
+	{
+		auto data = MakeShared<FJsonObject>();
+		data->SetStringField("trackId", d.TrackId);
+		data->SetStringField("mediaId", d.Mid);
+		data->SetStringField("media", d.Media);
+
+		auto value = MakeShared<FJsonValueObject>(data);
+		ProjectionJson.Emplace(value);
+	}
+
+	DataJson->SetStringField("sourceId", SourceId);
+	DataJson->SetArrayField("mapping", ProjectionJson);
+
+	SendCommand("project", DataJson);
+}
+
+void UMillicastSubscriberComponent::Unproject(const TArray<FString>& Mids)
+{
+	auto DataJson = MakeShared<FJsonObject>();
+	TArray<TSharedPtr<FJsonValue>> MidsJson;
+
+	for (auto& m : Mids)
+	{
+		MidsJson.Emplace(MakeShared<FJsonValueString>(m));
+	}
+
+	DataJson->SetArrayField("mediaIds", MidsJson);
+
+	SendCommand("unproject", DataJson);
+}
+
 bool UMillicastSubscriberComponent::StartWebSocketConnection(const FString& Url,
                                                      const FString& Jwt)
 {
@@ -154,17 +192,7 @@ bool UMillicastSubscriberComponent::SubscribeToMillicast()
 		DataJson->SetStringField("sdp", ToString(sdp));
 		DataJson->SetArrayField("events", eventsJson);
 
-		auto Payload = MakeShared<FJsonObject>();
-		Payload->SetStringField("type", "cmd");
-		Payload->SetNumberField("transId", std::rand());
-		Payload->SetStringField("name", "view");
-		Payload->SetObjectField("data", DataJson);
-
-		FString StringStream;
-		auto Writer = TJsonWriterFactory<>::Create(&StringStream);
-		FJsonSerializer::Serialize(Payload, Writer);
-
-		if(WS) WS->Send(StringStream);
+		SendCommand("view", DataJson);
 	});
 
 	LocalDescriptionObserver->SetOnFailureCallback([this](const std::string& err) {
@@ -184,7 +212,16 @@ bool UMillicastSubscriberComponent::SubscribeToMillicast()
 	PeerConnection->OaOptions.offer_to_receive_video = true;
 	PeerConnection->OaOptions.offer_to_receive_audio = true;
 
-	PeerConnection->SetVideoSink(MillicastMediaSource);
+	using RtcTrack = rtc::scoped_refptr<webrtc::MediaStreamTrackInterface>;
+	PeerConnection->OnVideoTrack = [this](const std::string& Mid, RtcTrack Track) {
+		auto videoTrack = NewObject<UMillicastVideoTrackImpl>();
+		videoTrack->Initialize(Mid.c_str(), Track);
+
+		OnVideoTrack.Broadcast(videoTrack);
+	};
+	PeerConnection->OnAudioTrack = [this](const std::string& mid, RtcTrack Track) {
+
+	};
 
 	PeerConnection->CreateOffer();
 
@@ -228,9 +265,12 @@ void UMillicastSubscriberComponent::OnMessage(const FString& Msg)
 
 		if(Type == "response") 
 		{
-			auto DataJson = ResponseJson->GetObjectField("data");
-			FString Sdp = DataJson->GetStringField("sdp");
-			PeerConnection->SetRemoteDescription(to_string(Sdp));
+			const TSharedPtr<FJsonObject>* DataJson;
+			if (ResponseJson->TryGetObjectField("data", DataJson))
+			{
+				FString Sdp = (* DataJson)->GetStringField("sdp");
+				PeerConnection->SetRemoteDescription(to_string(Sdp));
+			}
 		}
 		else if(Type == "error")
 		{
@@ -253,6 +293,23 @@ void UMillicastSubscriberComponent::OnMessage(const FString& Msg)
 			UE_LOG(LogMillicastPlayer, Warning, TEXT("WebSocket response type not handled (yet?) %s"), *Type);
 		}
 	}
+}
+
+void UMillicastSubscriberComponent::SendCommand(const FString& Name, TSharedPtr<FJsonObject> Data)
+{
+	auto Payload = MakeShared<FJsonObject>();
+	Payload->SetStringField("type", "cmd");
+	Payload->SetNumberField("transId", std::rand());
+	Payload->SetStringField("name", *Name);
+	Payload->SetObjectField("data", Data);
+
+	FString StringStream;
+	auto Writer = TJsonWriterFactory<>::Create(&StringStream);
+	FJsonSerializer::Serialize(Payload, Writer);
+
+	UE_LOG(LogMillicastPlayer, Log, TEXT("Send command : %s \n Data : %s"), *Name, *StringStream);
+
+	if (WS) WS->Send(StringStream);
 }
 
 void UMillicastSubscriberComponent::ParseActiveEvent(TSharedPtr<FJsonObject> JsonMsg)

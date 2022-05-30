@@ -112,7 +112,7 @@ void UMillicastMediaSource::UpdateMaterialTexture(UMaterialInstanceDynamic* Mate
 	if (IsValid(TAsConst(MaterialInstance)) && IsValid(VideoTexture))
 	{
 		// Call the function to set the texture parameter with the proper texture
-		MaterialInstance->SetTextureParameterValue(FName(*ParameterName), this->VideoTexture);
+		MaterialInstance->SetTextureParameterValue(FName(*ParameterName), VideoTexture);
 	}
 }
 

@@ -38,8 +38,6 @@ class FWebRTCPeerConnection : public webrtc::PeerConnectionObserver
 	TUniquePtr<FSetSessionDescriptionObserver>    LocalSessionDescription;
 	TUniquePtr<FSetSessionDescriptionObserver>    RemoteSessionDescription;
 
-	rtc::VideoSinkInterface<webrtc::VideoFrame>* VideoSink;
-
 	template<typename Callback>
 	webrtc::SessionDescriptionInterface* CreateDescription(const std::string&,
 														   const std::string&,
@@ -49,6 +47,8 @@ class FWebRTCPeerConnection : public webrtc::PeerConnectionObserver
 	static void CreatePeerConnectionFactory();
 
 public:
+	std::function<void(const std::string& mid, rtc::scoped_refptr<webrtc::MediaStreamTrackInterface>)> OnVideoTrack = nullptr;
+	std::function<void(const std::string& mid, rtc::scoped_refptr<webrtc::MediaStreamTrackInterface>)> OnAudioTrack = nullptr;
 
 	webrtc::PeerConnectionInterface::RTCOfferAnswerOptions OaOptions;
 
@@ -65,7 +65,6 @@ public:
 	const FSetSessionDescriptionObserver* GetRemoteDescriptionObserver()    const;
 	const FCreateSessionDescriptionObserver* GetCreateDescriptionObserver() const;
 
-	void SetVideoSink(rtc::VideoSinkInterface<webrtc::VideoFrame>* Sink);
 	void CreateOffer();
 	void SetLocalDescription(const std::string& Sdp, const std::string& Type);
 	void SetRemoteDescription(const std::string& Sdp, const std::string& Type=std::string("answer"));
