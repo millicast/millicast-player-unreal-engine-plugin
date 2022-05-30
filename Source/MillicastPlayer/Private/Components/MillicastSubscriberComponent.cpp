@@ -128,6 +128,25 @@ void UMillicastSubscriberComponent::Unproject(const TArray<FString>& Mids)
 	SendCommand("unproject", DataJson);
 }
 
+void UMillicastSubscriberComponent::AddRemoteTrack(const FString& Kind)
+{
+	webrtc::RtpTransceiverInit init;
+	init.direction = webrtc::RtpTransceiverDirection::kRecvOnly;
+
+	using cricket::MediaType;
+	cricket::MediaType media = (Kind == "audio") ? MediaType::MEDIA_TYPE_AUDIO : MediaType::MEDIA_TYPE_VIDEO;
+
+	auto result = (*PeerConnection)->AddTransceiver(media, init);
+	if (result.ok())
+	{
+		UE_LOG(LogMillicastPlayer, Log, TEXT("Successfully added transceiver for remote track"));
+	}
+	else
+	{
+		UE_LOG(LogMillicastPlayer, Error, TEXT("Failed to add transceiver for remote track"));
+	}
+}
+
 bool UMillicastSubscriberComponent::StartWebSocketConnection(const FString& Url,
                                                      const FString& Jwt)
 {

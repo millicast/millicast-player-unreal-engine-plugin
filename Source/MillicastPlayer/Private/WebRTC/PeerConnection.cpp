@@ -3,6 +3,8 @@
 #include "PeerConnection.h"
 
 #include <sstream>
+#include <pc/session_description.h>
+#include <api/jsep_session_description.h>
 
 #include "AudioDeviceModule.h"
 #include "MillicastAudioActor.h"
@@ -226,7 +228,50 @@ void FWebRTCPeerConnection::OnDataChannel(rtc::scoped_refptr<webrtc::DataChannel
 {}
 
 void FWebRTCPeerConnection::OnRenegotiationNeeded()
-{}
+{
+	UE_LOG(LogMillicastPlayer, Log, TEXT("On renegociation needed"));
+
+	std::string sdp;
+	auto remote_sdp = PeerConnection->remote_description();
+
+	if (!remote_sdp) return;
+
+	remote_sdp->ToString(&sdp);
+	if (sdp.empty()) return;
+
+	CreateSessionDescription = MakeUnique<FCreateSessionDescriptionObserver>();
+	LocalSessionDescription = MakeUnique<FSetSessionDescriptionObserver>();
+	RemoteSessionDescription = MakeUnique<FSetSessionDescriptionObserver>();
+
+	CreateSessionDescription->SetOnSuccessCallback([this](const std::string& type, const std::string& sdp) {
+		UE_LOG(LogMillicastPlayer, Log, TEXT("[renegociation] pc.createOffer() | Success"));
+		SetLocalDescription(sdp, type);
+		});
+
+	CreateSessionDescription->SetOnFailureCallback([](const std::string& err) {
+		UE_LOG(LogMillicastPlayer, Error, TEXT("[renegociation] pc.createOffer() | Error: %s"), err.c_str());
+		});
+
+	LocalSessionDescription->SetOnSuccessCallback([this]() {
+		UE_LOG(LogMillicastPlayer, Log, TEXT("[renegociation] pc.setLocalDescription() | success"));
+		Renegociate(PeerConnection->local_description(), PeerConnection->remote_description());
+		});
+
+	LocalSessionDescription->SetOnFailureCallback([](const std::string& err) {
+		UE_LOG(LogMillicastPlayer, Error, TEXT("[renegociation]  Set local description failed | Error: %s"), err.c_str());
+		});
+
+	RemoteSessionDescription->SetOnSuccessCallback([]() {
+		UE_LOG(LogMillicastPlayer, Log, TEXT("[renegociation] Set remote description | success"));
+		});
+	RemoteSessionDescription->SetOnFailureCallback([](const std::string& err) {
+		UE_LOG(LogMillicastPlayer, Error, TEXT("[renegociation]  Set remote description failed | Error: %s"), err.c_str());
+		});
+
+	UE_LOG(LogMillicastPlayer, Log, TEXT("Starting renegociation"));
+
+	CreateOffer();
+}
 
 void FWebRTCPeerConnection::OnIceConnectionChange(webrtc::PeerConnectionInterface::IceConnectionState)
 {}
@@ -239,3 +284,111 @@ void FWebRTCPeerConnection::OnIceCandidate(const webrtc::IceCandidateInterface*)
 
 void FWebRTCPeerConnection::OnIceConnectionReceivingChange(bool)
 {}
+
+static inline webrtc::RtpTransceiverDirection reverse_direction(webrtc::RtpTransceiverDirection direction)
+{
+	switch (direction) {
+	case webrtc::RtpTransceiverDirection::kSendOnly:
+		return webrtc::RtpTransceiverDirection::kRecvOnly;
+	case webrtc::RtpTransceiverDirection::kRecvOnly:
+		return webrtc::RtpTransceiverDirection::kSendOnly;
+	default: return direction;
+	}
+}
+
+// Missing in old version of libwebrtc
+std::unique_ptr<webrtc::SessionDescriptionInterface> CloneSessionDescription(const webrtc::SessionDescriptionInterface* Source)
+{
+	auto NewDescription = std::make_unique<webrtc::JsepSessionDescription>(Source->GetType(),
+		Source->description()->Clone(),
+		Source->session_id(),
+		Source->session_version());
+
+	for (size_t i = 0; i < Source->number_of_mediasections(); ++i)
+	{
+		auto candidates = Source->candidates(i);
+		for (size_t j = 0; j < candidates->count(); ++j) {
+			auto c = candidates->at(j);
+			auto new_candidate = webrtc::CreateIceCandidate(c->sdp_mid(),
+				c->sdp_mline_index(),
+				c->candidate());
+			NewDescription->AddCandidate(new_candidate.release());
+		}
+	}
+
+	return NewDescription;
+}
+
+void FWebRTCPeerConnection::Renegociate(const webrtc::SessionDescriptionInterface* local_sdp,
+	const webrtc::SessionDescriptionInterface* remote_sdp)
+{
+	// Clone the remote sdp to have a setup a new one
+	auto new_remote = CloneSessionDescription(remote_sdp);
+
+	if (!new_remote) {
+		UE_LOG(LogMillicastPlayer, Error, TEXT("Could not clone remote sdp"));
+		return;
+	}
+
+	auto local_desc = local_sdp->description();
+
+	int mline_index = 0; // Keep track of the mline index to add ice candidates
+	for (const auto& offer_content : local_desc->contents()) {
+		auto remote_desc = new_remote->description();
+
+		// Find the corresponding mid in the answer
+		auto answered_media = remote_desc->GetContentDescriptionByName(offer_content.mid());
+
+		// If it does not exists create it
+		if (!answered_media) {
+			// Get offered media description
+			auto offered_media = offer_content.media_description();
+
+			// Copy the offer media into the answered media
+			auto answered_media_new = offered_media->Clone();
+			// Invert the transceiver direction
+			answered_media_new->set_direction(reverse_direction(offered_media->direction()));
+
+			// Add the media description for the answer
+			remote_desc->AddContent(offer_content.mid(),
+				cricket::MediaProtocolType::kRtp,
+				std::move(answered_media_new));
+
+			// Copy the transport info from the first mid of the remote desc
+			auto transport_info = remote_desc->GetTransportInfoByName(remote_desc->FirstContent()->name);
+			cricket::TransportInfo new_transport_info{ offer_content.mid(), transport_info->description };
+
+			remote_desc->AddTransportInfo(new_transport_info);
+
+			// Add mid to the BUNDLE group
+			cricket::ContentGroup bundle = remote_desc->groups().front();
+			bundle.AddContentName(offer_content.mid());
+			remote_desc->RemoveGroupByName(bundle.semantics());
+			remote_desc->AddGroup(bundle);
+
+			// reinit to update the number of mediasections
+			auto new_remote_jsep = static_cast<webrtc::JsepSessionDescription*>(new_remote.get());
+			new_remote_jsep->Initialize(remote_desc->Clone(),
+				new_remote->session_id(),
+				new_remote->session_version());
+
+			// Copy ice candidates for the new mline_index
+			auto candidates = new_remote->candidates(0);
+			for (size_t i = 0; i < candidates->count(); ++i) {
+				auto c = candidates->at(i);
+				auto new_candidate = webrtc::CreateIceCandidate(offer_content.mid(),
+					mline_index,
+					c->candidate());
+				new_remote->AddCandidate(new_candidate.release());
+			}
+		}
+
+		++mline_index;
+	}
+
+	std::string sdp;
+	new_remote->ToString(&sdp);
+
+	UE_LOG(LogMillicastPlayer, Log, TEXT("[renegociation] remote sdp : %s"), sdp.c_str());
+	SetRemoteDescription(sdp);
+}

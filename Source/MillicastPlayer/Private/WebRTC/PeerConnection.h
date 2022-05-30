@@ -46,6 +46,9 @@ class FWebRTCPeerConnection : public webrtc::PeerConnectionObserver
 	static rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> PeerConnectionFactory;
 	static void CreatePeerConnectionFactory();
 
+	void Renegociate(const webrtc::SessionDescriptionInterface* local_sdp,
+		const webrtc::SessionDescriptionInterface* remote_sdp);
+
 public:
 	std::function<void(const std::string& mid, rtc::scoped_refptr<webrtc::MediaStreamTrackInterface>)> OnVideoTrack = nullptr;
 	std::function<void(const std::string& mid, rtc::scoped_refptr<webrtc::MediaStreamTrackInterface>)> OnAudioTrack = nullptr;

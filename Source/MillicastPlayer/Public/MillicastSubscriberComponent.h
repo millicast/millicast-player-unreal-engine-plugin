@@ -133,8 +133,15 @@ public:
 	/**
 	* Unproject a track from a given transceiver mid
 	*/
-	UFUNCTION(BlueprintCallable, Category = "MillicastPlayer", META = (DislpayName = "Unproject"))
+	UFUNCTION(BlueprintCallable, Category = "MillicastPlayer", META = (DisplayName = "Unproject"))
 	void Unproject(const TArray<FString>& Mids);
+
+	/**
+	* Dynamically add a new track to the peerconnection and locally renegociate the SDP
+	* When the new track is created, OnTrack event will be called
+	*/
+	UFUNCTION(BlueprintCallable, Category = "MillicastPlayer", META = (DisplayName = "AddRemoteTrack"))
+	void AddRemoteTrack(const FString& Kind);
 
 public:
 	/** Called when the response from the director api is successfull */
