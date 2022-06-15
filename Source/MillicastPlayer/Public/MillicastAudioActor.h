@@ -21,16 +21,18 @@ class MILLICASTPLAYER_API AMillicastAudioActor : public AActor, public IMillicas
         
 public:
     AMillicastAudioActor(const FObjectInitializer& ObjectInitializer);
+    ~AMillicastAudioActor() noexcept;
 
     UPROPERTY(BlueprintReadWrite, EditAnywhere, AssetRegistrySearchable)
     UAudioComponent* AudioComponent;
 public:
     // IMillicastExternalAudioConsumer
     virtual FMillicastAudioParameters GetAudioParameters() const override;
+    void UpdateAudioParameters(FMillicastAudioParameters Parameters) noexcept override;
     
     virtual void Initialize() override;
     virtual void Shutdown() override;
-    virtual void QueueAudioData(TArray<uint8>& AudioData, int32 NumSamples) override;
+    virtual void QueueAudioData(const uint8* AudioData, int32 NumSamples) override;
     // ~IMillicastExternalAudioConsumer
 
 private:

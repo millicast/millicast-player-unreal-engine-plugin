@@ -17,8 +17,7 @@
  */
 UCLASS(BlueprintType, hideCategories=(Platforms,Object),
        META = (DisplayName = "Millicast Media Source"))
-class MILLICASTPLAYER_API UMillicastMediaSource : public UStreamMediaSource,
-												  public rtc::VideoSinkInterface<webrtc::VideoFrame>
+class MILLICASTPLAYER_API UMillicastMediaSource : public UStreamMediaSource
 {
 	GENERATED_BODY()
 public:
@@ -40,19 +39,6 @@ public:
 	/** Subscribe token (optional). */
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Stream, AssetRegistrySearchable)
 	FString SubscribeToken;
-
-	/**
-		Provides an Millicast Video Texture object to render videos frames.
-	*/
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, BlueprintSetter = "ChangeVideoTexture", Category = "Content",
-			  META = (DisplayName = "Video Texture"))
-	UMillicastMediaTexture2D* VideoTexture = nullptr;
-
-	/**
-		Attempts to change the Video Texture object used as the video frame capture object
-	*/
-	UFUNCTION(BlueprintSetter)
-	void ChangeVideoTexture(UMillicastMediaTexture2D* InVideoTexture = nullptr);
 
 public:
 	//~ IMediaOptions interface
@@ -78,12 +64,6 @@ public:
 	    Create websocket connection and attempts to subscribe to the feed
 	*/
 	bool Initialize(const FMillicastSignalingData& data);
-
-	/**
-		Updates the DynamicMaterial with the VideoTexture of this object
-	*/
-	void UpdateMaterialTexture(class UMaterialInstanceDynamic* MaterialInstance, FString ParameterName);
-
 public:
 	//~ UObject interface
 #if WITH_EDITOR
@@ -91,10 +71,6 @@ public:
 	virtual void PostEditChangeChainProperty(struct FPropertyChangedChainEvent& InPropertyChangedEvent) override;
 #endif //WITH_EDITOR
 	//~ End UObject interface
-
-protected:
-	//~ VideoSink interface
-	void OnFrame(const webrtc::VideoFrame& frame) override;
 
 private:
 	uint8_t * Buffer;

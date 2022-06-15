@@ -2,6 +2,7 @@
 
 #include "MillicastAudioActor.h"
 
+#include "MillicastPlayerPrivate.h"
 
 AMillicastAudioActor::AMillicastAudioActor(const FObjectInitializer& ObjectInitializer)
     : Super(ObjectInitializer), SoundStreaming(nullptr)
@@ -14,9 +15,24 @@ AMillicastAudioActor::AMillicastAudioActor(const FObjectInitializer& ObjectIniti
     AudioComponent->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform); 
 }
 
+AMillicastAudioActor::~AMillicastAudioActor() noexcept
+{}
+
 FMillicastAudioParameters AMillicastAudioActor::GetAudioParameters() const
 {
     return AudioParameters;
+}
+
+void AMillicastAudioActor::UpdateAudioParameters(FMillicastAudioParameters Parameters) noexcept
+{
+    AudioParameters = MoveTemp(Parameters);
+
+    if (SoundStreaming)
+    {
+        SoundStreaming->SetSampleRate(AudioParameters.SamplesPerSecond);
+        SoundStreaming->NumChannels = AudioParameters.NumberOfChannels;
+        SoundStreaming->SampleByteSize = AudioParameters.GetNumberBytesPerSample();
+    }
 }
 
 void AMillicastAudioActor::Initialize()
@@ -42,13 +58,13 @@ void AMillicastAudioActor::Shutdown()
     {
         AudioComponent->Stop();
     }
-    /*AudioComponent = nullptr;
-    SoundStreaming = nullptr;*/
+    // AudioComponent = nullptr;
+    SoundStreaming = nullptr;
 }
 
-void AMillicastAudioActor::QueueAudioData(TArray<uint8>& AudioData, int32 NumSamples)
+void AMillicastAudioActor::QueueAudioData(const uint8* AudioData, int32 NumSamples)
 {
-    SoundStreaming->QueueAudio(AudioData.GetData(), AudioParameters.GetNumberSamples() * AudioParameters.GetNumberBytesPerSample());    
+    SoundStreaming->QueueAudio(AudioData, NumSamples * AudioParameters.GetNumberBytesPerSample());
 }
 
 void AMillicastAudioActor::InitSoundWave()
@@ -62,6 +78,7 @@ void AMillicastAudioActor::InitSoundWave()
     SoundStreaming->Duration = INDEFINITELY_LOOPING_DURATION;
     SoundStreaming->SoundGroup = SOUNDGROUP_Voice;
     SoundStreaming->bLooping = true;
+    // SoundStreaming->AddToRoot();
 
     if (AudioComponent == nullptr)
     {

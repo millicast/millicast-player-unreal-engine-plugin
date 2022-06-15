@@ -239,7 +239,12 @@ bool UMillicastSubscriberComponent::SubscribeToMillicast()
 		OnVideoTrack.Broadcast(videoTrack);
 	};
 	PeerConnection->OnAudioTrack = [this](const std::string& mid, RtcTrack Track) {
+		AsyncTask(ENamedThreads::GameThread, [this, mid, Track]() {
+			auto audioTrack = NewObject<UMillicastAudioTrackImpl>();
+			audioTrack->Initialize(mid.c_str(), Track);
 
+			OnAudioTrack.Broadcast(audioTrack);
+			});
 	};
 
 	PeerConnection->CreateOffer();

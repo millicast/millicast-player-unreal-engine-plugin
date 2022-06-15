@@ -30,6 +30,7 @@ class IMillicastExternalAudioConsumer
 
 public:
     virtual FMillicastAudioParameters GetAudioParameters() const = 0;
+    virtual void UpdateAudioParameters(FMillicastAudioParameters Paramaters) noexcept = 0;
 
     // Called when an audio track is added and playback is about to start
     virtual void Initialize() = 0;
@@ -38,5 +39,5 @@ public:
 
     // Called from a WebRTC thread when new audio samples are available.
     // The consumer is encouraged to move the data out of this array
-    virtual void QueueAudioData(TArray<uint8>& AudioData, int32 NumSamples) = 0;
+    virtual void QueueAudioData(const uint8* AudioData, int32 NumSamples) = 0;
 };

@@ -67,16 +67,10 @@ FWebRTCPeerConnection* FWebRTCPeerConnection::Create(const FRTCConfig& Config, T
 		CreatePeerConnectionFactory();
 	}
 
-    if (!ExternalAudioConsumer.IsValid())
+    if (ExternalAudioConsumer.IsValid())
     {
-		AMillicastAudioActor* DefaultAudioConsumer = NewObject<AMillicastAudioActor>();
-        DefaultAudioConsumer->AddToRoot();
-        AudioDeviceModule->SetAudioConsumer(DefaultAudioConsumer);
+		AudioDeviceModule->SetAudioConsumer(ExternalAudioConsumer);
 	}
-    else
-    {
-        AudioDeviceModule->SetAudioConsumer(ExternalAudioConsumer);      
-    }
 
 	FWebRTCPeerConnection * PeerConnectionInstance = new FWebRTCPeerConnection();
 	webrtc::PeerConnectionDependencies deps(PeerConnectionInstance);

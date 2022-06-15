@@ -9,7 +9,7 @@
 
 #include "MillicastMediaTracks.generated.h"
 
-UCLASS(BlueprintType, Blueprintable, Category = "MIllicastPlayer")
+UCLASS(BlueprintType, Blueprintable, Category = "MillicastPlayer")
 class MILLICASTPLAYER_API UMillicastVideoTrackImpl : public UMillicastVideoTrack, public rtc::VideoSinkInterface<webrtc::VideoFrame>
 {
 	GENERATED_BODY()
@@ -44,5 +44,41 @@ public:
 
 	/* UMillicastVideoTrack overrides */
 	void AddConsumer(TScriptInterface<IMillicastVideoConsumer> VideoConsumer) override;
+};
+
+UCLASS(BlueprintType, Blueprintable, Category = "MillicastPlayer")
+class MILLICASTPLAYER_API UMillicastAudioTrackImpl : public UMillicastAudioTrack, public webrtc::AudioTrackSinkInterface
+{
+	GENERATED_BODY()
+
+private:
+	rtc::scoped_refptr<webrtc::MediaStreamTrackInterface> RtcAudioTrack;
+	FString Mid;
+
+	TArray<TWeakInterfacePtr<IMillicastExternalAudioConsumer>> AudioConsumers;
+
+	FCriticalSection CriticalSection;
+
+protected:
+	/* VideoSinkInterface */
+	void OnData(const void* AudioData, int BitPerSample, int SampleRate, size_t NumberOfChannels,
+		size_t NumberOfFrames) override;
+
+public:
+	void Initialize(FString InMid, rtc::scoped_refptr<webrtc::MediaStreamTrackInterface> InAudioTrack);
+
+	/* UMillicastMediaTrack overrides */
+	FString GetMid() const noexcept override;
+
+	FString GetTrackId() const noexcept override;
+
+	FString GetKind() const noexcept override;
+
+	bool IsEnabled() const noexcept override;
+
+	void SetEnabled(bool Enabled);
+
+	/* UMillicastVideoTrack overrides */
+	void AddConsumer(TScriptInterface<IMillicastExternalAudioConsumer> AudioConsumer) override;
 };
 

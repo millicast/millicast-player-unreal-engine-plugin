@@ -4,6 +4,8 @@
 #include "MillicastPlayerPrivate.h"
 
 const char FAudioDeviceModule::kTimerQueueName[] = "FAudioDeviceModuleTimer";
+TAtomic<bool> FAudioDeviceModule::ReadDataAvailable = false;
+
 
 FAudioDeviceModule::FAudioDeviceModule(webrtc::TaskQueueFactory* queue_factory) noexcept
 	: AudioCallback(nullptr),
@@ -105,10 +107,12 @@ int32_t FAudioDeviceModule::StartPlayout()
 		if (IMillicastExternalAudioConsumer* Consumer = AudioConsumer.Get())
 		{
 			AudioParameters = Consumer->GetAudioParameters();
-			AudioBuffer.SetNumUninitialized(AudioParameters.GetNumberSamples() * AudioParameters.GetNumberBytesPerSample());
 			Consumer->Initialize();
-			TaskQueue.PostTask([this]() { Process(); });
 		}
+
+		ReadDataAvailable = false;
+		AudioBuffer.SetNumUninitialized(AudioParameters.GetNumberSamples() * AudioParameters.GetNumberBytesPerSample());
+		TaskQueue.PostTask([this]() { Process(); });
 	});
 
 	return 0;
@@ -269,9 +273,10 @@ void FAudioDeviceModule::PullAudioData()
 	// Before the stream actually started playing, elapsed == -1 and all samples are silent. Don't queue those
 	if (elapsed >= 0)
 	{
+		ReadDataAvailable = true;
 		if (IMillicastExternalAudioConsumer* Consumer = AudioConsumer.Get())
 		{
-			Consumer->QueueAudioData(AudioBuffer, out);
+			Consumer->QueueAudioData(AudioBuffer.GetData(), out);
 		}
 	}
 }
