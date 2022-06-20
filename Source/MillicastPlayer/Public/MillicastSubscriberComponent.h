@@ -101,6 +101,7 @@ private:
 	void ParseVadEvent(TSharedPtr<FJsonObject> JsonMsg);
 	void ParseLayersEvent(TSharedPtr<FJsonObject> JsonMsg);
 	void ParseViewerCountEvent(TSharedPtr<FJsonObject> JsonMsg);
+
 public:
 	virtual ~UMillicastSubscriberComponent() override;
 
@@ -152,27 +153,35 @@ public:
 	UPROPERTY(BlueprintAssignable, Category = "Components|Activation")
 	FMillicastSubscriberComponentSubscribedFailure OnSubscribedFailure;
 
+	/** Called when a new source has been published within the stream */
 	UPROPERTY(BlueprintAssignable, Category = "Components|Activation")
 	FMillicastSubscriberComponentActive OnActive;
 
+	/** Called when a source has been unpublished within the stream */
 	UPROPERTY(BlueprintAssignable, Category = "Components|Activation")
 	FMillicastSubscriberComponentInactive OnInactive;
 
+	/** Called when the stream is no longer available */
 	UPROPERTY(BlueprintAssignable, Category = "Components|Activation")
 	FMillicastSubscriberComponentStopped OnStopped;
 
+	/** Called when a source id is being multiplexed into the audio track based on the voice activity level */
 	UPROPERTY(BlueprintAssignable, Category = "Components|Activation")
 	FMillicastSubscriberComponentVad OnVad;
 
+	/** Called the simulcast/svc layer information for the published video tracks of each source */
 	UPROPERTY(BlueprintAssignable, Category = "Components|Activation")
 	FMillicastSubscriberComponentLayers OnLayers;
 
+	/** Called the number of viewver has changed */
 	UPROPERTY(BlueprintAssignable, Category = "Components|Activation")
 	FMillicastSubscriberComponentViewerCount OnViewerCount;
 
+	/** Called when a video track is received */
 	UPROPERTY(BlueprintAssignable, Category = "Components|Activation")
 	FMillicastSubscriberComponentVideoTrack OnVideoTrack;
 
+	/** Called when a audio track is received */
 	UPROPERTY(BlueprintAssignable, Category = "Components|Activation")
 	FMillicastSubscriberComponentAudioTrack OnAudioTrack;
 
