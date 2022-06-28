@@ -101,6 +101,11 @@ float UMillicastMediaTexture2D::GetSurfaceWidth() const
 	return GetResource() != nullptr ? GetResource()->GetSizeX() : 0.0f;
 }
 
+float UMillicastMediaTexture2D::GetSurfaceDepth() const
+{
+	return GetResource() != nullptr ? GetResource()->GetSizeZ() : 0.0f;
+}
+
 EMaterialValueType UMillicastMediaTexture2D::GetMaterialType() const
 {
 	return MCT_Texture2D;

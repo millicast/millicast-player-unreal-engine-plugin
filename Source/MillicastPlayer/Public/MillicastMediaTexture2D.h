@@ -20,6 +20,9 @@ class MILLICASTPLAYER_API UMillicastMediaTexture2D : public UTexture
 public:
 	virtual float GetSurfaceHeight() const override;
 	virtual float GetSurfaceWidth() const override;
+	virtual float GetSurfaceDepth() const override;
+
+	virtual uint32 GetSurfaceArraySize() const override { return 0; }
 
 	virtual void GetResourceSizeEx(FResourceSizeEx& CumulativeResourceSize) override;
 	virtual EMaterialValueType GetMaterialType() const override;
