@@ -59,7 +59,7 @@ FTextureResource* UMillicastMediaTexture2D::CreateResource()
 
 	if (FMillicastMediaTextureResource* TextureResource = new FMillicastMediaTextureResource(this))
 	{
-		resource = TextureResource;
+		SetResource(TextureResource);
 
 		// Set the default video texture to reference nothing
 		TRefCountPtr<FRHITexture2D> ShaderTexture2D;
@@ -70,7 +70,7 @@ FTextureResource* UMillicastMediaTexture2D::CreateResource()
 											TexCreate_Dynamic, TexCreate_RenderTargetable, false, CreateInfo,
 											RenderableTexture, ShaderTexture2D);
 
-		resource->TextureRHI = (FTextureRHIRef&)RenderableTexture;
+		TextureResource->TextureRHI = (FTextureRHIRef&)RenderableTexture;
 
 		ENQUEUE_RENDER_COMMAND(FMillicastMediaTexture2DUpdateTextureReference)
 		([this](FRHICommandListImmediate& RHICmdList) {
@@ -78,7 +78,7 @@ FTextureResource* UMillicastMediaTexture2D::CreateResource()
 		});
 	}
 
-	return resource;
+	return GetResource();
 }
 
 void UMillicastMediaTexture2D::GetResourceSizeEx(FResourceSizeEx& CumulativeResourceSize)
