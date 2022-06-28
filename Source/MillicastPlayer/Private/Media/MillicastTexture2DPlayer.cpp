@@ -30,7 +30,7 @@ void UMillicastTexture2DPlayer::OnFrame(TArray<uint8>& VideoData, int Width, int
 				false);
 
 			// Update the shader resource for the 'SourceTexture'
-			FRHIResourceCreateInfo CreateInfo;
+			FRHIResourceCreateInfo CreateInfo(TEXT("CreateInfo"));
 			TRefCountPtr<FRHITexture2D> DummyTexture2DRHI;
 			RHICreateTargetableShaderResource2D(FrameSize.X, FrameSize.Y, TEXTURE_PIXEL_FORMAT,
 				1,

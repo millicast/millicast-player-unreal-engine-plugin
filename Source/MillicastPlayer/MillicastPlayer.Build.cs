@@ -43,6 +43,7 @@ namespace UnrealBuildTool.Rules
 					"Json",
 					"SSL",
 					"RHI",
+					"libOpus",
 					"HeadMountedDisplay"
 		});
 
