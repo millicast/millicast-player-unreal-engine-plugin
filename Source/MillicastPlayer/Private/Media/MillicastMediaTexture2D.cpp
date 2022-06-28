@@ -8,26 +8,27 @@ constexpr int32 DEFAULT_HEIGHT = 1080;
 
 UMillicastMediaTexture2D::UMillicastMediaTexture2D(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
-	Resource = nullptr;
+	SetResource(nullptr);
 }
 
 void UMillicastMediaTexture2D::UpdateTextureReference(FRHICommandList& RHICmdList, FTexture2DRHIRef Reference)
 {
-	if (Resource != nullptr)
+	auto resource = GetResource();
+	if (resource != nullptr)
 	{
-		if (Reference.IsValid() && Resource->TextureRHI != Reference)
+		if (Reference.IsValid() && resource->TextureRHI != Reference)
 		{
-			Resource->TextureRHI = (FTexture2DRHIRef&)Reference;
-			RHIUpdateTextureReference(TextureReference.TextureReferenceRHI, Resource->TextureRHI);
+			resource->TextureRHI = (FTexture2DRHIRef&)Reference;
+			RHIUpdateTextureReference(TextureReference.TextureReferenceRHI, resource->TextureRHI);
 		}
 		else if (!Reference.IsValid())
 		{
-			if (FMillicastMediaTextureResource* TextureResource = static_cast<FMillicastMediaTextureResource*>(Resource))
+			if (FMillicastMediaTextureResource* TextureResource = static_cast<FMillicastMediaTextureResource*>(resource))
 			{
 				// Set the default video texture to reference nothing
 				TRefCountPtr<FRHITexture2D> ShaderTexture2D;
 				TRefCountPtr<FRHITexture2D> RenderableTexture;
-				FRHIResourceCreateInfo CreateInfo = {FClearValueBinding(FLinearColor(0.0f, 0.0f, 0.0f))};
+				FRHIResourceCreateInfo CreateInfo(TEXT("ResourceCreateInfo"), FClearValueBinding(FLinearColor(0.0f, 0.0f, 0.0f)));
 
 				RHICreateTargetableShaderResource2D(DEFAULT_WIDTH, DEFAULT_HEIGHT, EPixelFormat::PF_B8G8R8A8, 1,
 													TexCreate_Dynamic, TexCreate_RenderTargetable, false, CreateInfo,
@@ -37,7 +38,7 @@ void UMillicastMediaTexture2D::UpdateTextureReference(FRHICommandList& RHICmdLis
 
 				ENQUEUE_RENDER_COMMAND(FMillicastMediaTexture2DUpdateTextureReference)
 				([this](FRHICommandListImmediate& RHICmdList) {
-					RHIUpdateTextureReference(TextureReference.TextureReferenceRHI, Resource->TextureRHI);
+					RHIUpdateTextureReference(TextureReference.TextureReferenceRHI, GetResource()->TextureRHI);
 				});
 
 				// Make sure _RenderThread is executed before continuing
@@ -49,41 +50,42 @@ void UMillicastMediaTexture2D::UpdateTextureReference(FRHICommandList& RHICmdLis
 
 FTextureResource* UMillicastMediaTexture2D::CreateResource()
 {
-	if (Resource != nullptr)
+	auto resource = GetResource();
+	if (resource != nullptr)
 	{
-		delete Resource;
-		Resource = nullptr;
+		delete resource;
+		SetResource(nullptr);
 	}
 
 	if (FMillicastMediaTextureResource* TextureResource = new FMillicastMediaTextureResource(this))
 	{
-		Resource = TextureResource;
+		resource = TextureResource;
 
 		// Set the default video texture to reference nothing
 		TRefCountPtr<FRHITexture2D> ShaderTexture2D;
 		TRefCountPtr<FRHITexture2D> RenderableTexture;
-		FRHIResourceCreateInfo CreateInfo = {FClearValueBinding(FLinearColor(0.0f, 0.0f, 0.0f))};
+		FRHIResourceCreateInfo CreateInfo(TEXT("ResourceCreateInfo"), FClearValueBinding(FLinearColor(0.0f, 0.0f, 0.0f)));
 
 		RHICreateTargetableShaderResource2D(DEFAULT_WIDTH, DEFAULT_HEIGHT, EPixelFormat::PF_B8G8R8A8, 1,
 											TexCreate_Dynamic, TexCreate_RenderTargetable, false, CreateInfo,
 											RenderableTexture, ShaderTexture2D);
 
-		Resource->TextureRHI = (FTextureRHIRef&)RenderableTexture;
+		resource->TextureRHI = (FTextureRHIRef&)RenderableTexture;
 
 		ENQUEUE_RENDER_COMMAND(FMillicastMediaTexture2DUpdateTextureReference)
 		([this](FRHICommandListImmediate& RHICmdList) {
-			RHIUpdateTextureReference(TextureReference.TextureReferenceRHI, Resource->TextureRHI);
+			RHIUpdateTextureReference(TextureReference.TextureReferenceRHI, GetResource()->TextureRHI);
 		});
 	}
 
-	return Resource;
+	return resource;
 }
 
 void UMillicastMediaTexture2D::GetResourceSizeEx(FResourceSizeEx& CumulativeResourceSize)
 {
 	Super::GetResourceSizeEx(CumulativeResourceSize);
 
-	if (FMillicastMediaTextureResource* CurrentResource = static_cast<FMillicastMediaTextureResource*>(Resource))
+	if (FMillicastMediaTextureResource* CurrentResource = static_cast<FMillicastMediaTextureResource*>(GetResource()))
 	{
 		CumulativeResourceSize.AddUnknownMemoryBytes(CurrentResource->GetResourceSize());
 	}
@@ -91,12 +93,12 @@ void UMillicastMediaTexture2D::GetResourceSizeEx(FResourceSizeEx& CumulativeReso
 
 float UMillicastMediaTexture2D::GetSurfaceHeight() const
 {
-	return Resource != nullptr ? Resource->GetSizeY() : 0.0f;
+	return GetResource() != nullptr ? GetResource()->GetSizeY() : 0.0f;
 }
 
 float UMillicastMediaTexture2D::GetSurfaceWidth() const
 {
-	return Resource != nullptr ? Resource->GetSizeX() : 0.0f;
+	return GetResource() != nullptr ? GetResource()->GetSizeX() : 0.0f;
 }
 
 EMaterialValueType UMillicastMediaTexture2D::GetMaterialType() const
