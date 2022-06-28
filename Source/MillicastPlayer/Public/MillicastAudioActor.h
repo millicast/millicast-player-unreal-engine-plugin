@@ -1,4 +1,4 @@
-﻿// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #pragma once
 
@@ -23,7 +23,7 @@ public:
     AMillicastAudioActor(const FObjectInitializer& ObjectInitializer);
     ~AMillicastAudioActor() noexcept;
 
-    UPROPERTY(BlueprintReadWrite, EditAnywhere, AssetRegistrySearchable)
+    UPROPERTY(BlueprintReadWrite, EditAnywhere, AssetRegistrySearchable, Category = "Properties")
     UAudioComponent* AudioComponent;
 public:
     // IMillicastExternalAudioConsumer
