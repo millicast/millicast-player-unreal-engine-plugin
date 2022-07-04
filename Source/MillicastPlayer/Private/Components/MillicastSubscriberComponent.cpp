@@ -242,6 +242,7 @@ bool UMillicastSubscriberComponent::SubscribeToMillicast()
 		AsyncTask(ENamedThreads::GameThread, [this, mid, Track]() {
 			auto audioTrack = NewObject<UMillicastAudioTrackImpl>();
 			audioTrack->Initialize(mid.c_str(), Track);
+			audioTrack->AddToRoot();
 
 			OnAudioTrack.Broadcast(audioTrack);
 			});
