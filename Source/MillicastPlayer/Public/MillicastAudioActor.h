@@ -38,6 +38,7 @@ public:
 private:
 	void InitSoundWave();
 
+    UPROPERTY()
     USoundWaveProcedural* SoundStreaming;
 
     FMillicastAudioParameters AudioParameters;

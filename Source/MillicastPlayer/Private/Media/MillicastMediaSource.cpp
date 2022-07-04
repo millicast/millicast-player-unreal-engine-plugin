@@ -11,6 +11,7 @@
 UMillicastMediaSource::UMillicastMediaSource()
 	: Buffer(nullptr)
 {
+	StreamUrl = "https://director.millicast.com/api/director/subscribe";
 }
 
 bool UMillicastMediaSource::Initialize(const FMillicastSignalingData& /*data*/)
