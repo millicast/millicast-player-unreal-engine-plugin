@@ -65,6 +65,8 @@ protected:
 		size_t NumberOfFrames) override;
 
 public:
+	~UMillicastAudioTrackImpl();
+
 	void Initialize(FString InMid, rtc::scoped_refptr<webrtc::MediaStreamTrackInterface> InAudioTrack);
 
 	/* UMillicastMediaTrack overrides */

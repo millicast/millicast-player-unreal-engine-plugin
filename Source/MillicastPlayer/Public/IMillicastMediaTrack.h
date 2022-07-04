@@ -15,6 +15,8 @@ class MILLICASTPLAYER_API UMillicastMediaTrack : public UObject
 	GENERATED_BODY()
 
 public:
+	virtual ~UMillicastMediaTrack() = default;
+
 	UFUNCTION(BlueprintCallable, Category = "MillicastPlayer", META = (DisplayName = "GetMid"))
 	virtual FString GetMid() const noexcept PURE_VIRTUAL(UMillicastMediaTrack::GetMid, return FString(););
 

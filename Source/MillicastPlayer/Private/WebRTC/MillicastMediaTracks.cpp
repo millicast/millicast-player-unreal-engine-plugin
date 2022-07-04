@@ -116,6 +116,10 @@ void UMillicastAudioTrackImpl::OnData(const void* AudioData, int BitPerSample, i
 	}
 }
 
+UMillicastAudioTrackImpl::~UMillicastAudioTrackImpl()
+{
+}
+
 void UMillicastAudioTrackImpl::Initialize(FString InMid, rtc::scoped_refptr<webrtc::MediaStreamTrackInterface> InAudioTrack)
 {
 	Mid = MoveTemp(InMid);
