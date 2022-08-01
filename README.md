@@ -1,6 +1,6 @@
-# MillicastPlayer plugin for Unreal Engine 4
+# MillicastPlayer plugin for Unreal Engine 5
 
-* Supported UE version 4.27
+* Supported UE version >= 5.0
 * Supported on Windows and Linux
 
 This plugin enable to play real time stream from Millicast in your Unreal Engine game.
