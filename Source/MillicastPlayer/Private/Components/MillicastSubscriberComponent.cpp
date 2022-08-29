@@ -18,6 +18,8 @@
 
 #include "Util.h"
 
+#define WEAK_CAPTURE WeakThis = TWeakObjectPtr<UMillicastSubscriberComponent>(this)
+
 UMillicastSubscriberComponent::UMillicastSubscriberComponent(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
 	PeerConnection = nullptr;
@@ -157,10 +159,10 @@ bool UMillicastSubscriberComponent::StartWebSocketConnection(const FString& Url,
 
 	WS = FWebSocketsModule::Get().CreateWebSocket(Url + "?token=" + Jwt);
 
-	OnConnectedHandle = WS->OnConnected().AddLambda([this]() { OnConnected(); });
-	OnConnectionErrorHandle = WS->OnConnectionError().AddLambda([this](const FString& Error) { OnConnectionError(Error); });
-	OnClosedHandle = WS->OnClosed().AddLambda([this](int32 StatusCode, const FString& Reason, bool bWasClean) { OnClosed(StatusCode, Reason, bWasClean); });
-	OnMessageHandle = WS->OnMessage().AddLambda([this](const FString& Msg) { OnMessage(Msg); });
+	OnConnectedHandle = WS->OnConnected().AddWeakLambda(this, [this]() { OnConnected(); });
+	OnConnectionErrorHandle = WS->OnConnectionError().AddWeakLambda(this, [this](const FString& Error) { OnConnectionError(Error); });
+	OnClosedHandle = WS->OnClosed().AddWeakLambda(this, [this](int32 StatusCode, const FString& Reason, bool bWasClean) { OnClosed(StatusCode, Reason, bWasClean); });
+	OnMessageHandle = WS->OnMessage().AddWeakLambda(this, [this](const FString& Msg) { OnMessage(Msg); });
 
 	WS->Connect();
 
@@ -176,29 +178,35 @@ bool UMillicastSubscriberComponent::SubscribeToMillicast()
 	auto * LocalDescriptionObserver  = PeerConnection->GetLocalDescriptionObserver();
 	auto * RemoteDescriptionObserver = PeerConnection->GetRemoteDescriptionObserver();
 
-	CreateSessionDescriptionObserver->SetOnSuccessCallback([this](const std::string& type, const std::string& sdp) {
-		FScopeLock Lock(&CriticalPcSection);
-		UE_LOG(LogMillicastPlayer, Log, TEXT("pc.createOffer() | sucess\nsdp : %s"), *ToString(sdp));
-		if(PeerConnection) PeerConnection->SetLocalDescription(sdp, type);
+	CreateSessionDescriptionObserver->SetOnSuccessCallback([WEAK_CAPTURE](const std::string& type, const std::string& sdp) {
+		if (WeakThis.IsValid())
+		{
+			FScopeLock Lock(&WeakThis->CriticalPcSection);
+			UE_LOG(LogMillicastPlayer, Log, TEXT("pc.createOffer() | sucess\nsdp : %s"), *ToString(sdp));
+			if (WeakThis->PeerConnection) WeakThis->PeerConnection->SetLocalDescription(sdp, type);
+		}
 	});
 
-	CreateSessionDescriptionObserver->SetOnFailureCallback([this](const std::string& err) {
+	CreateSessionDescriptionObserver->SetOnFailureCallback([WEAK_CAPTURE](const std::string& err) {
 		UE_LOG(LogMillicastPlayer, Error, TEXT("pc.createOffer() | Error: %s"), *ToString(err));
-		OnSubscribedFailure.Broadcast(FString{ err.c_str() });
+		if (WeakThis.IsValid())
+		{
+			WeakThis->OnSubscribedFailure.Broadcast(FString{ err.c_str() });
+		}
 	});
 
-	LocalDescriptionObserver->SetOnSuccessCallback([this]() {
-		FScopeLock Lock(&CriticalPcSection);
-		if (!PeerConnection) return;
+	LocalDescriptionObserver->SetOnSuccessCallback([WEAK_CAPTURE]() {
+		FScopeLock Lock(&WeakThis->CriticalPcSection);
+		if (!WeakThis.IsValid() || !WeakThis->PeerConnection) return;
 
 		UE_LOG(LogMillicastPlayer, Log, TEXT("pc.setLocalDescription() | sucess"));
 		std::string sdp;
-		(*PeerConnection)->local_description()->ToString(&sdp);
+		(*WeakThis->PeerConnection)->local_description()->ToString(&sdp);
 
 		// Add events we want to receive from millicast
 		TArray<TSharedPtr<FJsonValue>> eventsJson;
 		TArray<FString> EvKeys;
-		EventBroadcaster.GetKeys(EvKeys);
+		WeakThis->EventBroadcaster.GetKeys(EvKeys);
 
 		for (auto& ev : EvKeys)
 		{
@@ -207,44 +215,58 @@ bool UMillicastSubscriberComponent::SubscribeToMillicast()
 
 		// Fill Signaling data
 		auto DataJson = MakeShared<FJsonObject>();
-		DataJson->SetStringField("streamId", MillicastMediaSource->StreamName);
+		DataJson->SetStringField("streamId", WeakThis->MillicastMediaSource->StreamName);
 		DataJson->SetStringField("sdp", ToString(sdp));
 		DataJson->SetArrayField("events", eventsJson);
 
-		SendCommand("view", DataJson);
+		WeakThis->SendCommand("view", DataJson);
 	});
 
-	LocalDescriptionObserver->SetOnFailureCallback([this](const std::string& err) {
+	LocalDescriptionObserver->SetOnFailureCallback([WEAK_CAPTURE](const std::string& err) {
 		UE_LOG(LogMillicastPlayer, Error, TEXT("Set local description failed : %s"), *ToString(err));
-		OnSubscribedFailure.Broadcast(FString{ err.c_str() });
+		if (WeakThis.IsValid())
+		{
+			WeakThis->OnSubscribedFailure.Broadcast(FString{ err.c_str() });
+		}
 	});
 
-	RemoteDescriptionObserver->SetOnSuccessCallback([this]() {
+	RemoteDescriptionObserver->SetOnSuccessCallback([WEAK_CAPTURE]() {
 		UE_LOG(LogMillicastPlayer, Log, TEXT("Set remote description suceeded"));
-		OnSubscribed.Broadcast();
+		if (WeakThis.IsValid())
+		{
+			WeakThis->OnSubscribed.Broadcast();
+		}
 	});
-	RemoteDescriptionObserver->SetOnFailureCallback([this](const std::string& err) {
+	RemoteDescriptionObserver->SetOnFailureCallback([WEAK_CAPTURE](const std::string& err) {
 		UE_LOG(LogMillicastPlayer, Error, TEXT("Set remote description failed : %s"), *ToString(err));
-		OnSubscribedFailure.Broadcast(FString{ err.c_str()});
+		if (WeakThis.IsValid())
+		{
+			WeakThis->OnSubscribedFailure.Broadcast(FString{ err.c_str() });
+		}
 	});
 
 	PeerConnection->OaOptions.offer_to_receive_video = true;
 	PeerConnection->OaOptions.offer_to_receive_audio = true;
 
 	using RtcTrack = rtc::scoped_refptr<webrtc::MediaStreamTrackInterface>;
-	PeerConnection->OnVideoTrack = [this](const std::string& Mid, RtcTrack Track) {
-		auto videoTrack = NewObject<UMillicastVideoTrackImpl>();
-		videoTrack->Initialize(Mid.c_str(), Track);
-
-		OnVideoTrack.Broadcast(videoTrack);
+	PeerConnection->OnVideoTrack = [WEAK_CAPTURE](const std::string& Mid, RtcTrack Track) {
+		if (WeakThis.IsValid())
+		{
+			auto videoTrack = NewObject<UMillicastVideoTrackImpl>();
+			videoTrack->Initialize(Mid.c_str(), Track);
+			WeakThis->OnVideoTrack.Broadcast(videoTrack);
+		}
 	};
-	PeerConnection->OnAudioTrack = [this](const std::string& mid, RtcTrack Track) {
-		AsyncTask(ENamedThreads::GameThread, [this, mid, Track]() {
-			auto audioTrack = NewObject<UMillicastAudioTrackImpl>();
-			audioTrack->Initialize(mid.c_str(), Track);
-			audioTrack->AddToRoot();
+	PeerConnection->OnAudioTrack = [WEAK_CAPTURE](const std::string& mid, RtcTrack Track) {
+		AsyncTask(ENamedThreads::GameThread, [WeakThis, mid, Track]() {
+			if (WeakThis.IsValid())
+			{
+				auto audioTrack = NewObject<UMillicastAudioTrackImpl>();
+				audioTrack->Initialize(mid.c_str(), Track);
+				audioTrack->AddToRoot();
 
-			OnAudioTrack.Broadcast(audioTrack);
+				WeakThis->OnAudioTrack.Broadcast(audioTrack);
+			}
 			});
 	};
 
