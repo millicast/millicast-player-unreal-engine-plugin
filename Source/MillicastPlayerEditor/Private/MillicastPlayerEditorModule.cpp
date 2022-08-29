@@ -72,6 +72,10 @@ private:
 		StyleInstance->Set("ClassIcon.MillicastTexture2DPlayer",
 			new IMAGE_BRUSH("MillicastMediaSource_20x", Icon20x20));
 
+		// Unregister first if it already exists
+		FSlateStyleRegistry::UnRegisterSlateStyle(*StyleInstance.Get());
+
+		// Register style
 		FSlateStyleRegistry::RegisterSlateStyle(*StyleInstance.Get());
 
 		PlacementModeModule.RegisterPlacementCategory(
