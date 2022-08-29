@@ -20,7 +20,8 @@
 
 #define WEAK_CAPTURE WeakThis = TWeakObjectPtr<UMillicastSubscriberComponent>(this)
 
-UMillicastSubscriberComponent::UMillicastSubscriberComponent(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
+UMillicastSubscriberComponent::UMillicastSubscriberComponent(const FObjectInitializer& ObjectInitializer) 
+	: Super(ObjectInitializer), Subscribed(false)
 {
 	PeerConnection = nullptr;
 	WS = nullptr;
@@ -61,6 +62,12 @@ bool UMillicastSubscriberComponent::Initialize(UMillicastMediaSource* InMediaSou
 */
 bool UMillicastSubscriberComponent::Subscribe(const FMillicastSignalingData& InSignalingData, TScriptInterface<IMillicastExternalAudioConsumer> InExternalAudioConsumer)
 {
+	if (IsSubscribed())
+	{
+		UE_LOG(LogMillicastPlayer, Error, TEXT("You are already subscribed to a stream. Please unsubscribed first."));
+		return false;
+	}
+
     ExternalAudioConsumer = InExternalAudioConsumer;
 
 	for (auto& s : InSignalingData.IceServers) 
@@ -90,7 +97,13 @@ void UMillicastSubscriberComponent::Unsubscribe()
 	{
 		delete PeerConnection;
 		PeerConnection = nullptr;
+		Subscribed = false;
 	}
+}
+
+bool UMillicastSubscriberComponent::IsSubscribed() const
+{
+	return Subscribed.Load();
 }
 
 void UMillicastSubscriberComponent::Project(const FString& SourceId, const TArray<FMillicastProjectionData>& ProjectionData)
@@ -234,6 +247,7 @@ bool UMillicastSubscriberComponent::SubscribeToMillicast()
 		UE_LOG(LogMillicastPlayer, Log, TEXT("Set remote description suceeded"));
 		if (WeakThis.IsValid())
 		{
+			WeakThis->Subscribed = true;
 			WeakThis->OnSubscribed.Broadcast();
 		}
 	});

@@ -125,6 +125,11 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "MillicastPlayer", META = (DisplayName = "Unsubscribe"))
 	void Unsubscribe();
 
+	/*
+		Returns if the subscriber is currently subscribed or not.
+	*/
+	bool IsSubscribed() const;
+
 	/**
 	* Project a media track into a given transceiver mid
 	*/
@@ -208,4 +213,5 @@ private:
 
 	TWeakInterfacePtr<IMillicastExternalAudioConsumer> ExternalAudioConsumer;
 	FCriticalSection CriticalPcSection;
+	TAtomic<bool> Subscribed;
 };
