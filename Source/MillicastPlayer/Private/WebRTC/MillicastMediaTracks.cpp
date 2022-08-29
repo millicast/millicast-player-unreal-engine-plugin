@@ -155,6 +155,12 @@ void UMillicastAudioTrackImpl::AddConsumer(TScriptInterface<IMillicastExternalAu
 {
 	FScopeLock Lock(&CriticalSection);
 
+	if (!AudioConsumer)
+	{
+		UE_LOG(LogMillicastPlayer, Warning, TEXT("Could not add audio consumer. Object was null"))
+		return;
+	}
+
 	if (AudioConsumers.Num() == 0)
 	{
 		auto track = static_cast<webrtc::AudioTrackInterface*>(RtcAudioTrack.get());
