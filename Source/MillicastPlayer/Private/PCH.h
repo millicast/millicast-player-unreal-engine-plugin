@@ -1,4 +1,4 @@
-// Copyright CoSMoSoftware, 2021. All Rights Reserved.
+// Copyright Millicast, 2022. All Rights Reserved.
 
 #pragma once
 
@@ -8,7 +8,7 @@
 #include "HAL/PlatformTime.h"
 #include "HAL/ThreadSafeBool.h"
 #include "HAL/ThreadSafeCounter.h"
-#include "HAL/PlatformFilemanager.h"
+// #include "HAL/PlatformFilemanager.h"
 #include "HAL/IConsoleManager.h"
 #include "HAL/CriticalSection.h"
 
