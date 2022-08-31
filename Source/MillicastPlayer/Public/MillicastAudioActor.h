@@ -23,7 +23,7 @@ public:
     AMillicastAudioActor(const FObjectInitializer& ObjectInitializer);
     ~AMillicastAudioActor() noexcept;
 
-    UPROPERTY(BlueprintReadWrite, EditAnywhere, AssetRegistrySearchable)
+    UPROPERTY(BlueprintReadWrite, Category = "Millicast Player", EditAnywhere, AssetRegistrySearchable)
     UAudioComponent* AudioComponent;
 public:
     // IMillicastExternalAudioConsumer

@@ -23,10 +23,10 @@ struct MILLICASTPLAYER_API FMillicastTrackInfo
 {
 	GENERATED_BODY();
 
-	UPROPERTY(BlueprintReadOnly, EditAnywhere)
+	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "Millicast Player")
 	FString Media;
 
-	UPROPERTY(BlueprintReadOnly, EditAnywhere)
+	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "Millicast Player")
 	FString TrackId;
 };
 
@@ -35,13 +35,13 @@ struct MILLICASTPLAYER_API FMillicastLayerData
 {
 	GENERATED_BODY();
 
-	UPROPERTY(BlueprintReadOnly, EditAnywhere)
+	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "Millicast Player")
 	FString EncodingId;
 
-	UPROPERTY(BlueprintReadOnly, EditAnywhere)
+	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "Millicast Player")
 	int SpatialLayerId;
 
-	UPROPERTY(BlueprintReadOnly, EditAnywhere)
+	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "Millicast Player")
 	int TemporalLayerId;
 };
 
@@ -50,13 +50,13 @@ struct MILLICASTPLAYER_API FMillicastProjectionData
 {
 	GENERATED_BODY();
 
-	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Millicast Player")
 	FString TrackId;
 
-	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Millicast Player")
 	FString Mid;
 
-	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Millicast Player")
 	FString Media;
 };
 
