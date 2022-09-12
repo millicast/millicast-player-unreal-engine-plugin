@@ -12,7 +12,7 @@ AMillicastAudioActor::AMillicastAudioActor(const FObjectInitializer& ObjectIniti
         TEXT("UAudioComponent")
         );
     AudioComponent->SetSound(SoundStreaming);
-    AudioComponent->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform); 
+    AudioComponent->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
 }
 
 AMillicastAudioActor::~AMillicastAudioActor() noexcept
@@ -58,7 +58,6 @@ void AMillicastAudioActor::Shutdown()
     {
         AudioComponent->Stop();
     }
-    // AudioComponent = nullptr;
     SoundStreaming = nullptr;
 }
 
@@ -78,7 +77,7 @@ void AMillicastAudioActor::InitSoundWave()
     SoundStreaming->Duration = INDEFINITELY_LOOPING_DURATION;
     SoundStreaming->SoundGroup = SOUNDGROUP_Voice;
     SoundStreaming->bLooping = true;
-    // SoundStreaming->AddToRoot();
+    SoundStreaming->VirtualizationMode = EVirtualizationMode::PlayWhenSilent;
 
     if (AudioComponent == nullptr)
     {
