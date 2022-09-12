@@ -15,9 +15,7 @@ FAudioDeviceModule::FAudioDeviceModule(webrtc::TaskQueueFactory* queue_factory) 
 	NextFrameTime(0),
 	TaskQueue(queue_factory->CreateTaskQueue(kTimerQueueName,
 		webrtc::TaskQueueFactory::Priority::NORMAL))
-{
-
-}
+{}
 
 rtc::scoped_refptr<FAudioDeviceModule>
 FAudioDeviceModule::Create(webrtc::TaskQueueFactory* queue_factory)
