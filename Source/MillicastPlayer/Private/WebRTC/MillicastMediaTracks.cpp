@@ -26,7 +26,7 @@ void UMillicastVideoTrackImpl::OnFrame(const webrtc::VideoFrame& VideoFrame)
 	}
 
 	webrtc::ConvertFromI420(VideoFrame, WEBRTC_PIXEL_FORMAT, 0, Buffer.GetData());
-	TArray<TWeakInterfacePtr<IMillicastExternalAudioConsumer>> removals;  //Track the AudioConsumers to clean up
+	TArray<TWeakInterfacePtr<IMillicastVideoConsumer>> removals;  //Track the AudioConsumers to clean up
 
 	for (auto& consumer : VideoConsumers)
 	{
