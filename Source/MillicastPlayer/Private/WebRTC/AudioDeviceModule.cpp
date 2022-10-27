@@ -123,6 +123,7 @@ int32_t FAudioDeviceModule::StopPlayout()
 		rtc::CritScope cs(&CriticalSection);
 		bIsPlaying = false;
 		bIsStarted = false;
+		ReadDataAvailable = false;
 	}
 
 	TaskQueue.PostTask([this]() {
