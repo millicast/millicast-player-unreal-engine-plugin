@@ -30,7 +30,7 @@ void UMillicastMediaTexture2D::UpdateTextureReference(FRHICommandList& RHICmdLis
 				FRHIResourceCreateInfo CreateInfo = {FClearValueBinding(FLinearColor(0.0f, 0.0f, 0.0f))};
 
 				RHICreateTargetableShaderResource2D(DEFAULT_WIDTH, DEFAULT_HEIGHT, EPixelFormat::PF_B8G8R8A8, 1,
-													TexCreate_Dynamic, TexCreate_RenderTargetable, false, CreateInfo,
+													TexCreate_Dynamic, TexCreate_Dynamic | TexCreate_SRGB, false, CreateInfo,
 													RenderableTexture, ShaderTexture2D);
 
 				TextureResource->TextureRHI = (FTextureRHIRef&)RenderableTexture;
