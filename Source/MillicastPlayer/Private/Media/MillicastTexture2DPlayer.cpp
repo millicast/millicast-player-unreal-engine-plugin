@@ -34,7 +34,7 @@ void UMillicastTexture2DPlayer::OnFrame(TArray<uint8>& VideoData, int Width, int
 			TRefCountPtr<FRHITexture2D> DummyTexture2DRHI;
 			RHICreateTargetableShaderResource2D(FrameSize.X, FrameSize.Y, TEXTURE_PIXEL_FORMAT,
 				1,
-				TexCreate_Dynamic,
+				TexCreate_Dynamic | TexCreate_SRGB,
 				TexCreate_RenderTargetable,
 				false,
 				CreateInfo,
