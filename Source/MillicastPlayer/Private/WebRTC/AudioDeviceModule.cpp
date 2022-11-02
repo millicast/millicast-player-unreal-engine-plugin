@@ -277,5 +277,9 @@ void FAudioDeviceModule::PullAudioData()
 			Consumer->QueueAudioData(AudioBuffer.GetData(), out);
 		}
 	}
+	else
+	{
+		ReadDataAvailable = false;
+	}
 }
 
