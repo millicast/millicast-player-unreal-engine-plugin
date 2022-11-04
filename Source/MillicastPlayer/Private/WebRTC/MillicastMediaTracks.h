@@ -44,6 +44,7 @@ public:
 
 	/* UMillicastVideoTrack overrides */
 	void AddConsumer(TScriptInterface<IMillicastVideoConsumer> VideoConsumer) override;
+	void RemoveConsumer(TScriptInterface<IMillicastVideoConsumer> VideoConsumer) override;
 };
 
 UCLASS(BlueprintType, Blueprintable, Category = "MillicastPlayer")
@@ -82,5 +83,7 @@ public:
 
 	/* UMillicastVideoTrack overrides */
 	void AddConsumer(TScriptInterface<IMillicastExternalAudioConsumer> AudioConsumer) override;
+
+	void RemoveConsumer(TScriptInterface<IMillicastExternalAudioConsumer> AudioConsumer) override;
 };
 

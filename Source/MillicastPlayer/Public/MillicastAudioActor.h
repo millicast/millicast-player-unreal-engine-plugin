@@ -30,8 +30,19 @@ public:
     virtual FMillicastAudioParameters GetAudioParameters() const override;
     void UpdateAudioParameters(FMillicastAudioParameters Parameters) noexcept override;
     
+    /**
+    * Initialize this actor and create the SoundWaveProcedural object.
+    */
     virtual void Initialize() override;
+
+    /**
+    * Call this to stop the playing and remove the SoundWaveProcedural
+    */
     virtual void Shutdown() override;
+
+    /**
+    * Add audio data to the unreal audio buffer.
+    */
     virtual void QueueAudioData(const uint8* AudioData, int32 NumSamples) override;
     // ~IMillicastExternalAudioConsumer
 

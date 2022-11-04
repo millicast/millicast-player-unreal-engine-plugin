@@ -93,6 +93,21 @@ void UMillicastVideoTrackImpl::AddConsumer(TScriptInterface<IMillicastVideoConsu
 	VideoConsumers.Add(consumer);
 }
 
+void UMillicastVideoTrackImpl::RemoveConsumer(TScriptInterface<IMillicastVideoConsumer> VideoConsumer)
+{
+	FScopeLock Lock(&CriticalSection);
+
+	TWeakInterfacePtr<IMillicastVideoConsumer> consumer;
+	consumer = VideoConsumer;
+	VideoConsumers.Remove(consumer);
+
+	if (VideoConsumers.Num() == 0)
+	{
+		auto track = static_cast<webrtc::VideoTrackInterface*>(RtcVideoTrack.get());
+		track->RemoveSink(this);
+	}
+}
+
 /** Audio */
 
 void UMillicastAudioTrackImpl::OnData(const void* AudioData, int BitPerSample, int SampleRate, size_t NumberOfChannels, 
@@ -172,4 +187,21 @@ void UMillicastAudioTrackImpl::AddConsumer(TScriptInterface<IMillicastExternalAu
 	consumer->Initialize();
 
 	AudioConsumers.Add(consumer);
+}
+
+void UMillicastAudioTrackImpl::RemoveConsumer(TScriptInterface<IMillicastExternalAudioConsumer> AudioConsumer)
+{
+	FScopeLock Lock(&CriticalSection);
+
+	TWeakInterfacePtr<IMillicastExternalAudioConsumer> consumer;
+	consumer = AudioConsumer;
+	consumer->Shutdown();
+
+	AudioConsumers.Remove(consumer);
+
+	if (AudioConsumers.Num() == 0)
+	{
+		auto track = static_cast<webrtc::AudioTrackInterface*>(RtcAudioTrack.get());
+		track->RemoveSink(this);
+	}
 }
