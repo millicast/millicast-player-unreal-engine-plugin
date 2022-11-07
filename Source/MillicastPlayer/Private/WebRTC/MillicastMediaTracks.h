@@ -31,6 +31,8 @@ protected:
 public:
 	void Initialize(FString InMid, rtc::scoped_refptr<webrtc::MediaStreamTrackInterface> InVideoTrack);
 
+	~UMillicastVideoTrackImpl() override;
+
 	/* UMillicastMediaTrack overrides */
 	FString GetMid() const noexcept override;
 
@@ -66,7 +68,7 @@ protected:
 		size_t NumberOfFrames) override;
 
 public:
-	~UMillicastAudioTrackImpl();
+	~UMillicastAudioTrackImpl() override;
 
 	void Initialize(FString InMid, rtc::scoped_refptr<webrtc::MediaStreamTrackInterface> InAudioTrack);
 

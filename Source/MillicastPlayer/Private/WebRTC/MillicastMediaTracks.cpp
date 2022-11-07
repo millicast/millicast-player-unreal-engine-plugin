@@ -52,6 +52,18 @@ void UMillicastVideoTrackImpl::Initialize(FString InMid, rtc::scoped_refptr<webr
 	RtcVideoTrack = InVideoTrack;
 }
 
+UMillicastVideoTrackImpl::~UMillicastVideoTrackImpl()
+{
+	for (auto& consumer : VideoConsumers)
+	{
+		if (auto c = consumer.Get() && RtcVideoTrack)
+		{
+			auto track = static_cast<webrtc::VideoTrackInterface*>(RtcVideoTrack.get());
+			track->RemoveSink(this);
+		}
+	}
+}
+
 FString UMillicastVideoTrackImpl::GetMid() const noexcept
 {
 	return Mid;
@@ -122,6 +134,8 @@ void UMillicastAudioTrackImpl::OnData(const void* AudioData, int BitPerSample, i
 
 	Audio::TSampleBuffer<int16> Buffer((int16*)AudioData, NumberOfFrames, NumberOfChannels, SampleRate);
 
+	AudioConsumers.RemoveAll([](auto& consumer) { return consumer.Get() == nullptr; });
+
 	for (auto& consumer : AudioConsumers)
 	{
 		if (auto c = consumer.Get())
@@ -139,6 +153,14 @@ void UMillicastAudioTrackImpl::OnData(const void* AudioData, int BitPerSample, i
 
 UMillicastAudioTrackImpl::~UMillicastAudioTrackImpl()
 {
+	for (auto& consumer : AudioConsumers)
+	{
+		if (auto c = consumer.Get() && RtcAudioTrack)
+		{
+			auto track = static_cast<webrtc::AudioTrackInterface*>(RtcAudioTrack.get());
+			track->RemoveSink(this);
+		}
+	}
 }
 
 void UMillicastAudioTrackImpl::Initialize(FString InMid, rtc::scoped_refptr<webrtc::MediaStreamTrackInterface> InAudioTrack)
