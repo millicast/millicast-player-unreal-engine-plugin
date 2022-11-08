@@ -93,14 +93,20 @@ void UMillicastVideoTrackImpl::AddConsumer(TScriptInterface<IMillicastVideoConsu
 {
 	FScopeLock Lock(&CriticalSection);
 
+	TWeakInterfacePtr<IMillicastVideoConsumer> consumer;
+	consumer = VideoConsumer;
+
+	// don't add consumer if already there
+	if (VideoConsumers.Contains(consumer))
+	{
+		return;
+	}
+
 	if (VideoConsumers.Num() == 0)
 	{
 		auto track = static_cast<webrtc::VideoTrackInterface*>(RtcVideoTrack.get());
 		track->AddOrUpdateSink(this, rtc::VideoSinkWants{});
 	}
-
-	TWeakInterfacePtr<IMillicastVideoConsumer> consumer;
-	consumer = VideoConsumer;
 
 	VideoConsumers.Add(consumer);
 }
@@ -198,14 +204,21 @@ void UMillicastAudioTrackImpl::AddConsumer(TScriptInterface<IMillicastExternalAu
 {
 	FScopeLock Lock(&CriticalSection);
 
+	TWeakInterfacePtr<IMillicastExternalAudioConsumer> consumer;
+	consumer = AudioConsumer;
+
+	// Don't add consumer if already there
+	if (AudioConsumers.Contains(consumer))
+	{
+		return;
+	}
+
 	if (AudioConsumers.Num() == 0)
 	{
 		auto track = static_cast<webrtc::AudioTrackInterface*>(RtcAudioTrack.get());
 		track->AddSink(this);
 	}
 
-	TWeakInterfacePtr<IMillicastExternalAudioConsumer> consumer;
-	consumer = AudioConsumer;
 	consumer->Initialize();
 
 	AudioConsumers.Add(consumer);
