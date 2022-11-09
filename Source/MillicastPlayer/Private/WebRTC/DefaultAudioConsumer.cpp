@@ -63,7 +63,11 @@ void AMillicastAudioActor::Shutdown()
 
 void AMillicastAudioActor::QueueAudioData(const uint8* AudioData, int32 NumSamples)
 {
-    SoundStreaming->QueueAudio(AudioData, NumSamples * AudioParameters.GetNumberBytesPerSample());
+    /* Don't queue if IsVirtualized is true because the buffer is not actually playing, this will desync with video*/
+    if (!AudioComponent->IsVirtualized())
+    {
+        SoundStreaming->QueueAudio(AudioData, NumSamples * AudioParameters.GetNumberBytesPerSample());
+    }
 }
 
 void AMillicastAudioActor::InitSoundWave()
