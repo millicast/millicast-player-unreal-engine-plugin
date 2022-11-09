@@ -95,6 +95,20 @@ void UMillicastSubscriberComponent::Unsubscribe()
 
 	if(PeerConnection)
 	{
+		for (auto& track : AudioTracks)
+		{
+			static_cast<UMillicastAudioTrackImpl*>(track)->Terminate();
+			track->RemoveFromRoot();
+		}
+
+		AudioTracks.Empty();
+
+		for (auto& track : VideoTracks)
+		{
+			static_cast<UMillicastVideoTrackImpl*>(track)->Terminate();
+		}
+
+		AudioTracks.Empty();
 		delete PeerConnection;
 		PeerConnection = nullptr;
 		Subscribed = false;
@@ -269,6 +283,11 @@ bool UMillicastSubscriberComponent::SubscribeToMillicast()
 			auto videoTrack = NewObject<UMillicastVideoTrackImpl>();
 			videoTrack->Initialize(Mid.c_str(), Track);
 			WeakThis->OnVideoTrack.Broadcast(videoTrack);
+
+			{
+				FScopeLock Lock(&WeakThis->VideoTracksCriticalSection);
+				WeakThis->VideoTracks.Add(videoTrack);
+			}
 		}
 	};
 	PeerConnection->OnAudioTrack = [WEAK_CAPTURE](const std::string& mid, RtcTrack Track) {
@@ -280,8 +299,13 @@ bool UMillicastSubscriberComponent::SubscribeToMillicast()
 				audioTrack->AddToRoot();
 
 				WeakThis->OnAudioTrack.Broadcast(audioTrack);
+
+				{
+					FScopeLock Lock(&WeakThis->AudioTracksCriticalSection);
+					WeakThis->AudioTracks.Add(audioTrack); // keep reference to delete it later
+				}
 			}
-			});
+		});
 	};
 
 	PeerConnection->CreateOffer();

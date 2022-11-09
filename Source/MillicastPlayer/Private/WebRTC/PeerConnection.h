@@ -27,9 +27,11 @@ class FWebRTCPeerConnection : public webrtc::PeerConnectionObserver
 
 	rtc::scoped_refptr<webrtc::PeerConnectionInterface> PeerConnection;
 
-	static TUniquePtr<rtc::Thread>                  SignalingThread;
-	static rtc::scoped_refptr<FAudioDeviceModule> AudioDeviceModule;
-	static std::unique_ptr<webrtc::TaskQueueFactory> TaskQueueFactory;
+	TUniquePtr<rtc::Thread>                SignalingThread;
+	TUniquePtr<rtc::Thread>                WorkingThread;
+	TUniquePtr<rtc::Thread>                NetworkingThread;
+	rtc::scoped_refptr<FAudioDeviceModule> AudioDeviceModule;
+	std::unique_ptr<webrtc::TaskQueueFactory> TaskQueueFactory;
 
 	using FCreateSessionDescriptionObserver = TSessionDescriptionObserver<webrtc::CreateSessionDescriptionObserver>;
 	using FSetSessionDescriptionObserver = TSessionDescriptionObserver<webrtc::SetSessionDescriptionObserver>;
@@ -43,11 +45,13 @@ class FWebRTCPeerConnection : public webrtc::PeerConnectionObserver
 														   const std::string&,
 														   Callback&&);
 
-	static rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> PeerConnectionFactory;
-	static void CreatePeerConnectionFactory();
+	rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> PeerConnectionFactory;
+	void CreatePeerConnectionFactory();
 
 	void Renegociate(const webrtc::SessionDescriptionInterface* local_sdp,
 		const webrtc::SessionDescriptionInterface* remote_sdp);
+
+	static TAtomic<int> RefCounter; // Number of Peerconnection factory created
 
 public:
 	std::function<void(const std::string& mid, rtc::scoped_refptr<webrtc::MediaStreamTrackInterface>)> OnVideoTrack = nullptr;
@@ -56,6 +60,8 @@ public:
 	webrtc::PeerConnectionInterface::RTCOfferAnswerOptions OaOptions;
 
 	FWebRTCPeerConnection() = default;
+	~FWebRTCPeerConnection() noexcept;
+	void Init(const FRTCConfig& Config, TWeakInterfacePtr<IMillicastExternalAudioConsumer> ExternalAudioConsumer);
 
 	static FRTCConfig GetDefaultConfig();
 	static FWebRTCPeerConnection* Create(const FRTCConfig& config, TWeakInterfacePtr<IMillicastExternalAudioConsumer> ExternalAudioConsumer);

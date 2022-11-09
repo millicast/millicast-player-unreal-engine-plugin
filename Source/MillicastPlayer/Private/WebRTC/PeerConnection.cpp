@@ -10,32 +10,46 @@
 #include "MillicastAudioActor.h"
 #include "MillicastPlayerPrivate.h"
 
-rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> FWebRTCPeerConnection::PeerConnectionFactory = nullptr;
-TUniquePtr<rtc::Thread> FWebRTCPeerConnection::SignalingThread = nullptr;
-rtc::scoped_refptr<FAudioDeviceModule> FWebRTCPeerConnection::AudioDeviceModule = nullptr;
-std::unique_ptr<webrtc::TaskQueueFactory> FWebRTCPeerConnection::TaskQueueFactory = nullptr;
+TAtomic<int> FWebRTCPeerConnection::RefCounter = 0;
 
 void FWebRTCPeerConnection::CreatePeerConnectionFactory()
 {
 	UE_LOG(LogMillicastPlayer, Log, TEXT("Creating FWebRTCPeerConnectionFactory"));
 
-	rtc::InitializeSSL();
+	if (RefCounter == 0)
+	{
+		++RefCounter; // increase ref count
+		rtc::InitializeSSL();
+		rtc::InitRandom((int)rtc::Time());
+	}
+	else
+	{
+		++RefCounter;
+	}
 
-	SignalingThread  = TUniquePtr<rtc::Thread>(rtc::Thread::Create().release());
+	SignalingThread = TUniquePtr<rtc::Thread>(rtc::Thread::Create().release());
 	SignalingThread->SetName("WebRTCSignalingThread", nullptr);
 	SignalingThread->Start();
+
+	WorkingThread = TUniquePtr<rtc::Thread>(rtc::Thread::Create().release());
+	WorkingThread->SetName("WebRTCWorkerThread", nullptr);
+	WorkingThread->Start();
+
+	NetworkingThread = TUniquePtr<rtc::Thread>(rtc::Thread::CreateWithSocketServer().release());
+	NetworkingThread->SetName("WebRTCNetworkThread", nullptr);
+	NetworkingThread->Start();
 
 	TaskQueueFactory = webrtc::CreateDefaultTaskQueueFactory();
 	AudioDeviceModule = FAudioDeviceModule::Create(TaskQueueFactory.get());
 
 	PeerConnectionFactory = webrtc::CreatePeerConnectionFactory(
-				nullptr, nullptr, SignalingThread.Get(), AudioDeviceModule,
-				webrtc::CreateBuiltinAudioEncoderFactory(),
-				webrtc::CreateBuiltinAudioDecoderFactory(),
-				webrtc::CreateBuiltinVideoEncoderFactory(),
-				webrtc::CreateBuiltinVideoDecoderFactory(),
-				nullptr, nullptr
-	  ).release();
+		NetworkingThread.Get(), WorkingThread.Get(), SignalingThread.Get(), AudioDeviceModule,
+		webrtc::CreateBuiltinAudioEncoderFactory(),
+		webrtc::CreateBuiltinAudioDecoderFactory(),
+		webrtc::CreateBuiltinVideoEncoderFactory(),
+		webrtc::CreateBuiltinVideoDecoderFactory(),
+		nullptr, nullptr
+	).release();
 
 	// Check
 	if (!PeerConnectionFactory)
@@ -47,6 +61,30 @@ void FWebRTCPeerConnection::CreatePeerConnectionFactory()
 	webrtc::PeerConnectionFactoryInterface::Options Options;
 	Options.crypto_options.srtp.enable_gcm_crypto_suites = true;
 	PeerConnectionFactory->SetOptions(Options);
+}
+
+FWebRTCPeerConnection::~FWebRTCPeerConnection() noexcept
+{
+	PeerConnection = nullptr;
+
+	WorkingThread->Invoke<void>(RTC_FROM_HERE, [this]() {
+		AudioDeviceModule->StopPlayout();
+		AudioDeviceModule->Terminate();
+		});
+
+	PeerConnectionFactory = nullptr;
+	AudioDeviceModule = nullptr;
+
+	SignalingThread->Stop();
+	NetworkingThread->Stop();
+	WorkingThread->Stop();
+
+	--RefCounter;
+
+	if (RefCounter == 0)
+	{
+		rtc::CleanupSSL();
+	}
 }
 
 webrtc::PeerConnectionInterface::RTCConfiguration FWebRTCPeerConnection::GetDefaultConfig()
@@ -62,33 +100,29 @@ webrtc::PeerConnectionInterface::RTCConfiguration FWebRTCPeerConnection::GetDefa
 
 FWebRTCPeerConnection* FWebRTCPeerConnection::Create(const FRTCConfig& Config, TWeakInterfacePtr<IMillicastExternalAudioConsumer> ExternalAudioConsumer)
 {
-	if(PeerConnectionFactory == nullptr)
-	{
-		CreatePeerConnectionFactory();
-	}
+	FWebRTCPeerConnection* PeerConnectionInstance = new FWebRTCPeerConnection();
 
-    if (ExternalAudioConsumer.IsValid())
-    {
+	PeerConnectionInstance->Init(Config, ExternalAudioConsumer);
+
+	return PeerConnectionInstance;
+}
+
+void FWebRTCPeerConnection::Init(const FRTCConfig& Config, TWeakInterfacePtr<IMillicastExternalAudioConsumer> ExternalAudioConsumer)
+{
+	CreatePeerConnectionFactory();
+
+	if (ExternalAudioConsumer.IsValid())
+	{
 		AudioDeviceModule->SetAudioConsumer(ExternalAudioConsumer);
 	}
 
-	FWebRTCPeerConnection * PeerConnectionInstance = new FWebRTCPeerConnection();
-	webrtc::PeerConnectionDependencies deps(PeerConnectionInstance);
+	webrtc::PeerConnectionDependencies deps(this);
 
-	PeerConnectionInstance->PeerConnection =
-			PeerConnectionFactory->CreatePeerConnection(Config,
-														nullptr,
-														nullptr,
-														PeerConnectionInstance);
+	PeerConnection = PeerConnectionFactory->CreatePeerConnection(Config, nullptr, nullptr, this);
 
-	PeerConnectionInstance->CreateSessionDescription =
-			MakeUnique<FCreateSessionDescriptionObserver>();
-	PeerConnectionInstance->LocalSessionDescription  =
-			MakeUnique<FSetSessionDescriptionObserver>();
-	PeerConnectionInstance->RemoteSessionDescription =
-			MakeUnique<FSetSessionDescriptionObserver>();
-
-	return PeerConnectionInstance;
+	CreateSessionDescription = MakeUnique<FCreateSessionDescriptionObserver>();
+	LocalSessionDescription = MakeUnique<FSetSessionDescriptionObserver>();
+	RemoteSessionDescription = MakeUnique<FSetSessionDescriptionObserver>();
 }
 
 FWebRTCPeerConnection::FSetSessionDescriptionObserver*

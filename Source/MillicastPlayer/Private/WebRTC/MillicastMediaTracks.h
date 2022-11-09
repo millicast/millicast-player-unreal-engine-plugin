@@ -42,7 +42,9 @@ public:
 
 	bool IsEnabled() const noexcept override;
 
-	void SetEnabled(bool Enabled);
+	void SetEnabled(bool Enabled) override;
+
+	void Terminate();
 
 	/* UMillicastVideoTrack overrides */
 	void AddConsumer(TScriptInterface<IMillicastVideoConsumer> VideoConsumer) override;
@@ -81,7 +83,9 @@ public:
 
 	bool IsEnabled() const noexcept override;
 
-	void SetEnabled(bool Enabled);
+	void SetEnabled(bool Enabled) override;
+
+	void Terminate();
 
 	/* UMillicastVideoTrack overrides */
 	void AddConsumer(TScriptInterface<IMillicastExternalAudioConsumer> AudioConsumer) override;
