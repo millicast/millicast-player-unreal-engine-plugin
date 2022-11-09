@@ -89,9 +89,21 @@ void UMillicastVideoTrackImpl::SetEnabled(bool Enabled)
 	RtcVideoTrack->set_enabled(Enabled);
 }
 
+void UMillicastVideoTrackImpl::Terminate()
+{
+	RtcVideoTrack = nullptr;
+	VideoConsumers.Empty();
+}
+
 void UMillicastVideoTrackImpl::AddConsumer(TScriptInterface<IMillicastVideoConsumer> VideoConsumer)
 {
 	FScopeLock Lock(&CriticalSection);
+
+	if (!VideoConsumer)
+	{
+		UE_LOG(LogMillicastPlayer, Warning, TEXT("Could not add video consumer. Object was null"));
+		return;
+	}
 
 	TWeakInterfacePtr<IMillicastVideoConsumer> consumer;
 	consumer = VideoConsumer;
@@ -200,9 +212,21 @@ void UMillicastAudioTrackImpl::SetEnabled(bool Enabled)
 	RtcAudioTrack->set_enabled(Enabled);
 }
 
+void UMillicastAudioTrackImpl::Terminate()
+{
+	RtcAudioTrack = nullptr;
+	AudioConsumers.Empty();
+}
+
 void UMillicastAudioTrackImpl::AddConsumer(TScriptInterface<IMillicastExternalAudioConsumer> AudioConsumer)
 {
 	FScopeLock Lock(&CriticalSection);
+
+	if (!AudioConsumer)
+	{
+		UE_LOG(LogMillicastPlayer, Warning, TEXT("Could not add audio consumer. Object was null"));
+		return;
+	}
 
 	TWeakInterfacePtr<IMillicastExternalAudioConsumer> consumer;
 	consumer = AudioConsumer;

@@ -86,6 +86,20 @@ void UMillicastSubscriberComponent::Unsubscribe()
 
 	if(PeerConnection)
 	{
+		for (auto& track : AudioTracks)
+		{
+			static_cast<UMillicastAudioTrackImpl*>(track)->Terminate();
+			track->RemoveFromRoot();
+		}
+
+		AudioTracks.Empty();
+
+		for (auto& track : VideoTracks)
+		{
+			static_cast<UMillicastVideoTrackImpl*>(track)->Terminate();
+		}
+
+		AudioTracks.Empty();
 		delete PeerConnection;
 		PeerConnection = nullptr;
 	}
@@ -237,6 +251,11 @@ bool UMillicastSubscriberComponent::SubscribeToMillicast()
 		videoTrack->Initialize(Mid.c_str(), Track);
 
 		OnVideoTrack.Broadcast(videoTrack);
+
+		{
+			FScopeLock Lock(&VideoTracksCriticalSection);
+			VideoTracks.Add(videoTrack);
+		}
 	};
 	PeerConnection->OnAudioTrack = [this](const std::string& mid, RtcTrack Track) {
 		AsyncTask(ENamedThreads::GameThread, [this, mid, Track]() {
@@ -245,6 +264,11 @@ bool UMillicastSubscriberComponent::SubscribeToMillicast()
 			audioTrack->AddToRoot();
 
 			OnAudioTrack.Broadcast(audioTrack);
+
+			{
+				FScopeLock Lock(&AudioTracksCriticalSection);
+				AudioTracks.Add(audioTrack); // keep reference to delete it later
+			}
 			});
 	};
 

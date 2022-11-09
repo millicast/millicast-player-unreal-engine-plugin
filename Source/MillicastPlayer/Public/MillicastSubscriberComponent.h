@@ -208,4 +208,10 @@ private:
 
 	TWeakInterfacePtr<IMillicastExternalAudioConsumer> ExternalAudioConsumer;
 	FCriticalSection CriticalPcSection;
+
+	TArray<UMillicastAudioTrack*> AudioTracks;
+	TArray<UMillicastVideoTrack*> VideoTracks;
+
+	FCriticalSection AudioTracksCriticalSection;
+	FCriticalSection VideoTracksCriticalSection;
 };
