@@ -97,6 +97,7 @@ void UMillicastSubscriberComponent::Unsubscribe()
 		for (auto& track : VideoTracks)
 		{
 			static_cast<UMillicastVideoTrackImpl*>(track)->Terminate();
+			track->RemoveFromRoot();
 		}
 
 		AudioTracks.Empty();
@@ -247,15 +248,14 @@ bool UMillicastSubscriberComponent::SubscribeToMillicast()
 
 	using RtcTrack = rtc::scoped_refptr<webrtc::MediaStreamTrackInterface>;
 	PeerConnection->OnVideoTrack = [this](const std::string& Mid, RtcTrack Track) {
-		auto videoTrack = NewObject<UMillicastVideoTrackImpl>();
-		videoTrack->Initialize(Mid.c_str(), Track);
+		AsyncTask(ENamedThreads::GameThread, [this, Mid, Track]() {
+			auto videoTrack = NewObject<UMillicastVideoTrackImpl>();
+			videoTrack->Initialize(Mid.c_str(), Track);
+			videoTrack->AddToRoot();
 
-		OnVideoTrack.Broadcast(videoTrack);
-
-		{
-			FScopeLock Lock(&VideoTracksCriticalSection);
+			OnVideoTrack.Broadcast(videoTrack);
 			VideoTracks.Add(videoTrack);
-		}
+		});
 	};
 	PeerConnection->OnAudioTrack = [this](const std::string& mid, RtcTrack Track) {
 		AsyncTask(ENamedThreads::GameThread, [this, mid, Track]() {
@@ -265,10 +265,7 @@ bool UMillicastSubscriberComponent::SubscribeToMillicast()
 
 			OnAudioTrack.Broadcast(audioTrack);
 
-			{
-				FScopeLock Lock(&AudioTracksCriticalSection);
-				AudioTracks.Add(audioTrack); // keep reference to delete it later
-			}
+			AudioTracks.Add(audioTrack); // keep reference to delete it later
 			});
 	};
 

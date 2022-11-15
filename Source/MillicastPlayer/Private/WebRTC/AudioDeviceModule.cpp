@@ -249,7 +249,9 @@ void FAudioDeviceModule::Process()
 
 		if (bIsPlaying)
 		{
-			PullAudioData();
+			AsyncTask(ENamedThreads::GameThread, [this]() { PullAudioData(); });
+			// PullAudioData();
+
 			NextFrameTime += AudioParameters.TimePerFrameMs;
 			const int64_t current_time = rtc::TimeMillis();
 			const int64_t wait_time =

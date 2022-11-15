@@ -211,7 +211,4 @@ private:
 
 	TArray<UMillicastAudioTrack*> AudioTracks;
 	TArray<UMillicastVideoTrack*> VideoTracks;
-
-	FCriticalSection AudioTracksCriticalSection;
-	FCriticalSection VideoTracksCriticalSection;
 };
