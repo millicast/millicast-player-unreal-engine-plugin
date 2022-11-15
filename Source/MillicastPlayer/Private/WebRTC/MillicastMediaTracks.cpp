@@ -11,39 +11,41 @@
 
 void UMillicastVideoTrackImpl::OnFrame(const webrtc::VideoFrame& VideoFrame)
 {
-	constexpr auto WEBRTC_PIXEL_FORMAT = webrtc::VideoType::kARGB;
+	AsyncTask(ENamedThreads::GameThread, [this, VideoFrame]() {
+		constexpr auto WEBRTC_PIXEL_FORMAT = webrtc::VideoType::kARGB;
+		
+		FScopeLock Lock(&CriticalSection);
 
-	FScopeLock Lock(&CriticalSection);
+		uint32_t Size = webrtc::CalcBufferSize(WEBRTC_PIXEL_FORMAT,
+			VideoFrame.width(),
+			VideoFrame.height());
 
-	uint32_t Size = webrtc::CalcBufferSize(WEBRTC_PIXEL_FORMAT,
-		VideoFrame.width(),
-		VideoFrame.height());
-
-	if (Size != Buffer.Num())
-	{
-		Buffer.Empty();
-		Buffer.AddZeroed(Size);
-	}
-
-	webrtc::ConvertFromI420(VideoFrame, WEBRTC_PIXEL_FORMAT, 0, Buffer.GetData());
-	TArray<TWeakInterfacePtr<IMillicastVideoConsumer>> removals;  //Track the AudioConsumers to clean up
-
-	for (auto& consumer : VideoConsumers)
-	{
-		if (auto c = consumer.Get())
+		if (Size != Buffer.Num())
 		{
-			c->OnFrame(Buffer, VideoFrame.width(), VideoFrame.height());
+			Buffer.Empty();
+			Buffer.AddZeroed(Size);
 		}
-		else
-		{
-			removals.Add(consumer);
-		}
-	}
 
-	for (auto& consumer : removals)
-	{
-		VideoConsumers.Remove(consumer);
-	}
+		webrtc::ConvertFromI420(VideoFrame, WEBRTC_PIXEL_FORMAT, 0, Buffer.GetData());
+		TArray<TWeakInterfacePtr<IMillicastVideoConsumer>> removals;  //Track the AudioConsumers to clean up
+
+		for (auto& consumer : VideoConsumers)
+		{
+			if (auto c = consumer.Get())
+			{
+				c->OnFrame(Buffer, VideoFrame.width(), VideoFrame.height());
+			}
+			else
+			{
+				removals.Add(consumer);
+			}
+		}
+
+		for (auto& consumer : removals)
+		{
+			VideoConsumers.Remove(consumer);
+		}
+	});
 }
 
 void UMillicastVideoTrackImpl::Initialize(FString InMid, rtc::scoped_refptr<webrtc::MediaStreamTrackInterface> InVideoTrack)
@@ -54,13 +56,10 @@ void UMillicastVideoTrackImpl::Initialize(FString InMid, rtc::scoped_refptr<webr
 
 UMillicastVideoTrackImpl::~UMillicastVideoTrackImpl()
 {
-	for (auto& consumer : VideoConsumers)
+	if (VideoConsumers.Num() > 0 && RtcVideoTrack)
 	{
-		if (auto c = consumer.Get() && RtcVideoTrack)
-		{
-			auto track = static_cast<webrtc::VideoTrackInterface*>(RtcVideoTrack.get());
-			track->RemoveSink(this);
-		}
+		auto track = static_cast<webrtc::VideoTrackInterface*>(RtcVideoTrack.get());
+		track->RemoveSink(this);
 	}
 }
 
@@ -152,32 +151,29 @@ void UMillicastAudioTrackImpl::OnData(const void* AudioData, int BitPerSample, i
 
 	Audio::TSampleBuffer<int16> Buffer((int16*)AudioData, NumberOfFrames, NumberOfChannels, SampleRate);
 
-	AudioConsumers.RemoveAll([](auto& consumer) { return consumer.Get() == nullptr; });
+	// AudioConsumers.RemoveAll([](auto& consumer) { return consumer.Get() == nullptr; });
 
 	for (auto& consumer : AudioConsumers)
 	{
 		if (auto c = consumer.Get())
 		{
-			auto Params = consumer->GetAudioParameters();
+			auto Params = c->GetAudioParameters();
 			if (Params.NumberOfChannels != NumberOfChannels)
 			{
 				Buffer.MixBufferToChannels(Params.NumberOfChannels);
 			}
 
-			consumer->QueueAudioData((uint8*)Buffer.GetData(), NumberOfFrames);
+			c->QueueAudioData((uint8*)Buffer.GetData(), NumberOfFrames);
 		}
 	}
 }
 
 UMillicastAudioTrackImpl::~UMillicastAudioTrackImpl()
 {
-	for (auto& consumer : AudioConsumers)
+	if (AudioConsumers.Num() > 0 && RtcAudioTrack)
 	{
-		if (auto c = consumer.Get() && RtcAudioTrack)
-		{
-			auto track = static_cast<webrtc::AudioTrackInterface*>(RtcAudioTrack.get());
-			track->RemoveSink(this);
-		}
+		auto track = static_cast<webrtc::AudioTrackInterface*>(RtcAudioTrack.get());
+		track->RemoveSink(this);
 	}
 }
 
