@@ -118,7 +118,16 @@ void FWebRTCPeerConnection::Init(const FRTCConfig& Config, TWeakInterfacePtr<IMi
 
 	webrtc::PeerConnectionDependencies deps(this);
 
-	PeerConnection = PeerConnectionFactory->CreatePeerConnection(Config, nullptr, nullptr, this);
+	auto result = PeerConnectionFactory->CreatePeerConnectionOrError(Config, std::move(deps));
+
+	if (!result.ok())
+	{
+		UE_LOG(LogMillicastPlayer, Error, TEXT("Could not create peerconnection : %S"), result.error().message());
+		PeerConnection = nullptr;
+		return;
+	}
+
+	PeerConnection = result.value();
 
 	CreateSessionDescription = MakeUnique<FCreateSessionDescriptionObserver>();
 	LocalSessionDescription = MakeUnique<FSetSessionDescriptionObserver>();
@@ -324,34 +333,11 @@ static inline webrtc::RtpTransceiverDirection reverse_direction(webrtc::RtpTrans
 	}
 }
 
-// Missing in old version of libwebrtc
-std::unique_ptr<webrtc::SessionDescriptionInterface> CloneSessionDescription(const webrtc::SessionDescriptionInterface* Source)
-{
-	auto NewDescription = std::make_unique<webrtc::JsepSessionDescription>(Source->GetType(),
-		Source->description()->Clone(),
-		Source->session_id(),
-		Source->session_version());
-
-	for (size_t i = 0; i < Source->number_of_mediasections(); ++i)
-	{
-		auto candidates = Source->candidates(i);
-		for (size_t j = 0; j < candidates->count(); ++j) {
-			auto c = candidates->at(j);
-			auto new_candidate = webrtc::CreateIceCandidate(c->sdp_mid(),
-				c->sdp_mline_index(),
-				c->candidate());
-			NewDescription->AddCandidate(new_candidate.release());
-		}
-	}
-
-	return NewDescription;
-}
-
 void FWebRTCPeerConnection::Renegociate(const webrtc::SessionDescriptionInterface* local_sdp,
 	const webrtc::SessionDescriptionInterface* remote_sdp)
 {
 	// Clone the remote sdp to have a setup a new one
-	auto new_remote = CloneSessionDescription(remote_sdp);
+	auto new_remote = remote_sdp->Clone();
 
 	if (!new_remote) {
 		UE_LOG(LogMillicastPlayer, Error, TEXT("Could not clone remote sdp"));

@@ -201,7 +201,7 @@ private:
 
 	// Protects variables that are accessed from process_thread_ and
 	// the main thread.
-	mutable rtc::CriticalSection CriticalSection;
+	mutable FCriticalSection CriticalSection;
 
 	TWeakInterfacePtr<IMillicastExternalAudioConsumer> AudioConsumer;
 	FMillicastAudioParameters AudioParameters;

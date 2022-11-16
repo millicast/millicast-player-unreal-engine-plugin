@@ -97,7 +97,7 @@ int32_t FAudioDeviceModule::StartPlayout()
 {
 	UE_LOG(LogMillicastPlayer, Log, TEXT("Start Playout"));
 	{
-		rtc::CritScope cs(&CriticalSection);
+		FScopeLock cs(&CriticalSection);
 		bIsPlaying = true;
 	}
 
@@ -121,7 +121,7 @@ int32_t FAudioDeviceModule::StopPlayout()
 	UE_LOG(LogMillicastPlayer, Log, TEXT("Stop Playout"));
 	bool start = false;
 	{
-		rtc::CritScope cs(&CriticalSection);
+		FScopeLock cs(&CriticalSection);
 		bIsPlaying = false;
 		bIsStarted = false;
 		ReadDataAvailable = false;
@@ -141,7 +141,7 @@ int32_t FAudioDeviceModule::StopPlayout()
 
 bool FAudioDeviceModule::Playing() const
 {
-	rtc::CritScope cs(&CriticalSection);
+	FScopeLock cs(&CriticalSection);
 	return bIsPlaying;
 }
 
@@ -240,7 +240,7 @@ void FAudioDeviceModule::Process()
 {
 	RTC_DCHECK_RUN_ON(&TaskQueue);
 	{
-		rtc::CritScope cs(&CriticalSection);
+		FScopeLock cs(&CriticalSection);
 
 		if (!bIsStarted)
 		{
