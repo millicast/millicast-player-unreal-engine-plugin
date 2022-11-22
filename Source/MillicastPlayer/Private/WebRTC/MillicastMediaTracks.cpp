@@ -7,33 +7,40 @@
 #include "PeerConnection.h"
 #include "WebRTC/AudioDeviceModule.h"
 
+#define WEAK_CAPTURE WeakThis = TWeakObjectPtr<UMillicastVideoTrackImpl>(this)
+
 /** Video */
 
 void UMillicastVideoTrackImpl::OnFrame(const webrtc::VideoFrame& VideoFrame)
 {
-	AsyncTask(ENamedThreads::GameThread, [this, VideoFrame]() {
+	AsyncTask(ENamedThreads::GameThread, [WEAK_CAPTURE, VideoFrame]() {
 		constexpr auto WEBRTC_PIXEL_FORMAT = webrtc::VideoType::kARGB;
 		
-		FScopeLock Lock(&CriticalSection);
+		if (!WeakThis.IsValid())
+		{
+			return;
+		}
+
+		FScopeLock Lock(&WeakThis->CriticalSection);
 
 		uint32_t Size = webrtc::CalcBufferSize(WEBRTC_PIXEL_FORMAT,
 			VideoFrame.width(),
 			VideoFrame.height());
 
-		if (Size != Buffer.Num())
+		if (Size != WeakThis->Buffer.Num())
 		{
-			Buffer.Empty();
-			Buffer.AddZeroed(Size);
+			WeakThis->Buffer.Empty();
+			WeakThis->Buffer.AddZeroed(Size);
 		}
 
-		webrtc::ConvertFromI420(VideoFrame, WEBRTC_PIXEL_FORMAT, 0, Buffer.GetData());
+		webrtc::ConvertFromI420(VideoFrame, WEBRTC_PIXEL_FORMAT, 0, WeakThis->Buffer.GetData());
 		TArray<TWeakInterfacePtr<IMillicastVideoConsumer>> removals;  //Track the AudioConsumers to clean up
 
-		for (auto& consumer : VideoConsumers)
+		for (auto& consumer : WeakThis->VideoConsumers)
 		{
 			if (auto c = consumer.Get())
 			{
-				c->OnFrame(Buffer, VideoFrame.width(), VideoFrame.height());
+				c->OnFrame(WeakThis->Buffer, VideoFrame.width(), VideoFrame.height());
 			}
 			else
 			{
@@ -43,7 +50,7 @@ void UMillicastVideoTrackImpl::OnFrame(const webrtc::VideoFrame& VideoFrame)
 
 		for (auto& consumer : removals)
 		{
-			VideoConsumers.Remove(consumer);
+			WeakThis->VideoConsumers.Remove(consumer);
 		}
 	});
 }
