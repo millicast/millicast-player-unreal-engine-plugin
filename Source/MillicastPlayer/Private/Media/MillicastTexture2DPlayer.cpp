@@ -30,16 +30,12 @@ void UMillicastTexture2DPlayer::OnFrame(TArray<uint8>& VideoData, int Width, int
 				false);
 
 			// Update the shader resource for the 'SourceTexture'
-			FRHIResourceCreateInfo CreateInfo(TEXT("CreateInfo"));
-			TRefCountPtr<FRHITexture2D> DummyTexture2DRHI;
-			RHICreateTargetableShaderResource2D(FrameSize.X, FrameSize.Y, TEXTURE_PIXEL_FORMAT,
-				1,
-				TexCreate_Dynamic | TexCreate_SRGB,
-				TexCreate_RenderTargetable,
-				false,
-				CreateInfo,
-				SourceTexture,
-				DummyTexture2DRHI);
+			FRHITextureCreateDesc CreateDesc = FRHITextureCreateDesc::Create2D(TEXT("MillicastTexture2d"),
+				FrameSize.X, FrameSize.Y, EPixelFormat::PF_B8G8R8A8);
+
+			CreateDesc.SetFlags(TexCreate_SRGB | TexCreate_Dynamic);
+
+			SourceTexture = RHICreateTexture(CreateDesc);
 
 			// Find a free target-able texture from the render pool
 			GRenderTargetPool.FindFreeElement(RHICmdList,

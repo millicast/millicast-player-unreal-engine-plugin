@@ -25,17 +25,12 @@ void UMillicastMediaTexture2D::UpdateTextureReference(FRHICommandList& RHICmdLis
 		{
 			if (FMillicastMediaTextureResource* TextureResource = static_cast<FMillicastMediaTextureResource*>(resource))
 			{
-				// Set the default video texture to reference nothing
-				// TRefCountPtr<FRHITexture2D> ShaderTexture2D;
 				TRefCountPtr<FRHITexture2D> RenderableTexture;
-				// FRHIResourceCreateInfo CreateInfo(TEXT("ResourceCreateInfo"), FClearValueBinding(FLinearColor(0.0f, 0.0f, 0.0f)));
-
-				/*RHICreateTargetableShaderResource2D(DEFAULT_WIDTH, DEFAULT_HEIGHT, EPixelFormat::PF_B8G8R8A8, 1,
-													TexCreate_Dynamic, TexCreate_Dynamic | TexCreate_SRGB, false, CreateInfo,
-													RenderableTexture, ShaderTexture2D);*/
 
 				FRHITextureCreateDesc CreateDesc = FRHITextureCreateDesc::Create2D(TEXT("MillicastTexture2d"), 
 					DEFAULT_WIDTH, DEFAULT_HEIGHT, EPixelFormat::PF_B8G8R8A8);
+
+				CreateDesc.SetFlags(TexCreate_SRGB | TexCreate_Dynamic);
 
 				RenderableTexture = RHICreateTexture(CreateDesc);
 
@@ -67,13 +62,12 @@ FTextureResource* UMillicastMediaTexture2D::CreateResource()
 		SetResource(TextureResource);
 
 		// Set the default video texture to reference nothing
-		TRefCountPtr<FRHITexture2D> ShaderTexture2D;
 		TRefCountPtr<FRHITexture2D> RenderableTexture;
-		FRHIResourceCreateInfo CreateInfo(TEXT("ResourceCreateInfo"), FClearValueBinding(FLinearColor(0.0f, 0.0f, 0.0f)));
+		FRHITextureCreateDesc CreateDesc = FRHITextureCreateDesc::Create2D(TEXT("MillicastTexture2d"),
+			DEFAULT_WIDTH, DEFAULT_HEIGHT, EPixelFormat::PF_B8G8R8A8);
 
-		RHICreateTargetableShaderResource2D(DEFAULT_WIDTH, DEFAULT_HEIGHT, EPixelFormat::PF_B8G8R8A8, 1,
-											TexCreate_Dynamic, TexCreate_RenderTargetable, false, CreateInfo,
-											RenderableTexture, ShaderTexture2D);
+		RenderableTexture = RHICreateTexture(CreateDesc);
+		CreateDesc.SetFlags(TexCreate_SRGB | TexCreate_Dynamic);
 
 		TextureResource->TextureRHI = (FTextureRHIRef&)RenderableTexture;
 

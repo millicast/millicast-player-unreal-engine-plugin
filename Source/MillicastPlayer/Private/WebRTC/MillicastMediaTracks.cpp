@@ -7,13 +7,13 @@
 #include "PeerConnection.h"
 #include "WebRTC/AudioDeviceModule.h"
 
-#define WEAK_CAPTURE WeakThis = TWeakObjectPtr<UMillicastVideoTrackImpl>(this)
+#define WEAK_CAPTURE_VIDEO_TRACK WeakThis = TWeakObjectPtr<UMillicastVideoTrackImpl>(this)
 
 /** Video */
 
 void UMillicastVideoTrackImpl::OnFrame(const webrtc::VideoFrame& VideoFrame)
 {
-	AsyncTask(ENamedThreads::GameThread, [WEAK_CAPTURE, VideoFrame]() {
+	AsyncTask(ENamedThreads::GameThread, [WEAK_CAPTURE_VIDEO_TRACK, VideoFrame]() {
 		constexpr auto WEBRTC_PIXEL_FORMAT = webrtc::VideoType::kARGB;
 		
 		if (!WeakThis.IsValid())
