@@ -2,6 +2,10 @@
 
 #include "MillicastAudioActor.h"
 
+#include "AudioDevice.h"
+#include "AudioDeviceManager.h"
+#include "Components/AudioComponent.h"
+
 #include "MillicastPlayerPrivate.h"
 
 AMillicastAudioActor::AMillicastAudioActor(const FObjectInitializer& ObjectInitializer)
