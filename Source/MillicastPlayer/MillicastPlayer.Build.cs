@@ -11,7 +11,6 @@ namespace UnrealBuildTool.Rules
 		public MillicastPlayer(ReadOnlyTargetRules Target) : base(Target)
 		{
 			PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
-			PrivatePCHHeaderFile = "Private/PCH.h";
 
 
 			DynamicallyLoadedModuleNames.AddRange(
@@ -55,6 +54,7 @@ namespace UnrealBuildTool.Rules
 			PrivateIncludePaths.AddRange(
 				new string[] {
 					"MillicastPlayer/Private",
+                    Path.Combine(Path.GetFullPath(Target.RelativeEnginePath), "Source/ThirdParty/WebRTC/4664/Include/third_party/libyuv/include"), // for libyuv headers
 				});
 		}
 	}

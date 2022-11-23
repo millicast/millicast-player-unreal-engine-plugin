@@ -6,6 +6,7 @@
 #include "MillicastPlayerPrivate.h"
 #include "PeerConnection.h"
 #include "WebRTC/AudioDeviceModule.h"
+#include "SampleBuffer.h"
 
 #define WEAK_CAPTURE_VIDEO_TRACK WeakThis = TWeakObjectPtr<UMillicastVideoTrackImpl>(this)
 
