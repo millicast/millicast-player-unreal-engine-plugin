@@ -1,7 +1,7 @@
 {
 	"FileVersion": 3,
 	"Version": 1,
-	"VersionName": "1.4.1",
+	"VersionName": "1.5.0",
 	"FriendlyName": "MillicastPlayer",
 	"Description": "Play a millicast stream in texture 2D",
 	"Category": "Media Players",
@@ -21,14 +21,14 @@
 			"Type": "Runtime",
 			"LoadingPhase": "PreLoadingScreen",
 			"WhitelistPlatforms": [ "Win64", "Linux" ],
-			"EngineVersion": "5.0.2"
+			"EngineVersion": "5.1.0"
 		},
 		{
 			"Name": "MillicastPlayerEditor",
 			"Type": "Editor",
 			"LoadingPhase": "PostEngineInit",
 			"WhitelistPlatforms": [ "Win64", "Linux" ],
-			"EngineVersion": "5.0.2"
+			"EngineVersion": "5.1.0"
 		}
 	]
 }
