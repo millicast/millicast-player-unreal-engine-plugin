@@ -57,6 +57,18 @@ bool UMillicastSubscriberComponent::Initialize(UMillicastMediaSource* InMediaSou
 	return InMediaSource != nullptr && InMediaSource == MillicastMediaSource;
 }
 
+void UMillicastSubscriberComponent::SetMediaSource(UMillicastMediaSource* InMediaSource)
+{
+	if (InMediaSource != nullptr)
+	{
+		MillicastMediaSource = InMediaSource;
+	}
+	else
+	{
+		UE_LOG(LogMillicastPlayer, Log, TEXT("Provided MediaSource was nullptr"));
+	}
+}
+
 /**
 	Begin receiving audio, video.
 */
