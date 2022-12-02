@@ -100,7 +100,7 @@ void UMillicastSubscriberComponent::Unsubscribe()
 			track->RemoveFromRoot();
 		}
 
-		AudioTracks.Empty();
+		VideoTracks.Empty();
 		delete PeerConnection;
 		PeerConnection = nullptr;
 	}
