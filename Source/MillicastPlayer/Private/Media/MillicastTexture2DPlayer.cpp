@@ -1,6 +1,7 @@
 // Copyright Millciast 2022. All Rights Reserved.
 
 #include "MillicastTexture2DPlayer.h"
+#include "MillicastPlayerPrivate.h"
 
 #include <RenderTargetPool.h>
 
@@ -66,6 +67,7 @@ void UMillicastTexture2DPlayer::BeginDestroy()
 
 void UMillicastTexture2DPlayer::ChangeVideoTexture(UMillicastMediaTexture2D* InVideoTexture)
 {
+	UE_LOG(LogMillicastPlayer, Verbose, TEXT("%S"), __FUNCTION__);
 	FScopeLock Lock(&RenderSyncContext);
 
 	if (IsValid(VideoTexture))

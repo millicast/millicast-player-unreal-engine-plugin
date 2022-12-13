@@ -9,23 +9,19 @@
 #include <RenderTargetPool.h>
 
 UMillicastMediaSource::UMillicastMediaSource()
-	: Buffer(nullptr)
 {
 	StreamUrl = "https://director.millicast.com/api/director/subscribe";
 }
 
 bool UMillicastMediaSource::Initialize(const FMillicastSignalingData& /*data*/)
 {
-	Buffer = nullptr;
-	BufferSize = 0;
+	UE_LOG(LogMillicastPlayer, Verbose, TEXT("%S"), __FUNCTION__);
 	return true;
 }
 
 void UMillicastMediaSource::BeginDestroy()
 {
-	delete [] Buffer;
-	Buffer = nullptr;
-	BufferSize = 0;
+	UE_LOG(LogMillicastPlayer, Verbose, TEXT("%S"), __FUNCTION__);
 
 	AsyncTask(ENamedThreads::ActualRenderingThread, [this]() {
 		FScopeLock Lock(&RenderSyncContext);

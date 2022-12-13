@@ -15,7 +15,11 @@
 
 constexpr auto HTTP_OK = 200;
 
-UMillicastDirectorComponent::UMillicastDirectorComponent(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer) {}
+UMillicastDirectorComponent::UMillicastDirectorComponent(const FObjectInitializer& ObjectInitializer) 
+	: Super(ObjectInitializer) 
+{
+	UE_LOG(LogMillicastPlayer, Verbose, TEXT("%S"), __FUNCTION__);
+}
 
 /**
 	Initialize this component with the media source required for receiving Millicast audio, video.

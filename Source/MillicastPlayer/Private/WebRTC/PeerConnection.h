@@ -8,20 +8,21 @@
 #include "SessionDescriptionObserver.h"
 #include "UObject/WeakInterfacePtr.h"
 
-namespace webrtc {
-
-class AudioDeviceModule;
-class TaskQueueFactory;
-
+namespace webrtc 
+{
+	class AudioDeviceModule;
+	class TaskQueueFactory;
 }  // webrtc
+
 
 namespace Millicast::Player
 {
 	class FAudioDeviceModule;
+	class FPlayerStatsCollector;
 
-	/*
-	 * Small wrapper for the WebRTC peerconnection
-	 */
+/*
+ * Small wrapper for the WebRTC peerconnection
+ */
 	class FWebRTCPeerConnection : public webrtc::PeerConnectionObserver
 	{
 		using FMediaStreamVector = std::vector<rtc::scoped_refptr<webrtc::MediaStreamInterface>>;
@@ -42,6 +43,8 @@ namespace Millicast::Player
 		TUniquePtr<FSetSessionDescriptionObserver>    LocalSessionDescription;
 		TUniquePtr<FSetSessionDescriptionObserver>    RemoteSessionDescription;
 
+		TUniquePtr<FPlayerStatsCollector>             RTCStatsCollector;
+
 		template<typename Callback>
 		webrtc::SessionDescriptionInterface* CreateDescription(const std::string&,
 			const std::string&,
@@ -56,12 +59,15 @@ namespace Millicast::Player
 		static TAtomic<int> RefCounter; // Number of Peerconnection factory created
 
 	public:
+		FString ClusterId;
+		FString ServerId;
+
 		std::function<void(const std::string& mid, rtc::scoped_refptr<webrtc::MediaStreamTrackInterface>)> OnVideoTrack = nullptr;
 		std::function<void(const std::string& mid, rtc::scoped_refptr<webrtc::MediaStreamTrackInterface>)> OnAudioTrack = nullptr;
 
 		webrtc::PeerConnectionInterface::RTCOfferAnswerOptions OaOptions;
 
-		FWebRTCPeerConnection() = default;
+		FWebRTCPeerConnection() noexcept;
 		~FWebRTCPeerConnection() noexcept;
 		void Init(const FRTCConfig& Config, TWeakInterfacePtr<IMillicastExternalAudioConsumer> ExternalAudioConsumer);
 
@@ -94,6 +100,9 @@ namespace Millicast::Player
 		void OnIceGatheringChange(webrtc::PeerConnectionInterface::IceGatheringState new_state) override;
 		void OnIceCandidate(const webrtc::IceCandidateInterface* candidate) override;
 		void OnIceConnectionReceivingChange(bool receiving) override;
+
+		void EnableStats(bool Enable);
+		void PollStats();
 
 		webrtc::PeerConnectionInterface* operator->()
 		{

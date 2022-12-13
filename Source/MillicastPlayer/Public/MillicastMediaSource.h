@@ -73,9 +73,6 @@ public:
 	//~ End UObject interface
 
 private:
-	uint8_t * Buffer;
-	size_t    BufferSize;
-
 	FCriticalSection RenderSyncContext;
 	FTexture2DRHIRef SourceTexture;
 	FPooledRenderTargetDesc RenderTargetDescriptor;

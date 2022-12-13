@@ -6,6 +6,7 @@
 #include <pc/session_description.h>
 #include <api/jsep_session_description.h>
 
+#include "PlayerStats.h"
 #include "AudioDeviceModule.h"
 #include "MillicastAudioActor.h"
 #include "MillicastPlayerPrivate.h"
@@ -17,11 +18,13 @@ TAtomic<int> FWebRTCPeerConnection::RefCounter = 0;
 
 void FWebRTCPeerConnection::CreatePeerConnectionFactory()
 {
-	UE_LOG(LogMillicastPlayer, Log, TEXT("Creating FWebRTCPeerConnectionFactory"));
+	UE_LOG(LogMillicastPlayer, Verbose, TEXT("%S"), __FUNCTION__);
 
 	if (RefCounter == 0)
 	{
-		++RefCounter; // increase ref count
+		UE_LOG(LogMillicastPlayer, Log, TEXT("Initialize ssl and random"));
+
+		++RefCounter; // increase ref count, todo: move this in the start of module
 		rtc::InitializeSSL();
 		rtc::InitRandom((int)rtc::Time());
 	}
@@ -30,21 +33,26 @@ void FWebRTCPeerConnection::CreatePeerConnectionFactory()
 		++RefCounter;
 	}
 
+	UE_LOG(LogMillicastPlayer, Log, TEXT("Creating Signaling thread"));
 	SignalingThread = TUniquePtr<rtc::Thread>(rtc::Thread::Create().release());
 	SignalingThread->SetName("WebRTCSignalingThread", nullptr);
 	SignalingThread->Start();
 
+	UE_LOG(LogMillicastPlayer, Log, TEXT("Creating Worker thread"));
 	WorkingThread = TUniquePtr<rtc::Thread>(rtc::Thread::Create().release());
 	WorkingThread->SetName("WebRTCWorkerThread", nullptr);
 	WorkingThread->Start();
 
+	UE_LOG(LogMillicastPlayer, Log, TEXT("Creating Networking thread"));
 	NetworkingThread = TUniquePtr<rtc::Thread>(rtc::Thread::CreateWithSocketServer().release());
 	NetworkingThread->SetName("WebRTCNetworkThread", nullptr);
 	NetworkingThread->Start();
 
+	UE_LOG(LogMillicastPlayer, Log, TEXT("Creating audio device module"));
 	TaskQueueFactory = webrtc::CreateDefaultTaskQueueFactory();
 	AudioDeviceModule = FAudioDeviceModule::Create(TaskQueueFactory.get());
 
+	UE_LOG(LogMillicastPlayer, Log, TEXT("Creating Peerconnection factory. Count %d"), RefCounter.Load());
 	PeerConnectionFactory = webrtc::CreatePeerConnectionFactory(
 		NetworkingThread.Get(), WorkingThread.Get(), SignalingThread.Get(), AudioDeviceModule,
 		webrtc::CreateBuiltinAudioEncoderFactory(),
@@ -66,18 +74,28 @@ void FWebRTCPeerConnection::CreatePeerConnectionFactory()
 	PeerConnectionFactory->SetOptions(Options);
 }
 
+FWebRTCPeerConnection::FWebRTCPeerConnection() noexcept
+{
+	RTCStatsCollector = nullptr;
+}
+
 FWebRTCPeerConnection::~FWebRTCPeerConnection() noexcept
 {
+	UE_LOG(LogMillicastPlayer, Verbose, TEXT("%S"), __FUNCTION__);
+
 	PeerConnection = nullptr;
 
+	UE_LOG(LogMillicastPlayer, Verbose, TEXT("Stop audio device module"));
 	WorkingThread->Invoke<void>(RTC_FROM_HERE, [this]() {
 		AudioDeviceModule->StopPlayout();
 		AudioDeviceModule->Terminate();
 		});
 
+	UE_LOG(LogMillicastPlayer, Verbose, TEXT("Destroy peerconnectino factory, count %d"), RefCounter.Load());
 	PeerConnectionFactory = nullptr;
 	AudioDeviceModule = nullptr;
 
+	UE_LOG(LogMillicastPlayer, Verbose, TEXT("Stop webrtc thread"));
 	SignalingThread->Stop();
 	NetworkingThread->Stop();
 	WorkingThread->Stop();
@@ -86,12 +104,15 @@ FWebRTCPeerConnection::~FWebRTCPeerConnection() noexcept
 
 	if (RefCounter == 0)
 	{
-		rtc::CleanupSSL();
+		UE_LOG(LogMillicastPlayer, Verbose, TEXT("Cleanup ssl"));
+		rtc::CleanupSSL(); // move this in the startup module
 	}
 }
 
 webrtc::PeerConnectionInterface::RTCConfiguration FWebRTCPeerConnection::GetDefaultConfig()
 {
+	UE_LOG(LogMillicastPlayer, Verbose, TEXT("%S"), __FUNCTION__);
+
 	FRTCConfig Config(webrtc::PeerConnectionInterface::RTCConfigurationType::kAggressive);
 
 	Config.set_cpu_adaptation(false);
@@ -103,6 +124,8 @@ webrtc::PeerConnectionInterface::RTCConfiguration FWebRTCPeerConnection::GetDefa
 
 FWebRTCPeerConnection* FWebRTCPeerConnection::Create(const FRTCConfig& Config, TWeakInterfacePtr<IMillicastExternalAudioConsumer> ExternalAudioConsumer)
 {
+	UE_LOG(LogMillicastPlayer, Verbose, TEXT("%S"), __FUNCTION__);
+
 	FWebRTCPeerConnection* PeerConnectionInstance = new FWebRTCPeerConnection();
 
 	PeerConnectionInstance->Init(Config, ExternalAudioConsumer);
@@ -112,6 +135,8 @@ FWebRTCPeerConnection* FWebRTCPeerConnection::Create(const FRTCConfig& Config, T
 
 void FWebRTCPeerConnection::Init(const FRTCConfig& Config, TWeakInterfacePtr<IMillicastExternalAudioConsumer> ExternalAudioConsumer)
 {
+	UE_LOG(LogMillicastPlayer, Verbose, TEXT("%S"), __FUNCTION__);
+
 	CreatePeerConnectionFactory();
 
 	if (ExternalAudioConsumer.IsValid())
@@ -121,6 +146,7 @@ void FWebRTCPeerConnection::Init(const FRTCConfig& Config, TWeakInterfacePtr<IMi
 
 	webrtc::PeerConnectionDependencies deps(this);
 
+	UE_LOG(LogMillicastPlayer, Verbose, TEXT("Creating peerconnection"));
 	auto result = PeerConnectionFactory->CreatePeerConnectionOrError(Config, std::move(deps));
 
 	if (!result.ok())
@@ -176,6 +202,8 @@ FWebRTCPeerConnection::GetCreateDescriptionObserver() const
 
 void FWebRTCPeerConnection::CreateOffer()
 {
+	UE_LOG(LogMillicastPlayer, VeryVerbose, TEXT("%S"), __FUNCTION__);
+
 	SignalingThread->PostTask(RTC_FROM_HERE, [this]() {
 		PeerConnection->CreateOffer(CreateSessionDescription.Release(),
 									OaOptions);
@@ -236,8 +264,30 @@ void FWebRTCPeerConnection::SetRemoteDescription(const std::string& Sdp,
 	PeerConnection->SetRemoteDescription(RemoteSessionDescription.Release(), SessionDescription);
 }
 
-void FWebRTCPeerConnection::OnSignalingChange(webrtc::PeerConnectionInterface::SignalingState)
-{}
+void FWebRTCPeerConnection::OnSignalingChange(webrtc::PeerConnectionInterface::SignalingState State)
+{
+	switch (State)
+	{
+	case webrtc::PeerConnectionInterface::SignalingState::kStable:
+		UE_LOG(LogMillicastPlayer, Verbose, TEXT("Signaling state change: kStable"));
+		break;
+	case webrtc::PeerConnectionInterface::SignalingState::kClosed:
+		UE_LOG(LogMillicastPlayer, Verbose, TEXT("Signaling state change: kClosed"));
+		break;
+	case webrtc::PeerConnectionInterface::SignalingState::kHaveLocalOffer:
+		UE_LOG(LogMillicastPlayer, Verbose, TEXT("Signaling state change: kHaveLocalOffer"));
+		break;
+	case webrtc::PeerConnectionInterface::SignalingState::kHaveRemoteOffer:
+		UE_LOG(LogMillicastPlayer, Verbose, TEXT("Signaling state change: kHaveRemoteOffer"));
+		break;
+	case webrtc::PeerConnectionInterface::SignalingState::kHaveLocalPrAnswer:
+		UE_LOG(LogMillicastPlayer, Verbose, TEXT("Signaling state change: kHaveLocalPrAnswer"));
+		break;
+	case webrtc::PeerConnectionInterface::SignalingState::kHaveRemotePrAnswer:
+		UE_LOG(LogMillicastPlayer, Verbose, TEXT("Signaling state change: kHaveRemotePrAnswer"));
+		break;
+	}
+}
 
 void FWebRTCPeerConnection::OnAddStream(rtc::scoped_refptr<webrtc::MediaStreamInterface>)
 {}
@@ -251,6 +301,8 @@ void FWebRTCPeerConnection::OnAddTrack(rtc::scoped_refptr<webrtc::RtpReceiverInt
 
 void FWebRTCPeerConnection::OnTrack(rtc::scoped_refptr<webrtc::RtpTransceiverInterface> Transceiver)
 {
+	UE_LOG(LogMillicastPlayer, Verbose, TEXT("%S"), __FUNCTION__);
+
 	if(OnVideoTrack && Transceiver->media_type() == cricket::MediaType::MEDIA_TYPE_VIDEO)
 	{
 		OnVideoTrack(*Transceiver->mid(), Transceiver->receiver()->track());
@@ -262,14 +314,18 @@ void FWebRTCPeerConnection::OnTrack(rtc::scoped_refptr<webrtc::RtpTransceiverInt
 }
 
 void FWebRTCPeerConnection::OnRemoveTrack(rtc::scoped_refptr<webrtc::RtpReceiverInterface>)
-{}
+{
+	UE_LOG(LogMillicastPlayer, Verbose, TEXT("%S"), __FUNCTION__);
+}
 
 void FWebRTCPeerConnection::OnDataChannel(rtc::scoped_refptr<webrtc::DataChannelInterface>)
-{}
+{
+	UE_LOG(LogMillicastPlayer, Verbose, TEXT("%S"), __FUNCTION__);
+}
 
 void FWebRTCPeerConnection::OnRenegotiationNeeded()
 {
-	UE_LOG(LogMillicastPlayer, Log, TEXT("On renegociation needed"));
+	UE_LOG(LogMillicastPlayer, Verbose, TEXT("%S"), __FUNCTION__);
 
 	std::string sdp;
 	auto remote_sdp = PeerConnection->remote_description();
@@ -325,6 +381,30 @@ void FWebRTCPeerConnection::OnIceCandidate(const webrtc::IceCandidateInterface*)
 void FWebRTCPeerConnection::OnIceConnectionReceivingChange(bool)
 {}
 
+void FWebRTCPeerConnection::EnableStats(bool Enable)
+{
+	if (Enable && !RTCStatsCollector)
+	{
+		RTCStatsCollector = MakeUnique<FPlayerStatsCollector>(this);
+	}
+	else
+	{
+		RTCStatsCollector = nullptr;
+	}
+}
+
+void FWebRTCPeerConnection::PollStats()
+{
+	if (PeerConnection)
+	{
+		std::vector<rtc::scoped_refptr<webrtc::RtpTransceiverInterface>> Transceivers = PeerConnection->GetTransceivers();
+		for (rtc::scoped_refptr<webrtc::RtpTransceiverInterface> Transceiver : Transceivers)
+		{
+			PeerConnection->GetStats(Transceiver->receiver(), RTCStatsCollector.Get());
+		}
+	}
+}
+
 static inline webrtc::RtpTransceiverDirection reverse_direction(webrtc::RtpTransceiverDirection direction)
 {
 	switch (direction) {
@@ -339,6 +419,7 @@ static inline webrtc::RtpTransceiverDirection reverse_direction(webrtc::RtpTrans
 void FWebRTCPeerConnection::Renegociate(const webrtc::SessionDescriptionInterface* local_sdp,
 	const webrtc::SessionDescriptionInterface* remote_sdp)
 {
+	UE_LOG(LogMillicastPlayer, Verbose, TEXT("%S"), __FUNCTION__);
 	// Clone the remote sdp to have a setup a new one
 	auto new_remote = remote_sdp->Clone();
 

@@ -2,6 +2,7 @@
 
 #include "MillicastMediaTexture2D.h"
 #include "MillicastMediaTextureResource.h"
+#include "MillicastPlayerPrivate.h"
 
 constexpr int32 DEFAULT_WIDTH = 1920;
 constexpr int32 DEFAULT_HEIGHT = 1080;
@@ -50,6 +51,7 @@ void UMillicastMediaTexture2D::UpdateTextureReference(FRHICommandList& RHICmdLis
 
 FTextureResource* UMillicastMediaTexture2D::CreateResource()
 {
+	UE_LOG(LogMillicastPlayer, Verbose, TEXT("%S"), __FUNCTION__);
 	auto resource = GetResource();
 	if (resource != nullptr)
 	{
