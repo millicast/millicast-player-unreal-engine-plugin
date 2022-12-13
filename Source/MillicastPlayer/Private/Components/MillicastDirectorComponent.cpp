@@ -32,6 +32,18 @@ bool UMillicastDirectorComponent::Initialize(UMillicastMediaSource* InMediaSourc
 	return InMediaSource != nullptr && InMediaSource == MillicastMediaSource;
 }
 
+void UMillicastDirectorComponent::SetMediaSource(UMillicastMediaSource* InMediaSource)
+{
+	if (InMediaSource != nullptr)
+	{
+		MillicastMediaSource = InMediaSource;
+	}
+	else
+	{
+		UE_LOG(LogMillicastPlayer, Log, TEXT("Provided MediaSource was nullptr"));
+	}
+}
+
 void UMillicastDirectorComponent::ParseIceServers(const TArray<TSharedPtr<FJsonValue>>& IceServersField,
 	FMillicastSignalingData& SignalingData)
 {

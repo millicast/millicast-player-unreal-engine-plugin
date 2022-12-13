@@ -41,6 +41,13 @@ public:
 	bool Initialize(UMillicastMediaSource* InMediaSource = nullptr);
 
 	/**
+	* Change the Millicast Media Source of this object
+	* Note that you have to change it before calling subscribe in order to have effect.
+	*/
+	UFUNCTION(BlueprintCallable, Category = "MillicastPlayer", META = (DisplayName = "SetMediaSource"))
+		void SetMediaSource(UMillicastMediaSource* InMediaSource);
+
+	/**
 		Connect to the Millicast platform
 	*/
 	UFUNCTION(BlueprintCallable, Category = "MillicastPlayer", META = (DisplayName = "Authenticate"))
