@@ -14,7 +14,7 @@ you must change use the right github branch.
 The naming pattern follows : UEX.Y where X is the major unreal version and Y the minor.
 
 * [Unreal 4.27 ](https://github.com/millicast/millicast-player-unreal-engine-plugin/tree/UE4.27)
-* [Unreal 5.1](https://github.com/millicast/millicast-player-unreal-engine-plugin/tree/UE5.0.3)
+* [Unreal 5.0.3](https://github.com/millicast/millicast-player-unreal-engine-plugin/tree/UE5.0.3)
 
 The main is currently for Unreal UE5.1.
 
