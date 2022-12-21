@@ -6,6 +6,18 @@
 This plugin enable to play real time stream from Millicast in your Unreal Engine game.
 You can configure your credentials and configure your game logic using unreal object and then render the video in a texture2D.
 
+## Supported Unreal Engine
+
+The Unreal Player supports Unreal engine 4.27, 5.0.3 and 5.1.
+In order to get the plugin corresponding to your unreal version,
+you must change use the right github branch.
+The naming pattern follows : UEX.Y where X is the major unreal version and Y the minor.
+
+* [Unreal 4.27 ](https://github.com/millicast/millicast-player-unreal-engine-plugin/tree/UE4.27)
+* [Unreal 5.1](https://github.com/millicast/millicast-player-unreal-engine-plugin/tree/UE5.0.3)
+
+The main is currently for Unreal UE5.1.
+
 ## Installation
 
 You can install the plugin from the source code.
