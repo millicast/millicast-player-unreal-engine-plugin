@@ -10,6 +10,9 @@
 #include "MillicastAudioActor.h"
 #include "MillicastPlayerPrivate.h"
 
+namespace Millicast::Player
+{
+
 TAtomic<int> FWebRTCPeerConnection::RefCounter = 0;
 
 void FWebRTCPeerConnection::CreatePeerConnectionFactory()
@@ -405,4 +408,6 @@ void FWebRTCPeerConnection::Renegociate(const webrtc::SessionDescriptionInterfac
 
 	UE_LOG(LogMillicastPlayer, Log, TEXT("[renegociation] remote sdp : %s"), sdp.c_str());
 	SetRemoteDescription(sdp);
+}
+
 }

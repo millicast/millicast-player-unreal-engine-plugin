@@ -47,6 +47,8 @@ void UMillicastDirectorComponent::SetMediaSource(UMillicastMediaSource* InMediaS
 void UMillicastDirectorComponent::ParseIceServers(const TArray<TSharedPtr<FJsonValue>>& IceServersField,
 	FMillicastSignalingData& SignalingData)
 {
+	using namespace Millicast::Player;
+
 	SignalingData.IceServers.Empty();
 	for (auto& elt : IceServersField)
 	{

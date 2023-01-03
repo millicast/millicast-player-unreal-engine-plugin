@@ -15,86 +15,90 @@ class TaskQueueFactory;
 
 }  // webrtc
 
-class FAudioDeviceModule;
-
-/*
- * Small wrapper for the WebRTC peerconnection
- */
-class FWebRTCPeerConnection : public webrtc::PeerConnectionObserver
+namespace Millicast::Player
 {
-    using FMediaStreamVector = std::vector<rtc::scoped_refptr<webrtc::MediaStreamInterface>>;
-	using FRTCConfig = webrtc::PeerConnectionInterface::RTCConfiguration;
+	class FAudioDeviceModule;
 
-	rtc::scoped_refptr<webrtc::PeerConnectionInterface> PeerConnection;
-
-	TUniquePtr<rtc::Thread>                SignalingThread;
-	TUniquePtr<rtc::Thread>                WorkingThread;
-	TUniquePtr<rtc::Thread>                NetworkingThread;
-	rtc::scoped_refptr<FAudioDeviceModule> AudioDeviceModule;
-	std::unique_ptr<webrtc::TaskQueueFactory> TaskQueueFactory;
-
-	using FCreateSessionDescriptionObserver = TSessionDescriptionObserver<webrtc::CreateSessionDescriptionObserver>;
-	using FSetSessionDescriptionObserver = TSessionDescriptionObserver<webrtc::SetSessionDescriptionObserver>;
-
-	TUniquePtr<FCreateSessionDescriptionObserver> CreateSessionDescription;
-	TUniquePtr<FSetSessionDescriptionObserver>    LocalSessionDescription;
-	TUniquePtr<FSetSessionDescriptionObserver>    RemoteSessionDescription;
-
-	template<typename Callback>
-	webrtc::SessionDescriptionInterface* CreateDescription(const std::string&,
-														   const std::string&,
-														   Callback&&);
-
-	rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> PeerConnectionFactory;
-	void CreatePeerConnectionFactory();
-
-	void Renegociate(const webrtc::SessionDescriptionInterface* local_sdp,
-		const webrtc::SessionDescriptionInterface* remote_sdp);
-
-	static TAtomic<int> RefCounter; // Number of Peerconnection factory created
-
-public:
-	std::function<void(const std::string& mid, rtc::scoped_refptr<webrtc::MediaStreamTrackInterface>)> OnVideoTrack = nullptr;
-	std::function<void(const std::string& mid, rtc::scoped_refptr<webrtc::MediaStreamTrackInterface>)> OnAudioTrack = nullptr;
-
-	webrtc::PeerConnectionInterface::RTCOfferAnswerOptions OaOptions;
-
-	FWebRTCPeerConnection() = default;
-	~FWebRTCPeerConnection() noexcept;
-	void Init(const FRTCConfig& Config, TWeakInterfacePtr<IMillicastExternalAudioConsumer> ExternalAudioConsumer);
-
-	static FRTCConfig GetDefaultConfig();
-	static FWebRTCPeerConnection* Create(const FRTCConfig& config, TWeakInterfacePtr<IMillicastExternalAudioConsumer> ExternalAudioConsumer);
-
-	FSetSessionDescriptionObserver* GetLocalDescriptionObserver();
-	FSetSessionDescriptionObserver* GetRemoteDescriptionObserver();
-	FCreateSessionDescriptionObserver* GetCreateDescriptionObserver();
-
-	const FSetSessionDescriptionObserver* GetLocalDescriptionObserver()     const;
-	const FSetSessionDescriptionObserver* GetRemoteDescriptionObserver()    const;
-	const FCreateSessionDescriptionObserver* GetCreateDescriptionObserver() const;
-
-	void CreateOffer();
-	void SetLocalDescription(const std::string& Sdp, const std::string& Type);
-	void SetRemoteDescription(const std::string& Sdp, const std::string& Type=std::string("answer"));
-
-	// PeerConnection Observer interface
-	void OnSignalingChange(webrtc::PeerConnectionInterface::SignalingState new_state) override;
-	void OnAddStream(rtc::scoped_refptr<webrtc::MediaStreamInterface> stream) override;
-	void OnRemoveStream(rtc::scoped_refptr<webrtc::MediaStreamInterface> stream) override;
-	void OnAddTrack(rtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver,
-	  const FMediaStreamVector& streams) override;
-	void OnTrack(rtc::scoped_refptr<webrtc::RtpTransceiverInterface> transceiver) override;
-	void OnRemoveTrack(rtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver) override;
-	void OnDataChannel(rtc::scoped_refptr<webrtc::DataChannelInterface> channel)  override;
-	void OnRenegotiationNeeded() override;
-	void OnIceConnectionChange(webrtc::PeerConnectionInterface::IceConnectionState new_state) override;
-	void OnIceGatheringChange(webrtc::PeerConnectionInterface::IceGatheringState new_state) override;
-	void OnIceCandidate(const webrtc::IceCandidateInterface* candidate) override;
-	void OnIceConnectionReceivingChange(bool receiving) override;
-
-	webrtc::PeerConnectionInterface* operator->()
+	/*
+	 * Small wrapper for the WebRTC peerconnection
+	 */
+	class FWebRTCPeerConnection : public webrtc::PeerConnectionObserver
 	{
-		return PeerConnection.get();
-	}
-};
+		using FMediaStreamVector = std::vector<rtc::scoped_refptr<webrtc::MediaStreamInterface>>;
+		using FRTCConfig = webrtc::PeerConnectionInterface::RTCConfiguration;
+
+		rtc::scoped_refptr<webrtc::PeerConnectionInterface> PeerConnection;
+
+		TUniquePtr<rtc::Thread>                SignalingThread;
+		TUniquePtr<rtc::Thread>                WorkingThread;
+		TUniquePtr<rtc::Thread>                NetworkingThread;
+		rtc::scoped_refptr<FAudioDeviceModule> AudioDeviceModule;
+		std::unique_ptr<webrtc::TaskQueueFactory> TaskQueueFactory;
+
+		using FCreateSessionDescriptionObserver = TSessionDescriptionObserver<webrtc::CreateSessionDescriptionObserver>;
+		using FSetSessionDescriptionObserver = TSessionDescriptionObserver<webrtc::SetSessionDescriptionObserver>;
+
+		TUniquePtr<FCreateSessionDescriptionObserver> CreateSessionDescription;
+		TUniquePtr<FSetSessionDescriptionObserver>    LocalSessionDescription;
+		TUniquePtr<FSetSessionDescriptionObserver>    RemoteSessionDescription;
+
+		template<typename Callback>
+		webrtc::SessionDescriptionInterface* CreateDescription(const std::string&,
+			const std::string&,
+			Callback&&);
+
+		rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> PeerConnectionFactory;
+		void CreatePeerConnectionFactory();
+
+		void Renegociate(const webrtc::SessionDescriptionInterface* local_sdp,
+			const webrtc::SessionDescriptionInterface* remote_sdp);
+
+		static TAtomic<int> RefCounter; // Number of Peerconnection factory created
+
+	public:
+		std::function<void(const std::string& mid, rtc::scoped_refptr<webrtc::MediaStreamTrackInterface>)> OnVideoTrack = nullptr;
+		std::function<void(const std::string& mid, rtc::scoped_refptr<webrtc::MediaStreamTrackInterface>)> OnAudioTrack = nullptr;
+
+		webrtc::PeerConnectionInterface::RTCOfferAnswerOptions OaOptions;
+
+		FWebRTCPeerConnection() = default;
+		~FWebRTCPeerConnection() noexcept;
+		void Init(const FRTCConfig& Config, TWeakInterfacePtr<IMillicastExternalAudioConsumer> ExternalAudioConsumer);
+
+		static FRTCConfig GetDefaultConfig();
+		static FWebRTCPeerConnection* Create(const FRTCConfig& config, TWeakInterfacePtr<IMillicastExternalAudioConsumer> ExternalAudioConsumer);
+
+		FSetSessionDescriptionObserver* GetLocalDescriptionObserver();
+		FSetSessionDescriptionObserver* GetRemoteDescriptionObserver();
+		FCreateSessionDescriptionObserver* GetCreateDescriptionObserver();
+
+		const FSetSessionDescriptionObserver* GetLocalDescriptionObserver()     const;
+		const FSetSessionDescriptionObserver* GetRemoteDescriptionObserver()    const;
+		const FCreateSessionDescriptionObserver* GetCreateDescriptionObserver() const;
+
+		void CreateOffer();
+		void SetLocalDescription(const std::string& Sdp, const std::string& Type);
+		void SetRemoteDescription(const std::string& Sdp, const std::string& Type = std::string("answer"));
+
+		// PeerConnection Observer interface
+		void OnSignalingChange(webrtc::PeerConnectionInterface::SignalingState new_state) override;
+		void OnAddStream(rtc::scoped_refptr<webrtc::MediaStreamInterface> stream) override;
+		void OnRemoveStream(rtc::scoped_refptr<webrtc::MediaStreamInterface> stream) override;
+		void OnAddTrack(rtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver,
+			const FMediaStreamVector& streams) override;
+		void OnTrack(rtc::scoped_refptr<webrtc::RtpTransceiverInterface> transceiver) override;
+		void OnRemoveTrack(rtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver) override;
+		void OnDataChannel(rtc::scoped_refptr<webrtc::DataChannelInterface> channel)  override;
+		void OnRenegotiationNeeded() override;
+		void OnIceConnectionChange(webrtc::PeerConnectionInterface::IceConnectionState new_state) override;
+		void OnIceGatheringChange(webrtc::PeerConnectionInterface::IceGatheringState new_state) override;
+		void OnIceCandidate(const webrtc::IceCandidateInterface* candidate) override;
+		void OnIceConnectionReceivingChange(bool receiving) override;
+
+		webrtc::PeerConnectionInterface* operator->()
+		{
+			return PeerConnection.get();
+		}
+	};
+
+}

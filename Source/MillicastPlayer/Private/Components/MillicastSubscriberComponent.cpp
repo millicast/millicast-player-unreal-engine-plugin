@@ -26,7 +26,7 @@ UMillicastSubscriberComponent::UMillicastSubscriberComponent(const FObjectInitia
 	PeerConnection = nullptr;
 	WS = nullptr;
 
-	PeerConnectionConfig = FWebRTCPeerConnection::GetDefaultConfig();
+	PeerConnectionConfig = Millicast::Player::FWebRTCPeerConnection::GetDefaultConfig();
 
 	// Event received from websocket signaling
 	EventBroadcaster.Emplace("active", [this](TSharedPtr<FJsonObject> Msg) { ParseActiveEvent(Msg); });
@@ -211,6 +211,8 @@ bool UMillicastSubscriberComponent::StartWebSocketConnection(const FString& Url,
 
 bool UMillicastSubscriberComponent::SubscribeToMillicast()
 {
+	using namespace Millicast::Player;
+
 	PeerConnection =
 		FWebRTCPeerConnection::Create(FWebRTCPeerConnection::GetDefaultConfig(), ExternalAudioConsumer);
 
@@ -363,7 +365,7 @@ void UMillicastSubscriberComponent::OnMessage(const FString& Msg)
 			if (ResponseJson->TryGetObjectField("data", DataJson))
 			{
 				FString Sdp = (* DataJson)->GetStringField("sdp");
-				PeerConnection->SetRemoteDescription(to_string(Sdp));
+				PeerConnection->SetRemoteDescription(Millicast::Player::to_string(Sdp));
 			}
 		}
 		else if(Type == "error")

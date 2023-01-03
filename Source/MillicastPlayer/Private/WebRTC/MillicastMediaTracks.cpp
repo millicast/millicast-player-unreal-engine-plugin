@@ -152,7 +152,7 @@ void UMillicastAudioTrackImpl::OnData(const void* AudioData, int BitPerSample, i
 {
 	FScopeLock Lock(&CriticalSection);
 
-	if (!FAudioDeviceModule::ReadDataAvailable || SampleRate != 48000)
+	if (!Millicast::Player::FAudioDeviceModule::ReadDataAvailable || SampleRate != 48000)
 	{
 		return;
 	}

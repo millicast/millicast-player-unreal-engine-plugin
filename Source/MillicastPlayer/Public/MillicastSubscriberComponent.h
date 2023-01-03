@@ -16,7 +16,10 @@
 
 class IWebSocket;
 
-class FWebRTCPeerConnection;
+namespace Millicast::Player
+{
+	class FWebRTCPeerConnection;
+}
 
 USTRUCT(BlueprintType, Blueprintable, Category = "MillicastPlayer")
 struct MILLICASTPLAYER_API FMillicastTrackInfo
@@ -215,7 +218,7 @@ private:
 	FDelegateHandle OnClosedHandle;
 	FDelegateHandle OnMessageHandle;
 
-	FWebRTCPeerConnection* PeerConnection;
+	Millicast::Player::FWebRTCPeerConnection* PeerConnection;
 	webrtc::PeerConnectionInterface::RTCConfiguration PeerConnectionConfig;
 
 	TWeakInterfacePtr<IMillicastExternalAudioConsumer> ExternalAudioConsumer;
