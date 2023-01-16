@@ -109,3 +109,8 @@ EMaterialValueType UMillicastMediaTexture2D::GetMaterialType() const
 {
 	return MCT_Texture2D;
 }
+
+ETextureClass UMillicastMediaTexture2D::GetTextureClass() const
+{
+	return ETextureClass::RenderTarget;
+}

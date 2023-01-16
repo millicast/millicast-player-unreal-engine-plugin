@@ -22,6 +22,8 @@ public:
 	virtual float GetSurfaceWidth() const override;
 	virtual float GetSurfaceDepth() const override;
 
+	ETextureClass GetTextureClass() const override;
+
 	virtual uint32 GetSurfaceArraySize() const override { return 0; }
 
 	virtual void GetResourceSizeEx(FResourceSizeEx& CumulativeResourceSize) override;
