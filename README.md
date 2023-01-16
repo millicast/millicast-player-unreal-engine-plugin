@@ -18,6 +18,12 @@ The naming pattern follows : UEX.Y where X is the major unreal version and Y the
 
 The main is currently for Unreal UE5.1.
 
+## Supported Codecs
+
+* VP8 (software decoding)
+* VP9 (software decoding)
+* H264 is NOT supported, you will get a black screen if you try viewing a stream encoded with H264.
+
 ## Installation
 
 You can install the plugin from the source code.
