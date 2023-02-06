@@ -14,7 +14,7 @@ namespace Millicast::Player
 		template<typename T>
 		class TSessionDescriptionObserver : public rtc::RefCountedObject<T>
 		{
-			friend class FWebRTCPeerConnection;
+		  friend class Millicast::Player::FWebRTCPeerConnection;
 			// friend class PeerConnection;
 			TFunction<void(const std::string&)> OnFailureCallback;
 		public:
