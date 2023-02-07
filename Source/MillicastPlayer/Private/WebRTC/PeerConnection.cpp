@@ -125,7 +125,7 @@ void FWebRTCPeerConnection::Init(const FRTCConfig& Config, TWeakInterfacePtr<IMi
 
 	if (!result.ok())
 	{
-		UE_LOG(LogMillicastPlayer, Error, TEXT("Could not create peerconnection : %S"), result.error().message());
+		UE_LOG(LogMillicastPlayer, Error, TEXT("Could not create peerconnection : %s"), result.error().message());
 		PeerConnection = nullptr;
 		return;
 	}
