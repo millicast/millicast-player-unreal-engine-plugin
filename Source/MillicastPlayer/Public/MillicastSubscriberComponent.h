@@ -42,10 +42,10 @@ struct MILLICASTPLAYER_API FMillicastLayerData
 	FString EncodingId;
 
 	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "MillicastPlayer")
-	int SpatialLayerId;
+	int32 SpatialLayerId = 0;
 
 	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "MillicastPlayer")
-	int TemporalLayerId;
+	int32 TemporalLayerId = 0;
 };
 
 USTRUCT(BlueprintType, Blueprintable, Category = "MillicastPlayer", META=(BlueprintSpawnableComponent))
