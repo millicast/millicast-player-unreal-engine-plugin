@@ -25,6 +25,7 @@ public:
 
     UPROPERTY(BlueprintReadWrite, EditAnywhere, AssetRegistrySearchable, Category = "Properties")
     UAudioComponent* AudioComponent;
+
 public:
     // IMillicastExternalAudioConsumer
     virtual FMillicastAudioParameters GetAudioParameters() const override;
