@@ -257,17 +257,19 @@ bool UMillicastSubscriberComponent::SubscribeToMillicast()
 	auto * LocalDescriptionObserver  = PeerConnection->GetLocalDescriptionObserver();
 	auto * RemoteDescriptionObserver = PeerConnection->GetRemoteDescriptionObserver();
 
-	CreateSessionDescriptionObserver->SetOnSuccessCallback([WEAK_CAPTURE](const std::string& type, const std::string& sdp) {
+	CreateSessionDescriptionObserver->SetOnSuccessCallback([WEAK_CAPTURE](const std::string& type, const std::string& sdp)
+	{
 		if (WeakThis.IsValid())
 		{
 			FScopeLock Lock(&WeakThis->CriticalPcSection);
-			UE_LOG(LogMillicastPlayer, Log, TEXT("pc.createOffer() | sucess\nsdp : %s"), *ToString(sdp));
+			UE_LOG(LogMillicastPlayer, Log, TEXT("pc.createOffer() | sucess\nsdp : %s"), *FString(sdp.c_str()));
 			if (WeakThis->PeerConnection) WeakThis->PeerConnection->SetLocalDescription(sdp, type);
 		}
 	});
 
-	CreateSessionDescriptionObserver->SetOnFailureCallback([WEAK_CAPTURE](const std::string& err) {
-		UE_LOG(LogMillicastPlayer, Error, TEXT("pc.createOffer() | Error: %s"), *ToString(err));
+	CreateSessionDescriptionObserver->SetOnFailureCallback([WEAK_CAPTURE](const std::string& err)
+	{
+		UE_LOG(LogMillicastPlayer, Error, TEXT("pc.createOffer() | Error: %s"), *FString(err.c_str()));
 		if (WeakThis.IsValid())
 		{
 			WeakThis->OnSubscribedFailure.Broadcast(FString{ err.c_str() });
@@ -302,7 +304,7 @@ bool UMillicastSubscriberComponent::SubscribeToMillicast()
 	});
 
 	LocalDescriptionObserver->SetOnFailureCallback([WEAK_CAPTURE](const std::string& err) {
-		UE_LOG(LogMillicastPlayer, Error, TEXT("Set local description failed : %s"), *ToString(err));
+		UE_LOG(LogMillicastPlayer, Error, TEXT("Set local description failed : %s"), *FString(err.c_str()));
 		if (WeakThis.IsValid())
 		{
 			WeakThis->OnSubscribedFailure.Broadcast(FString{ err.c_str() });
@@ -318,7 +320,7 @@ bool UMillicastSubscriberComponent::SubscribeToMillicast()
 		}
 	});
 	RemoteDescriptionObserver->SetOnFailureCallback([WEAK_CAPTURE](const std::string& err) {
-		UE_LOG(LogMillicastPlayer, Error, TEXT("Set remote description failed : %s"), *ToString(err));
+		UE_LOG(LogMillicastPlayer, Error, TEXT("Set remote description failed : %s"), *FString(err.c_str()));
 		if (WeakThis.IsValid())
 		{
 			WeakThis->OnSubscribedFailure.Broadcast(FString{ err.c_str() });
