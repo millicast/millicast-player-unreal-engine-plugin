@@ -30,5 +30,12 @@
 			"WhitelistPlatforms": [ "Win64", "Linux" ],
 			"EngineVersion": "5.1.0"
 		}
+	],
+	"Plugins":
+	[
+		{
+			"Name": "MediaIOFramework",
+			"Enabled": true
+		}
 	]
 }
