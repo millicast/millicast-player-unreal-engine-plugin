@@ -78,6 +78,13 @@ DECLARE_DYNAMIC_MULTICAST_SPARSE_DELEGATE_TwoParams(FMillicastSubscriberComponen
 DECLARE_DYNAMIC_MULTICAST_SPARSE_DELEGATE_ThreeParams(FMillicastSubscriberComponentLayers, UMillicastSubscriberComponent, OnLayers, const FString&, Mid, const TArray<FMillicastLayerData>&, ActiveLayers, const TArray<FMillicastLayerData>&, InactiveLayers);
 DECLARE_DYNAMIC_MULTICAST_SPARSE_DELEGATE_OneParam(FMillicastSubscriberComponentViewerCount, UMillicastSubscriberComponent, OnViewerCount, int, Count);
 
+enum class EMillicastSubscriberState : uint8
+{
+	Disconnected,
+	Connecting,
+	Connected
+};
+
 /**
 	A component used to receive audio, video from a Millicast feed.
 */
@@ -111,7 +118,6 @@ private:
 	void ParseViewerCountEvent(TSharedPtr<FJsonObject> JsonMsg);
 
 public:
-	virtual ~UMillicastSubscriberComponent() override;
 
 	/**
 		Initialize this component with the media source required for receiving Millicast audio, video, and metadata.
@@ -143,7 +149,7 @@ public:
 	/*
 		Returns if the subscriber is currently subscribed or not.
 	*/
-	bool IsSubscribed() const;
+	bool IsConnectionActive() const;
 
 	/**
 	* Project a media track into a given transceiver mid
@@ -206,6 +212,9 @@ public:
 	FMillicastSubscriberComponentAudioTrack OnAudioTrack;
 
 private:
+	void BeginPlay() override;
+	void EndPlay(EEndPlayReason::Type Reason) override;
+
 	/** Websocket Connection */
 	bool StartWebSocketConnection(const FString& url, const FString& jwt);
 	void OnConnected();
@@ -223,14 +232,17 @@ private:
 	FDelegateHandle OnClosedHandle;
 	FDelegateHandle OnMessageHandle;
 
-	Millicast::Player::FWebRTCPeerConnection* PeerConnection;
+	Millicast::Player::FWebRTCPeerConnection* PeerConnection = nullptr;
 	webrtc::PeerConnectionInterface::RTCConfiguration PeerConnectionConfig;
 
 	TWeakInterfacePtr<IMillicastExternalAudioConsumer> ExternalAudioConsumer;
 	FCriticalSection CriticalPcSection;
 
+	UPROPERTY()
 	TArray<UMillicastAudioTrack*> AudioTracks;
+
+	UPROPERTY()
 	TArray<UMillicastVideoTrack*> VideoTracks;
 
-	TAtomic<bool> Subscribed;
+	TAtomic<EMillicastSubscriberState> State = EMillicastSubscriberState::Disconnected;
 };

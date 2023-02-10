@@ -15,9 +15,16 @@
 
 constexpr auto HTTP_OK = 200;
 
-UMillicastDirectorComponent::UMillicastDirectorComponent(const FObjectInitializer& ObjectInitializer) 
-	: Super(ObjectInitializer) 
+UMillicastDirectorComponent::UMillicastDirectorComponent(const FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer)
 {
+
+}
+
+void UMillicastDirectorComponent::BeginPlay()
+{
+	Super::BeginPlay();
+
 	UE_LOG(LogMillicastPlayer, Verbose, TEXT("%S"), __FUNCTION__);
 }
 
@@ -127,7 +134,10 @@ void UMillicastDirectorComponent::ParseDirectorResponse(FHttpResponsePtr Respons
 */
 bool UMillicastDirectorComponent::Authenticate()
 {
-	if(!IsValid(MillicastMediaSource)) return false;
+	if (!IsValid(MillicastMediaSource))
+	{
+		return false;
+	}
 
 	auto PostHttpRequest = FHttpModule::Get().CreateRequest();
 	PostHttpRequest->SetURL(MillicastMediaSource->GetUrl());
@@ -157,19 +167,18 @@ bool UMillicastDirectorComponent::Authenticate()
 	PostHttpRequest->SetContentAsString(SerializedRequestData);
 
 	PostHttpRequest->OnProcessRequestComplete()
-	  .BindLambda([this](FHttpRequestPtr Request,
-				  FHttpResponsePtr Response,
-				  bool bConnectedSuccessfully) {
-		if(bConnectedSuccessfully && Response->GetResponseCode() == HTTP_OK) 
+		.BindLambda([this](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bConnectedSuccessfully)
+	{
+		if (!bConnectedSuccessfully || Response->GetResponseCode() != HTTP_OK)
 		{
-			ParseDirectorResponse(Response);
-		}
-		else 
-		{
-			UE_LOG(LogMillicastPlayer, Error, TEXT("Director HTTP request failed %d %s"), Response->GetResponseCode(), *Response->GetContentType());
+			UE_LOG(LogMillicastPlayer, Error, TEXT("Director HTTP request failed [code] %d [response] %s \n [body] %s"), Response->GetResponseCode(), *Response->GetContentType(), *Response->GetContentAsString());
+
 			FString ErrorMsg = Response->GetContentAsString();
 			OnAuthenticationFailure.Broadcast(Response->GetResponseCode(), ErrorMsg);
+			return;
 		}
+
+		ParseDirectorResponse(Response);
 	});
 
 	return PostHttpRequest->ProcessRequest();

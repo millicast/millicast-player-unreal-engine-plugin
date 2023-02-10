@@ -115,7 +115,7 @@ void AMillicastAudioActor::InitSoundWave()
 	}
 
 	// Provide VoiP sound class override if none provided by the user
-	if (!AudioComponent->SoundClassOverride.IsNull())
+	if (!AudioComponent->SoundClassOverride)
 	{
 		const auto& VoiPSoundClassName = GetDefault<UAudioSettings>()->VoiPSoundClass;
 		if (VoiPSoundClassName.IsValid())

@@ -21,11 +21,8 @@
 #define WEAK_CAPTURE WeakThis = TWeakObjectPtr<UMillicastSubscriberComponent>(this)
 
 UMillicastSubscriberComponent::UMillicastSubscriberComponent(const FObjectInitializer& ObjectInitializer) 
-	: Super(ObjectInitializer), Subscribed(false)
+	: Super(ObjectInitializer)
 {
-	PeerConnection = nullptr;
-	WS = nullptr;
-
 	PeerConnectionConfig = Millicast::Player::FWebRTCPeerConnection::GetDefaultConfig();
 
 	// Json Message received from websocket
@@ -40,14 +37,21 @@ UMillicastSubscriberComponent::UMillicastSubscriberComponent(const FObjectInitia
 	EventBroadcaster.Emplace("vad", [this](TSharedPtr<FJsonObject> Msg) { ParseVadEvent(Msg); });
 	EventBroadcaster.Emplace("layers", [this](TSharedPtr<FJsonObject> Msg) { ParseLayersEvent(Msg); });
 	EventBroadcaster.Emplace("viewercount", [this](TSharedPtr<FJsonObject> Msg) { ParseViewerCountEvent(Msg); });
+}
+
+void UMillicastSubscriberComponent::BeginPlay()
+{
+	Super::BeginPlay();
 
 	UE_LOG(LogMillicastPlayer, Verbose, TEXT("%S"), __FUNCTION__);
 }
 
-UMillicastSubscriberComponent::~UMillicastSubscriberComponent()
+void UMillicastSubscriberComponent::EndPlay(EEndPlayReason::Type Reason)
 {
+	Super::EndPlay(Reason);
+
 	UE_LOG(LogMillicastPlayer, Verbose, TEXT("%S"), __FUNCTION__);
-    Unsubscribe();
+	Unsubscribe();
 }
 
 /**
@@ -88,11 +92,13 @@ bool UMillicastSubscriberComponent::Subscribe(const FMillicastSignalingData& InS
 {
 	UE_LOG(LogMillicastPlayer, Verbose, TEXT("%S"), __FUNCTION__);
 
-	if (IsSubscribed())
+	if (IsConnectionActive())
 	{
 		UE_LOG(LogMillicastPlayer, Error, TEXT("You are already subscribed to a stream. Please unsubscribed first."));
 		return false;
 	}
+
+	State = EMillicastSubscriberState::Connecting;
 
 	if (InExternalAudioConsumer)
 	{
@@ -116,6 +122,12 @@ bool UMillicastSubscriberComponent::Subscribe(const FMillicastSignalingData& InS
 */
 void UMillicastSubscriberComponent::Unsubscribe()
 {
+	if (!IsConnectionActive())
+	{
+		return;
+	}
+	State = EMillicastSubscriberState::Disconnected;
+
 	UE_LOG(LogMillicastPlayer, Verbose, TEXT("%S"), __FUNCTION__);
 	FScopeLock Lock(&CriticalPcSection);
 	
@@ -133,7 +145,6 @@ void UMillicastSubscriberComponent::Unsubscribe()
 		for (auto& track : AudioTracks)
 		{
 			static_cast<UMillicastAudioTrackImpl*>(track)->Terminate();
-			track->RemoveFromRoot();
 		}
 
 		AudioTracks.Empty();
@@ -142,7 +153,6 @@ void UMillicastSubscriberComponent::Unsubscribe()
 		for (auto& track : VideoTracks)
 		{
 			static_cast<UMillicastVideoTrackImpl*>(track)->Terminate();
-			track->RemoveFromRoot();
 		}
 
 		VideoTracks.Empty();
@@ -150,14 +160,12 @@ void UMillicastSubscriberComponent::Unsubscribe()
 		UE_LOG(LogMillicastPlayer, Verbose, TEXT("Destroying peerconnection"));
 		delete PeerConnection;
 		PeerConnection = nullptr;
-
-		Subscribed = false;
 	}
 }
 
-bool UMillicastSubscriberComponent::IsSubscribed() const
+bool UMillicastSubscriberComponent::IsConnectionActive() const
 {
-	return Subscribed.Load();
+	return State.Load() != EMillicastSubscriberState::Disconnected;
 }
 
 void UMillicastSubscriberComponent::Project(const FString& SourceId, const TArray<FMillicastProjectionData>& ProjectionData)
@@ -205,14 +213,13 @@ void UMillicastSubscriberComponent::AddRemoteTrack(const FString& Kind)
 {
 	UE_LOG(LogMillicastPlayer, VeryVerbose, TEXT("%S"), __FUNCTION__);
 
-	webrtc::RtpTransceiverInit init;
-	init.direction = webrtc::RtpTransceiverDirection::kRecvOnly;
+	webrtc::RtpTransceiverInit Init;
+	Init.direction = webrtc::RtpTransceiverDirection::kRecvOnly;
 
-	using cricket::MediaType;
-	cricket::MediaType media = (Kind == "audio") ? MediaType::MEDIA_TYPE_AUDIO : MediaType::MEDIA_TYPE_VIDEO;
+	const auto MediaType = (Kind == "audio") ? cricket::MediaType::MEDIA_TYPE_AUDIO : cricket::MediaType::MEDIA_TYPE_VIDEO;
 
-	auto result = (*PeerConnection)->AddTransceiver(media, init);
-	if (result.ok())
+	const auto Result = (*PeerConnection)->AddTransceiver(MediaType, Init);
+	if (Result.ok())
 	{
 		UE_LOG(LogMillicastPlayer, Log, TEXT("Successfully added transceiver for remote track"));
 	}
@@ -222,8 +229,7 @@ void UMillicastSubscriberComponent::AddRemoteTrack(const FString& Kind)
 	}
 }
 
-bool UMillicastSubscriberComponent::StartWebSocketConnection(const FString& Url,
-                                                     const FString& Jwt)
+bool UMillicastSubscriberComponent::StartWebSocketConnection(const FString& Url, const FString& Jwt)
 {
 	UE_LOG(LogMillicastPlayer, Verbose, TEXT("%S"), __FUNCTION__);
 
@@ -250,12 +256,11 @@ bool UMillicastSubscriberComponent::SubscribeToMillicast()
 	using namespace Millicast::Player;
 	UE_LOG(LogMillicastPlayer, Verbose, TEXT("%S"), __FUNCTION__);
 
-	PeerConnection =
-		FWebRTCPeerConnection::Create(FWebRTCPeerConnection::GetDefaultConfig(), ExternalAudioConsumer);
+	PeerConnection = FWebRTCPeerConnection::Create(FWebRTCPeerConnection::GetDefaultConfig(), ExternalAudioConsumer);
 
-	auto * CreateSessionDescriptionObserver = PeerConnection->GetCreateDescriptionObserver();
-	auto * LocalDescriptionObserver  = PeerConnection->GetLocalDescriptionObserver();
-	auto * RemoteDescriptionObserver = PeerConnection->GetRemoteDescriptionObserver();
+	auto* CreateSessionDescriptionObserver = PeerConnection->GetCreateDescriptionObserver();
+	auto* LocalDescriptionObserver  = PeerConnection->GetLocalDescriptionObserver();
+	auto* RemoteDescriptionObserver = PeerConnection->GetRemoteDescriptionObserver();
 
 	CreateSessionDescriptionObserver->SetOnSuccessCallback([WEAK_CAPTURE](const std::string& type, const std::string& sdp)
 	{
@@ -263,7 +268,10 @@ bool UMillicastSubscriberComponent::SubscribeToMillicast()
 		{
 			FScopeLock Lock(&WeakThis->CriticalPcSection);
 			UE_LOG(LogMillicastPlayer, Log, TEXT("pc.createOffer() | sucess\nsdp : %s"), *FString(sdp.c_str()));
-			if (WeakThis->PeerConnection) WeakThis->PeerConnection->SetLocalDescription(sdp, type);
+			if (WeakThis->PeerConnection)
+			{
+				WeakThis->PeerConnection->SetLocalDescription(sdp, type);
+			}
 		}
 	});
 
@@ -276,9 +284,13 @@ bool UMillicastSubscriberComponent::SubscribeToMillicast()
 		}
 	});
 
-	LocalDescriptionObserver->SetOnSuccessCallback([WEAK_CAPTURE]() {
+	LocalDescriptionObserver->SetOnSuccessCallback([WEAK_CAPTURE]()
+	{
 		FScopeLock Lock(&WeakThis->CriticalPcSection);
-		if (!WeakThis.IsValid() || !WeakThis->PeerConnection) return;
+		if (!WeakThis.IsValid() || !WeakThis->PeerConnection)
+		{
+			return;
+		}
 
 		UE_LOG(LogMillicastPlayer, Log, TEXT("pc.setLocalDescription() | sucess"));
 		std::string sdp;
@@ -303,7 +315,8 @@ bool UMillicastSubscriberComponent::SubscribeToMillicast()
 		WeakThis->SendCommand("view", DataJson);
 	});
 
-	LocalDescriptionObserver->SetOnFailureCallback([WEAK_CAPTURE](const std::string& err) {
+	LocalDescriptionObserver->SetOnFailureCallback([WEAK_CAPTURE](const std::string& err)
+	{
 		UE_LOG(LogMillicastPlayer, Error, TEXT("Set local description failed : %s"), *FString(err.c_str()));
 		if (WeakThis.IsValid())
 		{
@@ -311,15 +324,18 @@ bool UMillicastSubscriberComponent::SubscribeToMillicast()
 		}
 	});
 
-	RemoteDescriptionObserver->SetOnSuccessCallback([WEAK_CAPTURE]() {
+	RemoteDescriptionObserver->SetOnSuccessCallback([WEAK_CAPTURE]()
+	{
 		UE_LOG(LogMillicastPlayer, Log, TEXT("Set remote description suceeded"));
 		if (WeakThis.IsValid())
 		{
-			WeakThis->Subscribed = true;
+			WeakThis->State = EMillicastSubscriberState::Connected;
 			WeakThis->OnSubscribed.Broadcast();
 		}
 	});
-	RemoteDescriptionObserver->SetOnFailureCallback([WEAK_CAPTURE](const std::string& err) {
+
+	RemoteDescriptionObserver->SetOnFailureCallback([WEAK_CAPTURE](const std::string& err)
+	{
 		UE_LOG(LogMillicastPlayer, Error, TEXT("Set remote description failed : %s"), *FString(err.c_str()));
 		if (WeakThis.IsValid())
 		{
@@ -332,42 +348,44 @@ bool UMillicastSubscriberComponent::SubscribeToMillicast()
 
 	using RtcTrack = rtc::scoped_refptr<webrtc::MediaStreamTrackInterface>;
 
-	PeerConnection->OnVideoTrack = [WEAK_CAPTURE](const std::string& Mid, RtcTrack Track) {
+	PeerConnection->OnVideoTrack = [WEAK_CAPTURE](const std::string& Mid, RtcTrack Track)
+	{
 		UE_LOG(LogMillicastPlayer, Log, TEXT("OnVideoTrack"));
 
-		AsyncTask(ENamedThreads::GameThread, [WeakThis, Mid, Track]() {
-			if (WeakThis.IsValid())
-			{
-				UE_LOG(LogMillicastPlayer, Verbose, TEXT("Create video track object"));
-				auto videoTrack = NewObject<UMillicastVideoTrackImpl>();
-				videoTrack->Initialize(Mid.c_str(), Track);
-				videoTrack->AddToRoot();
-				WeakThis->OnVideoTrack.Broadcast(videoTrack);
-				WeakThis->VideoTracks.Add(videoTrack);
-			}
-			else
+		AsyncTask(ENamedThreads::GameThread, [WeakThis, Mid, Track]()
+		{
+			if (!WeakThis.IsValid())
 			{
 				UE_LOG(LogMillicastPlayer, Warning, TEXT("SubscriberComponent no longer valid to add video track"));
+				return;
 			}
+
+			UE_LOG(LogMillicastPlayer, Verbose, TEXT("Create video track object"));
+			auto VideoTrack = NewObject<UMillicastVideoTrackImpl>();
+			VideoTrack->Initialize(Mid.c_str(), Track);
+
+			WeakThis->OnVideoTrack.Broadcast(VideoTrack);
+			WeakThis->VideoTracks.Add(VideoTrack);
 		});
 	};
-	PeerConnection->OnAudioTrack = [WEAK_CAPTURE](const std::string& mid, RtcTrack Track) {
-		UE_LOG(LogMillicastPlayer, Log, TEXT("OnAudioTrack"));
-		AsyncTask(ENamedThreads::GameThread, [WeakThis, mid, Track]() {
-			if (WeakThis.IsValid())
-			{
-				UE_LOG(LogMillicastPlayer, Verbose, TEXT("Create audio track object"));
-				auto audioTrack = NewObject<UMillicastAudioTrackImpl>();
-				audioTrack->Initialize(mid.c_str(), Track);
-				audioTrack->AddToRoot();
 
-				WeakThis->OnAudioTrack.Broadcast(audioTrack);
-				WeakThis->AudioTracks.Add(audioTrack); // keep reference to delete it later
-			}
-			else
+	PeerConnection->OnAudioTrack = [WEAK_CAPTURE](const std::string& mid, RtcTrack Track)
+	{
+		UE_LOG(LogMillicastPlayer, Log, TEXT("OnAudioTrack"));
+		AsyncTask(ENamedThreads::GameThread, [WeakThis, mid, Track]()
+		{
+			if (!WeakThis.IsValid())
 			{
 				UE_LOG(LogMillicastPlayer, Warning, TEXT("SubscriberComponent no longer valid to add audio track"));
+				return;
 			}
+
+			UE_LOG(LogMillicastPlayer, Verbose, TEXT("Create audio track object"));
+			auto AudioTrack = NewObject<UMillicastAudioTrackImpl>();
+			AudioTrack->Initialize(mid.c_str(), Track);
+
+			WeakThis->OnAudioTrack.Broadcast(AudioTrack);
+			WeakThis->AudioTracks.Add(AudioTrack); // keep reference to delete it later
 		});
 	};
 
@@ -407,21 +425,27 @@ void UMillicastSubscriberComponent::OnMessage(const FString& Msg)
 	TSharedPtr<FJsonObject> ResponseJson;
 	auto Reader = TJsonReaderFactory<>::Create(Msg);
 
-	if(FJsonSerializer::Deserialize(Reader, ResponseJson)) 
+	if (!FJsonSerializer::Deserialize(Reader, ResponseJson))
 	{
-		FString Type;
-		if(!ResponseJson->TryGetStringField("type", Type)) return;
-
-		auto * func = MessageParser.Find(Type);
-
-		if (func == nullptr)
-		{
-			UE_LOG(LogMillicastPlayer, Warning, TEXT("WebSocket response type not handled (yet?) %s"), *Type);
-			return;
-		}
-
-		(*func)(ResponseJson);
+		UE_LOG(LogMillicastPlayer, Error, TEXT("[UMillicastSubscriberComponent::OnMessage] Failed to deserialize"));
+		return;
 	}
+
+	FString Type;
+	if (!ResponseJson->TryGetStringField("type", Type))
+	{
+		UE_LOG(LogMillicastPlayer, Error, TEXT("[UMillicastSubscriberComponent::OnMessage] Missing type field"));
+		return;
+	}
+
+	auto* func = MessageParser.Find(Type);
+	if (!func)
+	{
+		UE_LOG(LogMillicastPlayer, Warning, TEXT("WebSocket response type not handled (yet?) %s"), *Type);
+		return;
+	}
+
+	(*func)(ResponseJson);
 }
 
 void UMillicastSubscriberComponent::SendCommand(const FString& Name, TSharedPtr<FJsonObject> Data)
@@ -438,25 +462,31 @@ void UMillicastSubscriberComponent::SendCommand(const FString& Name, TSharedPtr<
 
 	UE_LOG(LogMillicastPlayer, Log, TEXT("Send command : %s \n Data : %s"), *Name, *StringStream);
 
-	if (WS) WS->Send(StringStream);
+	if (WS)
+	{
+		WS->Send(StringStream);
+	}
 }
 
 void UMillicastSubscriberComponent::ParseResponse(TSharedPtr<FJsonObject> JsonMsg)
 {
 	const TSharedPtr<FJsonObject>* DataJson;
-	if (JsonMsg->TryGetObjectField("data", DataJson))
+	if (!JsonMsg->TryGetObjectField("data", DataJson))
 	{
-		FString Sdp = (*DataJson)->GetStringField("sdp");
-		FString ServerId = (*DataJson)->GetStringField("subscriberId");
-		FString ClusterId = (*DataJson)->GetStringField("clusterId");
-
-		UE_LOG(LogMillicastPlayer, Log, TEXT("Server Id : %s"), *ServerId);
-		UE_LOG(LogMillicastPlayer, Log, TEXT("Cluster Id : %s"), *ClusterId);
-
-		PeerConnection->SetRemoteDescription(Millicast::Player::to_string(Sdp));
-		PeerConnection->ServerId = MoveTemp(ServerId);
-		PeerConnection->ClusterId = MoveTemp(ClusterId);
+		UE_LOG(LogMillicastPlayer, Error, TEXT("[UMillicastSubscriberComponent::ParseResponse] Missing data field"));
+		return;
 	}
+
+	FString Sdp = (*DataJson)->GetStringField("sdp");
+	FString ServerId = (*DataJson)->GetStringField("subscriberId");
+	FString ClusterId = (*DataJson)->GetStringField("clusterId");
+
+	UE_LOG(LogMillicastPlayer, Log, TEXT("Server Id : %s"), *ServerId);
+	UE_LOG(LogMillicastPlayer, Log, TEXT("Cluster Id : %s"), *ClusterId);
+
+	PeerConnection->SetRemoteDescription(Millicast::Player::to_string(Sdp));
+	PeerConnection->ServerId = MoveTemp(ServerId);
+	PeerConnection->ClusterId = MoveTemp(ClusterId);
 }
 
 void UMillicastSubscriberComponent::ParseError(TSharedPtr<FJsonObject> JsonMsg)
@@ -518,6 +548,7 @@ void UMillicastSubscriberComponent::ParseStoppedEvent(TSharedPtr<FJsonObject>)
 {
 	OnStopped.Broadcast();
 }
+
 void UMillicastSubscriberComponent::ParseVadEvent(TSharedPtr<FJsonObject> JsonMsg)
 {
 	auto DataJson = JsonMsg->GetObjectField("data");

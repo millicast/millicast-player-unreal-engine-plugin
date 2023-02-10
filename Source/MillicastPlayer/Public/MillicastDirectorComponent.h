@@ -45,13 +45,14 @@ public:
 	* Note that you have to change it before calling subscribe in order to have effect.
 	*/
 	UFUNCTION(BlueprintCallable, Category = "MillicastPlayer", META = (DisplayName = "SetMediaSource"))
-		void SetMediaSource(UMillicastMediaSource* InMediaSource);
+	void SetMediaSource(UMillicastMediaSource* InMediaSource);
 
 	/**
 		Connect to the Millicast platform
 	*/
 	UFUNCTION(BlueprintCallable, Category = "MillicastPlayer", META = (DisplayName = "Authenticate"))
 	bool Authenticate();
+
 public:
 	/** Called when the response from the director api is successfull */
 	UPROPERTY(BlueprintAssignable, Category = "Components|Activation")
@@ -62,7 +63,8 @@ public:
 	FMillicastDirectorComponentAuthenticationFailure OnAuthenticationFailure;
 
 private:
-	void ParseIceServers(const TArray<TSharedPtr<FJsonValue>>& IceServersField,
-		FMillicastSignalingData& SignalingData);
+	void BeginPlay() override;
+
+	void ParseIceServers(const TArray<TSharedPtr<FJsonValue>>& IceServersField, FMillicastSignalingData& SignalingData);
 	void ParseDirectorResponse(TSharedPtr<IHttpResponse, ESPMode::ThreadSafe> Response);
 };
