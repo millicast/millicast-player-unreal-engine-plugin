@@ -3,6 +3,9 @@
 #include "AudioDeviceModule.h"
 #include "MillicastPlayerPrivate.h"
 
+namespace MillicastPlayer
+{
+
 const char FAudioDeviceModule::kTimerQueueName[] = "FAudioDeviceModuleTimer";
 TAtomic<bool> FAudioDeviceModule::ReadDataAvailable = false;
 
@@ -285,3 +288,4 @@ void FAudioDeviceModule::PullAudioData()
 	}
 }
 
+}

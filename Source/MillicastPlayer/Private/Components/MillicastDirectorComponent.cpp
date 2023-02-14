@@ -71,16 +71,16 @@ void UMillicastDirectorComponent::ParseIceServers(const TArray<TSharedPtr<FJsonV
 		{
 			for (auto& url : iceServerUrls)
 			{
-				iceServer.urls.push_back(to_string(url));
+				iceServer.urls.push_back(MillicastPlayer::to_string(url));
 			}
 		}
 		if (hasUsername)
 		{
-			iceServer.username = to_string(iceServerUsername);
+			iceServer.username = MillicastPlayer::to_string(iceServerUsername);
 		}
 		if (hasPassword)
 		{
-			iceServer.password = to_string(iceServerPassword);
+			iceServer.password = MillicastPlayer::to_string(iceServerPassword);
 		}
 
 		SignalingData.IceServers.Emplace(MoveTemp(iceServer));

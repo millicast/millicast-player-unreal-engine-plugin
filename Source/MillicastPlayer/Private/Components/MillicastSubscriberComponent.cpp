@@ -23,7 +23,7 @@ UMillicastSubscriberComponent::UMillicastSubscriberComponent(const FObjectInitia
 	PeerConnection = nullptr;
 	WS = nullptr;
 
-	PeerConnectionConfig = FWebRTCPeerConnection::GetDefaultConfig();
+	PeerConnectionConfig = MillicastPlayer::FWebRTCPeerConnection::GetDefaultConfig();
 
 	// Event received from websocket signaling
 	EventBroadcaster.Emplace("active", [this](TSharedPtr<FJsonObject> Msg) { ParseActiveEvent(Msg); });
@@ -185,7 +185,7 @@ bool UMillicastSubscriberComponent::StartWebSocketConnection(const FString& Url,
 bool UMillicastSubscriberComponent::SubscribeToMillicast()
 {
 	PeerConnection =
-		FWebRTCPeerConnection::Create(FWebRTCPeerConnection::GetDefaultConfig(), ExternalAudioConsumer);
+		MillicastPlayer::FWebRTCPeerConnection::Create(MillicastPlayer::FWebRTCPeerConnection::GetDefaultConfig(), ExternalAudioConsumer);
 
 	auto * CreateSessionDescriptionObserver = PeerConnection->GetCreateDescriptionObserver();
 	auto * LocalDescriptionObserver  = PeerConnection->GetLocalDescriptionObserver();
@@ -193,12 +193,12 @@ bool UMillicastSubscriberComponent::SubscribeToMillicast()
 
 	CreateSessionDescriptionObserver->SetOnSuccessCallback([this](const std::string& type, const std::string& sdp) {
 		FScopeLock Lock(&CriticalPcSection);
-		UE_LOG(LogMillicastPlayer, Log, TEXT("pc.createOffer() | sucess\nsdp : %s"), *ToString(sdp));
+		UE_LOG(LogMillicastPlayer, Log, TEXT("pc.createOffer() | sucess\nsdp : %s"), *MillicastPlayer::ToString(sdp));
 		if(PeerConnection) PeerConnection->SetLocalDescription(sdp, type);
 	});
 
 	CreateSessionDescriptionObserver->SetOnFailureCallback([this](const std::string& err) {
-		UE_LOG(LogMillicastPlayer, Error, TEXT("pc.createOffer() | Error: %s"), *ToString(err));
+		UE_LOG(LogMillicastPlayer, Error, TEXT("pc.createOffer() | Error: %s"), *MillicastPlayer::ToString(err));
 		OnSubscribedFailure.Broadcast(FString{ err.c_str() });
 	});
 
@@ -223,14 +223,14 @@ bool UMillicastSubscriberComponent::SubscribeToMillicast()
 		// Fill Signaling data
 		auto DataJson = MakeShared<FJsonObject>();
 		DataJson->SetStringField("streamId", MillicastMediaSource->StreamName);
-		DataJson->SetStringField("sdp", ToString(sdp));
+		DataJson->SetStringField("sdp", MillicastPlayer::ToString(sdp));
 		DataJson->SetArrayField("events", eventsJson);
 
 		SendCommand("view", DataJson);
 	});
 
 	LocalDescriptionObserver->SetOnFailureCallback([this](const std::string& err) {
-		UE_LOG(LogMillicastPlayer, Error, TEXT("Set local description failed : %s"), *ToString(err));
+		UE_LOG(LogMillicastPlayer, Error, TEXT("Set local description failed : %s"), *MillicastPlayer::ToString(err));
 		OnSubscribedFailure.Broadcast(FString{ err.c_str() });
 	});
 
@@ -239,7 +239,7 @@ bool UMillicastSubscriberComponent::SubscribeToMillicast()
 		OnSubscribed.Broadcast();
 	});
 	RemoteDescriptionObserver->SetOnFailureCallback([this](const std::string& err) {
-		UE_LOG(LogMillicastPlayer, Error, TEXT("Set remote description failed : %s"), *ToString(err));
+		UE_LOG(LogMillicastPlayer, Error, TEXT("Set remote description failed : %s"), *MillicastPlayer::ToString(err));
 		OnSubscribedFailure.Broadcast(FString{ err.c_str()});
 	});
 
@@ -315,7 +315,7 @@ void UMillicastSubscriberComponent::OnMessage(const FString& Msg)
 			if (ResponseJson->TryGetObjectField("data", DataJson))
 			{
 				FString Sdp = (* DataJson)->GetStringField("sdp");
-				PeerConnection->SetRemoteDescription(to_string(Sdp));
+				PeerConnection->SetRemoteDescription(MillicastPlayer::to_string(Sdp));
 			}
 		}
 		else if(Type == "error")
