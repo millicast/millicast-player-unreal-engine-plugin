@@ -406,6 +406,8 @@ void UMillicastSubscriberComponent::OnConnected()
 
 void UMillicastSubscriberComponent::OnConnectionError(const FString& Error)
 {
+	State = EMillicastSubscriberState::Disconnected;
+
 	UE_LOG(LogMillicastPlayer, Log, TEXT("Millicast WebSocket Connection error : %s"), *Error);
 }
 
@@ -413,7 +415,9 @@ void UMillicastSubscriberComponent::OnClosed(int32 StatusCode,
                                      const FString& Reason,
                                      bool bWasClean)
 {
-	UE_LOG(LogMillicastPlayer, Log, TEXT("Millicast WebSocket Closed"))
+	State = EMillicastSubscriberState::Disconnected;
+
+	UE_LOG(LogMillicastPlayer, Log, TEXT("Millicast WebSocket Closed"));
 }
 
 void UMillicastSubscriberComponent::OnMessage(const FString& Msg)
