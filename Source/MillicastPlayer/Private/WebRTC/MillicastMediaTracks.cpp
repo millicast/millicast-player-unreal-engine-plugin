@@ -19,7 +19,7 @@ void UMillicastVideoTrackImpl::OnFrame(const webrtc::VideoFrame& VideoFrame)
 		
 		if (!WeakThis.IsValid())
 		{
-			UE_LOG(LogMillicastPlayer, Verbose, TEXT("This video track is no more valid."),);
+			UE_LOG(LogMillicastPlayer, Verbose, TEXT("This video track is no more valid."));
 			return;
 		}
 

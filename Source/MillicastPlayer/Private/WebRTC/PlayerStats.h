@@ -85,7 +85,7 @@ namespace Millicast::Player
 	public:
 		static FPlayerStats& Get() { return Instance; }
 
-		~FPlayerStats() noexcept;
+	        ~FPlayerStats() = default;
 
 		void Tick(float DeltaTime);
 		FORCEINLINE TStatId GetStatId() const { RETURN_QUICK_DECLARE_CYCLE_STAT(MillicastPlayerProducerStats, STATGROUP_Tickables); }

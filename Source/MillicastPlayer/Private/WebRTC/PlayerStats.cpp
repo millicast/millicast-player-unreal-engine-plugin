@@ -299,8 +299,4 @@ namespace Millicast::Player
 		UE_LOG(LogMillicastPlayer, Verbose, TEXT("%S"), __FUNCTION__);
 		StatsCollectors.Remove(Collector);
 	}
-
-	FPlayerStats::~FPlayerStats()
-	{}
-
 }
