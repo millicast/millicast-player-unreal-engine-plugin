@@ -209,6 +209,8 @@ namespace Millicast::Player
 
 		TWeakInterfacePtr<IMillicastExternalAudioConsumer> AudioConsumer;
 		FMillicastAudioParameters AudioParameters;
+
+		int64_t NextDebugLog = 0;
 	};
 
 }

@@ -70,9 +70,20 @@ void AMillicastAudioActor::Shutdown()
 void AMillicastAudioActor::QueueAudioData(const uint8* AudioData, int32 NumSamples)
 {
 	/* Don't queue if IsVirtualized is true because the buffer is not actually playing, this will desync with video*/
-	if (AudioComponent->IsPlaying() && !AudioComponent->IsVirtualized())
+	if (!AudioComponent->IsPlaying() || AudioComponent->IsVirtualized())
 	{
-		SoundStreaming->QueueAudio(AudioData, NumSamples * AudioParameters.GetNumberBytesPerSample());
+		return;
+	}
+
+	SoundStreaming->QueueAudio(AudioData, NumSamples * AudioParameters.GetNumberBytesPerSample());
+
+	// Debug: log every second
+	const auto TimeInMs = rtc::TimeMillis();
+	if (NextDebugLog < TimeInMs)
+	{
+		const auto QueuedAudioSize = SoundStreaming->GetAvailableAudioByteCount();
+		UE_LOG(LogTemp, Log, TEXT("Time: %d -- FAudioDeviceModule.QueueSize=%d"), TimeInMs, QueuedAudioSize);
+		NextDebugLog = TimeInMs + 1'000;
 	}
 }
 
