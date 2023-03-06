@@ -66,8 +66,7 @@ private:
 
 protected:
 	/* VideoSinkInterface */
-	void OnData(const void* AudioData, int BitPerSample, int SampleRate, size_t NumberOfChannels,
-		size_t NumberOfFrames) override;
+	void OnData(const void* AudioData, int BitPerSample, int SampleRate, size_t NumberOfChannels, size_t NumberOfFrames) override;
 
 public:
 	~UMillicastAudioTrackImpl() override;

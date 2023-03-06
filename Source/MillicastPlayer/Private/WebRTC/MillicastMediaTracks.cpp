@@ -14,7 +14,8 @@
 
 void UMillicastVideoTrackImpl::OnFrame(const webrtc::VideoFrame& VideoFrame)
 {
-	AsyncTask(ENamedThreads::GameThread, [WEAK_CAPTURE_VIDEO_TRACK, VideoFrame]() {
+	AsyncTask(ENamedThreads::GameThread, [WEAK_CAPTURE_VIDEO_TRACK, VideoFrame]()
+	{
 		constexpr auto WEBRTC_PIXEL_FORMAT = webrtc::VideoType::kARGB;
 		
 		if (!WeakThis.IsValid())
@@ -23,12 +24,7 @@ void UMillicastVideoTrackImpl::OnFrame(const webrtc::VideoFrame& VideoFrame)
 			return;
 		}
 
-		FScopeLock Lock(&WeakThis->CriticalSection);
-
-		uint32_t Size = webrtc::CalcBufferSize(WEBRTC_PIXEL_FORMAT,
-			VideoFrame.width(),
-			VideoFrame.height());
-
+		const size_t Size = webrtc::CalcBufferSize(WEBRTC_PIXEL_FORMAT, VideoFrame.width(), VideoFrame.height());
 		if (Size != WeakThis->Buffer.Num())
 		{
 			WeakThis->Buffer.Empty();
@@ -36,24 +32,22 @@ void UMillicastVideoTrackImpl::OnFrame(const webrtc::VideoFrame& VideoFrame)
 		}
 
 		webrtc::ConvertFromI420(VideoFrame, WEBRTC_PIXEL_FORMAT, 0, WeakThis->Buffer.GetData());
-		TArray<TWeakInterfacePtr<IMillicastVideoConsumer>> removals;  //Track the AudioConsumers to clean up
-
-		for (auto& consumer : WeakThis->VideoConsumers)
+		
 		{
-			if (auto c = consumer.Get())
-			{
-				c->OnFrame(WeakThis->Buffer, VideoFrame.width(), VideoFrame.height());
-			}
-			else
-			{
-				UE_LOG(LogMillicastPlayer, Verbose, TEXT("Removing no more valid consumer"));
-				removals.Add(consumer);
-			}
-		}
+			FScopeLock Lock(&WeakThis->CriticalSection);
 
-		for (auto& consumer : removals)
-		{
-			WeakThis->VideoConsumers.Remove(consumer);
+			for (int32 Index = WeakThis->VideoConsumers.Num() - 1; Index >= 0; --Index)
+			{
+				auto& ConsumerRef = WeakThis->VideoConsumers[Index];
+				if (auto* Consumer = ConsumerRef.Get())
+				{
+					Consumer->OnFrame(WeakThis->Buffer, VideoFrame.width(), VideoFrame.height());
+					continue;
+				}
+
+				UE_LOG(LogMillicastPlayer, Verbose, TEXT("Removing invalid consumer"));
+				WeakThis->VideoConsumers.RemoveAtSwap(Index);
+			}
 		}
 	});
 }
@@ -116,8 +110,6 @@ void UMillicastVideoTrackImpl::AddConsumer(TScriptInterface<IMillicastVideoConsu
 {
 	UE_LOG(LogMillicastPlayer, Verbose, TEXT("%S"), __FUNCTION__);
 
-	FScopeLock Lock(&CriticalSection);
-
 	if (!VideoConsumer)
 	{
 		UE_LOG(LogMillicastPlayer, Warning, TEXT("Could not add video consumer. Object was null"));
@@ -127,69 +119,82 @@ void UMillicastVideoTrackImpl::AddConsumer(TScriptInterface<IMillicastVideoConsu
 	TWeakInterfacePtr<IMillicastVideoConsumer> consumer;
 	consumer = VideoConsumer;
 
-	// don't add consumer if already there
-	if (VideoConsumers.Contains(consumer))
 	{
-		UE_LOG(LogMillicastPlayer, Verbose, TEXT("Consumer has already been added"));
-		return;
-	}
+		FScopeLock Lock(&CriticalSection);
 
-	if (VideoConsumers.Num() == 0)
-	{
-		UE_LOG(LogMillicastPlayer, VeryVerbose, TEXT("Add Video Sink"));
-		auto track = static_cast<webrtc::VideoTrackInterface*>(RtcVideoTrack.get());
-		track->AddOrUpdateSink(this, rtc::VideoSinkWants{});
-	}
+		// don't add consumer if already there
+		if (VideoConsumers.Contains(consumer))
+		{
+			UE_LOG(LogMillicastPlayer, Verbose, TEXT("Consumer has already been added"));
+			return;
+		}
 
-	VideoConsumers.Add(consumer);
+		if (VideoConsumers.Num() == 0)
+		{
+			UE_LOG(LogMillicastPlayer, VeryVerbose, TEXT("Add Video Sink"));
+			auto track = static_cast<webrtc::VideoTrackInterface*>(RtcVideoTrack.get());
+			track->AddOrUpdateSink(this, rtc::VideoSinkWants{});
+		}
+
+		VideoConsumers.Add(consumer);
+	}
 }
 
 void UMillicastVideoTrackImpl::RemoveConsumer(TScriptInterface<IMillicastVideoConsumer> VideoConsumer)
 {
 	UE_LOG(LogMillicastPlayer, Verbose, TEXT("%S"), __FUNCTION__);
 
-	FScopeLock Lock(&CriticalSection);
-
 	TWeakInterfacePtr<IMillicastVideoConsumer> consumer;
 	consumer = VideoConsumer;
-	VideoConsumers.Remove(consumer);
 
-	if (VideoConsumers.Num() == 0)
 	{
-		UE_LOG(LogMillicastPlayer, VeryVerbose, TEXT("Remove Video Sink"));
-		auto track = static_cast<webrtc::VideoTrackInterface*>(RtcVideoTrack.get());
-		track->RemoveSink(this);
+		FScopeLock Lock(&CriticalSection);
+
+		VideoConsumers.Remove(consumer);
+
+		if (VideoConsumers.Num() == 0)
+		{
+			UE_LOG(LogMillicastPlayer, VeryVerbose, TEXT("Remove Video Sink"));
+			auto track = static_cast<webrtc::VideoTrackInterface*>(RtcVideoTrack.get());
+			track->RemoveSink(this);
+		}
 	}
 }
 
 /** Audio */
 
-void UMillicastAudioTrackImpl::OnData(const void* AudioData, int BitPerSample, int SampleRate, size_t NumberOfChannels, 
-	size_t NumberOfFrames)
+void UMillicastAudioTrackImpl::OnData(const void* AudioData, int BitPerSample, int SampleRate, size_t NumberOfChannels, size_t NumberOfFrames)
 {
-	FScopeLock Lock(&CriticalSection);
-
-	if (!Millicast::Player::FAudioDeviceModule::ReadDataAvailable || SampleRate != 48000)
+	if (!Millicast::Player::FAudioDeviceModule::ReadDataAvailable)
 	{
-		UE_LOG(LogMillicastPlayer, Verbose, TEXT("Could not read audio data or the sample rate is not 48kHz"));
+		// Do not error log here, this is normal if no audio is being streamed
+		return;
+	}
+
+	if (SampleRate != 48000)
+	{
+		UE_LOG(LogMillicastPlayer, Verbose, TEXT("Audio sample rate is not 48kHz"));
 		return;
 	}
 
 	Audio::TSampleBuffer<int16> Buffer((int16*)AudioData, NumberOfFrames, NumberOfChannels, SampleRate);
 
-	// AudioConsumers.RemoveAll([](auto& consumer) { return consumer.Get() == nullptr; });
-
-	for (auto& consumer : AudioConsumers)
+	// Queue Audio Data for Consumers
 	{
-		if (auto c = consumer.Get())
-		{
-			auto Params = c->GetAudioParameters();
-			if (Params.NumberOfChannels != NumberOfChannels)
-			{
-				Buffer.MixBufferToChannels(Params.NumberOfChannels);
-			}
+		FScopeLock Lock(&CriticalSection);
 
-			c->QueueAudioData((uint8*)Buffer.GetData(), NumberOfFrames);
+		for (auto& ConsumerRef : AudioConsumers)
+		{
+			if (auto* Consumer = ConsumerRef.Get())
+			{
+				const auto& Params = Consumer->GetAudioParameters();
+				if (Params.NumberOfChannels != NumberOfChannels)
+				{
+					Buffer.MixBufferToChannels(Params.NumberOfChannels);
+				}
+
+				Consumer->QueueAudioData((uint8*)Buffer.GetData(), NumberOfFrames);
+			}
 		}
 	}
 }
@@ -250,7 +255,6 @@ void UMillicastAudioTrackImpl::Terminate()
 void UMillicastAudioTrackImpl::AddConsumer(TScriptInterface<IMillicastExternalAudioConsumer> AudioConsumer)
 {
 	UE_LOG(LogMillicastPlayer, Verbose, TEXT("%S"), __FUNCTION__);
-	FScopeLock Lock(&CriticalSection);
 
 	if (!AudioConsumer)
 	{
@@ -261,40 +265,47 @@ void UMillicastAudioTrackImpl::AddConsumer(TScriptInterface<IMillicastExternalAu
 	TWeakInterfacePtr<IMillicastExternalAudioConsumer> consumer;
 	consumer = AudioConsumer;
 
-	// Don't add consumer if already there
-	if (AudioConsumers.Contains(consumer))
 	{
-		UE_LOG(LogMillicastPlayer, Warning, TEXT("Audio tracks already contains this audio consumer"));
-		return;
+		FScopeLock Lock(&CriticalSection);
+
+		// Don't add consumer if already there
+		if (AudioConsumers.Contains(consumer))
+		{
+			UE_LOG(LogMillicastPlayer, Warning, TEXT("Audio tracks already contains this audio consumer"));
+			return;
+		}
+
+		if (AudioConsumers.Num() == 0)
+		{
+			UE_LOG(LogMillicastPlayer, VeryVerbose, TEXT("Adding audio sink"));
+			auto track = static_cast<webrtc::AudioTrackInterface*>(RtcAudioTrack.get());
+			track->AddSink(this);
+		}
+
+		consumer->Initialize();
+
+		AudioConsumers.Add(consumer);
 	}
-
-	if (AudioConsumers.Num() == 0)
-	{
-		UE_LOG(LogMillicastPlayer, VeryVerbose, TEXT("Adding audio sink"));
-		auto track = static_cast<webrtc::AudioTrackInterface*>(RtcAudioTrack.get());
-		track->AddSink(this);
-	}
-
-	consumer->Initialize();
-
-	AudioConsumers.Add(consumer);
 }
 
 void UMillicastAudioTrackImpl::RemoveConsumer(TScriptInterface<IMillicastExternalAudioConsumer> AudioConsumer)
 {
 	UE_LOG(LogMillicastPlayer, Verbose, TEXT("%S"), __FUNCTION__);
-	FScopeLock Lock(&CriticalSection);
 
 	TWeakInterfacePtr<IMillicastExternalAudioConsumer> consumer;
 	consumer = AudioConsumer;
 	consumer->Shutdown();
 
-	AudioConsumers.Remove(consumer);
-
-	if (AudioConsumers.Num() == 0)
 	{
-		UE_LOG(LogMillicastPlayer, VeryVerbose, TEXT("Remove audio sink"));
-		auto track = static_cast<webrtc::AudioTrackInterface*>(RtcAudioTrack.get());
-		track->RemoveSink(this);
-	}
+		FScopeLock Lock(&CriticalSection);
+
+		AudioConsumers.Remove(consumer);
+
+		if (AudioConsumers.Num() == 0)
+		{
+			UE_LOG(LogMillicastPlayer, VeryVerbose, TEXT("Remove audio sink"));
+			auto track = static_cast<webrtc::AudioTrackInterface*>(RtcAudioTrack.get());
+			track->RemoveSink(this);
+		}
+	}	
 }
