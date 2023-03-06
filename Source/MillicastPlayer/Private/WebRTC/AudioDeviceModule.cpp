@@ -124,7 +124,7 @@ int32_t FAudioDeviceModule::StopPlayout()
 	bIsStarted = false;
 	ReadDataAvailable = false;
 
-	auto ShutDownConsumer = [this]()
+	TFunction<void()> ShutDownConsumer = [this]()
 	{
 		if (IMillicastExternalAudioConsumer* Consumer = AudioConsumer.Get())
 		{
