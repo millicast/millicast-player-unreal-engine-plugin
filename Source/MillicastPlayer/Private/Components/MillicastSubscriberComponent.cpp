@@ -122,6 +122,13 @@ bool UMillicastSubscriberComponent::Subscribe(const FMillicastSignalingData& InS
 */
 void UMillicastSubscriberComponent::Unsubscribe()
 {
+	if (WS)
+	{
+		UE_LOG(LogMillicastPlayer, Verbose, TEXT("Closing web socket"));
+		WS->Close();
+		WS = nullptr;
+	}
+
 	if (!IsConnectionActive())
 	{
 		return;
@@ -130,13 +137,6 @@ void UMillicastSubscriberComponent::Unsubscribe()
 
 	UE_LOG(LogMillicastPlayer, Verbose, TEXT("%S"), __FUNCTION__);
 	FScopeLock Lock(&CriticalPcSection);
-	
-	if (WS)
-	{
-		UE_LOG(LogMillicastPlayer, Verbose, TEXT("Closing web socket"));
-		WS->Close();
-		WS = nullptr;
-	}
 
 	if(PeerConnection)
 	{

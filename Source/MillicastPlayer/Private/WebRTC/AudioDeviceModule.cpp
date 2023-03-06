@@ -10,14 +10,10 @@ const char FAudioDeviceModule::kTimerQueueName[] = "FAudioDeviceModuleTimer";
 TAtomic<bool> FAudioDeviceModule::ReadDataAvailable = false;
 
 FAudioDeviceModule::FAudioDeviceModule(webrtc::TaskQueueFactory* queue_factory) noexcept
-	: AudioCallback(nullptr),
-	bIsPlaying(false),
-	bIsPlayInitialized(false),
-	bIsStarted(false),
-	NextFrameTime(0),
-	TaskQueue(queue_factory->CreateTaskQueue(kTimerQueueName,
-		webrtc::TaskQueueFactory::Priority::NORMAL))
-{}
+	: TaskQueue(queue_factory->CreateTaskQueue(kTimerQueueName, webrtc::TaskQueueFactory::Priority::NORMAL))
+{
+
+}
 
 rtc::scoped_refptr<FAudioDeviceModule>
 FAudioDeviceModule::Create(webrtc::TaskQueueFactory* queue_factory)
@@ -101,12 +97,10 @@ int32_t FAudioDeviceModule::InitRecording()
 int32_t FAudioDeviceModule::StartPlayout()
 {
 	UE_LOG(LogMillicastPlayer, Verbose, TEXT("%S"), __FUNCTION__);
-	{
-		FScopeLock cs(&CriticalSection);
-		bIsPlaying = true;
-	}
+	SetPlaying(true);
 
-	AsyncTask(ENamedThreads::GameThread, [this]() {
+	AsyncTask(ENamedThreads::GameThread, [this]()
+	{
 		if (IMillicastExternalAudioConsumer* Consumer = AudioConsumer.Get())
 		{
 			AudioParameters = Consumer->GetAudioParameters();
@@ -124,23 +118,21 @@ int32_t FAudioDeviceModule::StartPlayout()
 int32_t FAudioDeviceModule::StopPlayout()
 {
 	UE_LOG(LogMillicastPlayer, Verbose, TEXT("%S"), __FUNCTION__);
-	bool start = false;
+
+	SetPlaying(false);
+	
+	bIsStarted = false;
+	ReadDataAvailable = false;
+
+	auto ShutDownConsumer = [this]()
 	{
-		FScopeLock cs(&CriticalSection);
-		bIsPlaying = false;
-		bIsStarted = false;
-		ReadDataAvailable = false;
-	}
+		if (IMillicastExternalAudioConsumer* Consumer = AudioConsumer.Get())
+		{
+			Consumer->Shutdown();
+		}
+	};
 
-	TaskQueue.PostTask([this]() {
-		AsyncTask(ENamedThreads::GameThread, [this]() {
-			if (IMillicastExternalAudioConsumer* Consumer = AudioConsumer.Get())
-			{
-				Consumer->Shutdown();
-			}
-		});
-	});
-
+	TaskQueue.PostTask([&]() { AsyncTask(ENamedThreads::GameThread, ShutDownConsumer); });
 	return 0;
 }
 
@@ -148,6 +140,12 @@ bool FAudioDeviceModule::Playing() const
 {
 	FScopeLock cs(&CriticalSection);
 	return bIsPlaying;
+}
+
+void FAudioDeviceModule::SetPlaying(bool Value)
+{
+	FScopeLock cs(&CriticalSection);
+	bIsPlaying = Value;
 }
 
 int32_t FAudioDeviceModule::StartRecording()
@@ -244,51 +242,47 @@ void FAudioDeviceModule::SetAudioConsumer(TWeakInterfacePtr<IMillicastExternalAu
 
 void FAudioDeviceModule::Process()
 {
-	RTC_DCHECK_RUN_ON(&TaskQueue);
+	UE_LOG(LogTemp, Warning, TEXT("FAudioDeviceModule::Process: %d"), FPlatformTLS::GetCurrentThreadId());
+
+	if (!Playing())
 	{
-		FScopeLock cs(&CriticalSection);
-
-		if (!bIsStarted)
-		{
-			NextFrameTime = rtc::TimeMillis();
-			bIsStarted = true;
-		}
-
-		if (bIsPlaying)
-		{
-			AsyncTask(ENamedThreads::GameThread, [this]() { PullAudioData(); });
-			// PullAudioData();
-
-			NextFrameTime += AudioParameters.TimePerFrameMs;
-			const int64_t current_time = rtc::TimeMillis();
-			const int64_t wait_time =
-				(NextFrameTime > current_time) ? NextFrameTime - current_time : 0;
-			TaskQueue.PostDelayedTask([this]() { Process(); }, int32_t(wait_time));
-		}
+		return;
 	}
+
+	if (!bIsStarted)
+	{
+		NextFrameTime = rtc::TimeMillis();
+		bIsStarted = true;
+	}
+
+	AsyncTask(ENamedThreads::GameThread, [this]() { PullAudioData(); });
+	
+	NextFrameTime += AudioParameters.TimePerFrameMs;
+	const int64_t current_time = rtc::TimeMillis();
+	const int64_t wait_time = (NextFrameTime > current_time) ? NextFrameTime - current_time : 0;
+	TaskQueue.PostDelayedTask([this]() { Process(); }, int32_t(wait_time));
 }
 
 void FAudioDeviceModule::PullAudioData()
 {
 	int64_t elapsed, ntp;
-	size_t  out;
+	size_t out;
 
 	AudioCallback->NeedMorePlayData(AudioParameters.GetNumberSamples(), AudioParameters.SampleSize,
 		AudioParameters.NumberOfChannels, AudioParameters.SamplesPerSecond, AudioBuffer.GetData(),
 		out, &elapsed, &ntp);
 
 	// Before the stream actually started playing, elapsed == -1 and all samples are silent. Don't queue those
-	if (elapsed >= 0)
-	{
-		ReadDataAvailable = true;
-		if (IMillicastExternalAudioConsumer* Consumer = AudioConsumer.Get())
-		{
-			Consumer->QueueAudioData(AudioBuffer.GetData(), out);
-		}
-	}
-	else
+	if (elapsed < 0)
 	{
 		ReadDataAvailable = false;
+		return;
+	}
+
+	ReadDataAvailable = true;
+	if (IMillicastExternalAudioConsumer* Consumer = AudioConsumer.Get())
+	{
+		Consumer->QueueAudioData(AudioBuffer.GetData(), out);
 	}
 }
 

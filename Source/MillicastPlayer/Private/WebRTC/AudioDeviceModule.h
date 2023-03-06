@@ -68,6 +68,7 @@ namespace Millicast::Player
 
 		// True when audio is being pulled by the instance.
 		bool Playing() const override;
+		void SetPlaying(bool Value);
 
 		int32 StartRecording() override;
 		int32 StopRecording() override;
@@ -188,13 +189,13 @@ namespace Millicast::Player
 		void Process();
 
 		// Callback for playout and recording.
-		webrtc::AudioTransport* AudioCallback;
+		webrtc::AudioTransport* AudioCallback = nullptr;
 
-		bool bIsPlaying;    // True when audio is being pulled by the instance.
-		bool bIsPlayInitialized;  // True when the instance is ready to pull audio.
+		bool bIsPlaying = false;    // True when audio is being pulled by the instance.
+		bool bIsPlayInitialized = false;  // True when the instance is ready to pull audio.
 
-		bool bIsStarted;
-		int64_t NextFrameTime;
+		bool bIsStarted = false;
+		int64_t NextFrameTime = 0;
 
 		rtc::TaskQueue TaskQueue;
 
