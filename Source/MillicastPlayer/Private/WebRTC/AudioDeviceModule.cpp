@@ -124,15 +124,15 @@ int32_t FAudioDeviceModule::StopPlayout()
 	bIsStarted = false;
 	ReadDataAvailable = false;
 
-	TFunction<void()> ShutDownConsumer = [this]()
-	{
-		if (IMillicastExternalAudioConsumer* Consumer = AudioConsumer.Get())
-		{
-			Consumer->Shutdown();
-		}
-	};
+	TaskQueue.PostTask([&]() {
+		AsyncTask(ENamedThreads::GameThread, [this]() {
+			if (IMillicastExternalAudioConsumer* Consumer = AudioConsumer.Get())
+			{
+				Consumer->Shutdown();
+			}
+		});
+	});
 
-	TaskQueue.PostTask([&]() { AsyncTask(ENamedThreads::GameThread, ShutDownConsumer); });
 	return 0;
 }
 
@@ -242,8 +242,6 @@ void FAudioDeviceModule::SetAudioConsumer(TWeakInterfacePtr<IMillicastExternalAu
 
 void FAudioDeviceModule::Process()
 {
-	UE_LOG(LogTemp, Warning, TEXT("FAudioDeviceModule::Process: %d"), FPlatformTLS::GetCurrentThreadId());
-
 	if (!Playing())
 	{
 		return;
@@ -280,10 +278,13 @@ void FAudioDeviceModule::PullAudioData()
 	}
 
 	ReadDataAvailable = true;
-	if (IMillicastExternalAudioConsumer* Consumer = AudioConsumer.Get())
+	IMillicastExternalAudioConsumer* Consumer = AudioConsumer.Get();
+	if (!Consumer)
 	{
-		Consumer->QueueAudioData(AudioBuffer.GetData(), out);
+		return;
 	}
+
+	Consumer->QueueAudioData(AudioBuffer.GetData(), out);
 }
 
 }
