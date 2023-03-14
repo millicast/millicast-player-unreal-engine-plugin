@@ -5,10 +5,10 @@
 
 #include <string>
 
-#include "Dom/JsonValue.h"
 #include "Dom/JsonObject.h"
 
 #include "Serialization/JsonReader.h"
+#include "Serialization/JsonSerializer.h"
 #include "Serialization/JsonWriter.h"
 
 #include "WebSocketsModule.h"
@@ -61,7 +61,7 @@ bool UMillicastSubscriberComponent::Subscribe(const FMillicastSignalingData& InS
 {
     ExternalAudioConsumer = InExternalAudioConsumer;
 
-	for (auto& s : InSignalingData.IceServers) 
+	for (auto& s : InSignalingData.IceServers)
 	{
 		PeerConnectionConfig.servers.push_back(s);
 	}
@@ -77,7 +77,7 @@ bool UMillicastSubscriberComponent::Subscribe(const FMillicastSignalingData& InS
 void UMillicastSubscriberComponent::Unsubscribe()
 {
 	FScopeLock Lock(&CriticalPcSection);
-	
+
 	if (WS)
 	{
 		WS->Close();
@@ -304,12 +304,12 @@ void UMillicastSubscriberComponent::OnMessage(const FString& Msg)
 	TSharedPtr<FJsonObject> ResponseJson;
 	auto Reader = TJsonReaderFactory<>::Create(Msg);
 
-	if(FJsonSerializer::Deserialize(Reader, ResponseJson)) 
+	if(FJsonSerializer::Deserialize(Reader, ResponseJson))
 	{
 		FString Type;
 		if(!ResponseJson->TryGetStringField("type", Type)) return;
 
-		if(Type == "response") 
+		if(Type == "response")
 		{
 			const TSharedPtr<FJsonObject>* DataJson;
 			if (ResponseJson->TryGetObjectField("data", DataJson))
@@ -325,7 +325,7 @@ void UMillicastSubscriberComponent::OnMessage(const FString& Msg)
 
 			UE_LOG(LogMillicastPlayer, Error, TEXT("WebSocket error : %s"), *errorMessage);
 		}
-		else if(Type == "event") 
+		else if(Type == "event")
 		{
 			FString eventName;
 			ResponseJson->TryGetStringField("name", eventName);
@@ -334,7 +334,7 @@ void UMillicastSubscriberComponent::OnMessage(const FString& Msg)
 
 			EventBroadcaster[eventName](ResponseJson);
 		}
-		else 
+		else
 		{
 			UE_LOG(LogMillicastPlayer, Warning, TEXT("WebSocket response type not handled (yet?) %s"), *Type);
 		}
