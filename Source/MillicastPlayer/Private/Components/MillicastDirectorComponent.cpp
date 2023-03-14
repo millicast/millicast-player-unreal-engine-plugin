@@ -7,6 +7,7 @@
 #include "Dom/JsonValue.h"
 #include "Dom/JsonObject.h"
 #include "Serialization/JsonReader.h"
+#include "Serialization/JsonSerializer.h"
 #include "Serialization/JsonWriter.h"
 
 #include "Util.h"
@@ -154,11 +155,11 @@ bool UMillicastDirectorComponent::Authenticate()
 	  .BindLambda([this](FHttpRequestPtr Request,
 				  FHttpResponsePtr Response,
 				  bool bConnectedSuccessfully) {
-		if(bConnectedSuccessfully && Response->GetResponseCode() == HTTP_OK) 
+		if(bConnectedSuccessfully && Response->GetResponseCode() == HTTP_OK)
 		{
 			ParseDirectorResponse(Response);
 		}
-		else 
+		else
 		{
 			UE_LOG(LogMillicastPlayer, Error, TEXT("Director HTTP request failed %d %s"), Response->GetResponseCode(), *Response->GetContentType());
 			FString ErrorMsg = Response->GetContentAsString();

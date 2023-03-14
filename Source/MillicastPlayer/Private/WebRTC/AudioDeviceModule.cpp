@@ -7,7 +7,7 @@ namespace MillicastPlayer
 {
 
 const char FAudioDeviceModule::kTimerQueueName[] = "FAudioDeviceModuleTimer";
-TAtomic<bool> FAudioDeviceModule::ReadDataAvailable = false;
+TAtomic<bool> FAudioDeviceModule::ReadDataAvailable{false};
 
 FAudioDeviceModule::FAudioDeviceModule(webrtc::TaskQueueFactory* queue_factory) noexcept
 	: AudioCallback(nullptr),
