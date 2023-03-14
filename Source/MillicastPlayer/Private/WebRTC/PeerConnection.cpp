@@ -13,7 +13,7 @@
 namespace MillicastPlayer
 {
 
-TAtomic<int> FWebRTCPeerConnection::RefCounter = 0;
+TAtomic<int> FWebRTCPeerConnection::RefCounter{0};
 
 void FWebRTCPeerConnection::CreatePeerConnectionFactory()
 {
