@@ -3,6 +3,7 @@
 #include <api/video/i420_buffer.h>
 #include <common_video/libyuv/include/webrtc_libyuv.h>
 
+#include "Async/Async.h"
 #include "MillicastPlayerPrivate.h"
 #include "PeerConnection.h"
 #include "WebRTC/AudioDeviceModule.h"
@@ -15,7 +16,7 @@ void UMillicastVideoTrackImpl::OnFrame(const webrtc::VideoFrame& VideoFrame)
 {
 	AsyncTask(ENamedThreads::GameThread, [WEAK_CAPTURE, VideoFrame]() {
 		constexpr auto WEBRTC_PIXEL_FORMAT = webrtc::VideoType::kARGB;
-		
+
 		if (!WeakThis.IsValid())
 		{
 			return;
@@ -146,7 +147,7 @@ void UMillicastVideoTrackImpl::RemoveConsumer(TScriptInterface<IMillicastVideoCo
 
 /** Audio */
 
-void UMillicastAudioTrackImpl::OnData(const void* AudioData, int BitPerSample, int SampleRate, size_t NumberOfChannels, 
+void UMillicastAudioTrackImpl::OnData(const void* AudioData, int BitPerSample, int SampleRate, size_t NumberOfChannels,
 	size_t NumberOfFrames)
 {
 	FScopeLock Lock(&CriticalSection);

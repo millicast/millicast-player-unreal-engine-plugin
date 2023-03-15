@@ -6,6 +6,7 @@
 #include <api/video/i420_buffer.h>
 #include <common_video/libyuv/include/webrtc_libyuv.h>
 
+#include "Async/Async.h"
 #include <RenderTargetPool.h>
 
 UMillicastMediaSource::UMillicastMediaSource()
@@ -58,7 +59,7 @@ FString UMillicastMediaSource::GetMediaOption(const FName& Key, const FString& D
 
 bool UMillicastMediaSource::HasMediaOption(const FName& Key) const
 {
-	if (Key == MillicastPlayerOption::StreamName || 
+	if (Key == MillicastPlayerOption::StreamName ||
 		Key == MillicastPlayerOption::AccountId ||
 		Key == MillicastPlayerOption::SubscribeToken)
 	{
@@ -79,7 +80,7 @@ FString UMillicastMediaSource::GetUrl() const
 
 bool UMillicastMediaSource::Validate() const
 {
-	return !StreamName.IsEmpty() && !AccountId.IsEmpty() && 
+	return !StreamName.IsEmpty() && !AccountId.IsEmpty() &&
 		(!bUseSubscribeToken || (bUseSubscribeToken && !SubscribeToken.IsEmpty()));
 }
 

@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "GameFramework/Actor.h"
 #include "UObject/ObjectMacros.h"
 #include "IMillicastExternalAudioConsumer.h"
 
@@ -18,7 +19,7 @@ UCLASS(BlueprintType, Blueprintable, Category = "Millicast Player", META = (Disp
 class MILLICASTPLAYER_API AMillicastAudioActor : public AActor, public IMillicastExternalAudioConsumer
 {
     GENERATED_BODY()
-        
+
 public:
     AMillicastAudioActor(const FObjectInitializer& ObjectInitializer);
     ~AMillicastAudioActor() noexcept;
@@ -30,7 +31,7 @@ public:
     // IMillicastExternalAudioConsumer
     virtual FMillicastAudioParameters GetAudioParameters() const override;
     void UpdateAudioParameters(FMillicastAudioParameters Parameters) noexcept override;
-    
+
     /**
     * Initialize this actor and create the SoundWaveProcedural object.
     */

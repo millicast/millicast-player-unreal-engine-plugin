@@ -1,6 +1,7 @@
 // Copyright Millciast 2022. All Rights Reserved.
 
 #include "MillicastTexture2DPlayer.h"
+#include "Async/Async.h"
 
 #include <RenderTargetPool.h>
 
