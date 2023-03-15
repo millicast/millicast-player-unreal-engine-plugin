@@ -62,7 +62,7 @@ public:
 	FMillicastDirectorComponentAuthenticationFailure OnAuthenticationFailure;
 
 private:
-	void ParseIceServers(const TArray<TSharedPtr<FJsonValue>>& IceServersField,
+	void ParseIceServers(const TArray<TSharedPtr<class FJsonValue>>& IceServersField,
 		FMillicastSignalingData& SignalingData);
 	void ParseDirectorResponse(TSharedPtr<IHttpResponse, ESPMode::ThreadSafe> Response);
 };

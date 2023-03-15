@@ -5,6 +5,7 @@
 
 #include <string>
 
+#include "Async/Async.h"
 #include "Dom/JsonObject.h"
 
 #include "Serialization/JsonReader.h"

@@ -6,6 +6,7 @@
 #include "StreamMediaSource.h"
 #include "MillicastMediaTexture2D.h"
 #include "MillicastSignalingData.h"
+#include "RendererInterface.h"
 
 #include "api/media_stream_interface.h"
 

@@ -1,6 +1,7 @@
 // Copyright CoSMoSoftware 2021. All Rights Reserved.
 
 #include "AudioDeviceModule.h"
+#include "Async/Async.h"
 #include "MillicastPlayerPrivate.h"
 
 namespace MillicastPlayer
