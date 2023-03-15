@@ -159,11 +159,16 @@ bool UMillicastDirectorComponent::Authenticate()
 		{
 			ParseDirectorResponse(Response);
 		}
-		else
+		else if (Response)
 		{
 			UE_LOG(LogMillicastPlayer, Error, TEXT("Director HTTP request failed %d %s"), Response->GetResponseCode(), *Response->GetContentType());
 			FString ErrorMsg = Response->GetContentAsString();
 			OnAuthenticationFailure.Broadcast(Response->GetResponseCode(), ErrorMsg);
+		}
+		else
+		{
+		    UE_LOG(LogMillicastPlayer, Error, TEXT("Director HTTP request failed without a response"));
+			OnAuthenticationFailure.Broadcast(-1, TEXT("No response"));
 		}
 	});
 
