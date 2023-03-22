@@ -2,21 +2,17 @@
 
 #include "MillicastSubscriberComponent.h"
 #include "MillicastPlayerPrivate.h"
-
-#include <string>
-
+#include "Util.h"
+#include "IWebSocket.h"
+#include "WebSocketsModule.h"
+#include "Async/Async.h"
 #include "Dom/JsonValue.h"
 #include "Dom/JsonObject.h"
-
 #include "Serialization/JsonReader.h"
 #include "Serialization/JsonWriter.h"
-
-#include "WebSocketsModule.h"
-#include "IWebSocket.h"
 #include "WebRTC/PeerConnection.h"
 #include "WebRTC/MillicastMediaTracks.h"
-
-#include "Util.h"
+#include <string>
 
 #define WEAK_CAPTURE WeakThis = TWeakObjectPtr<UMillicastSubscriberComponent>(this)
 
@@ -98,6 +94,12 @@ bool UMillicastSubscriberComponent::Subscribe(const FMillicastSignalingData& InS
 		return false;
 	}
 
+	if( !IsValid(MillicastMediaSource) )
+	{
+		UE_LOG(LogMillicastPlayer, Error, TEXT("Trying to subscribe with invalid media source."));
+		return false;
+	}
+
 	State = EMillicastSubscriberState::Connecting;
 
 	if (InExternalAudioConsumer)
@@ -112,9 +114,7 @@ bool UMillicastSubscriberComponent::Subscribe(const FMillicastSignalingData& InS
 		PeerConnectionConfig.servers.push_back(s);
 	}
 
-	return IsValid(MillicastMediaSource) &&
-	    MillicastMediaSource->Initialize(InSignalingData) &&
-	    StartWebSocketConnection(InSignalingData.WsUrl, InSignalingData.Jwt);
+	return StartWebSocketConnection(InSignalingData.WsUrl, InSignalingData.Jwt);
 }
 
 /**
@@ -390,8 +390,11 @@ bool UMillicastSubscriberComponent::SubscribeToMillicast()
 	};
 
 	PeerConnection->CreateOffer();
-	PeerConnection->EnableStats(true);
 
+#if ENGINE_MAJOR_VERSION > 5 && ENGINE_MINOR_VERSION > 0
+	PeerConnection->EnableStats(true);
+#endif
+	
 	return true;
 }
 

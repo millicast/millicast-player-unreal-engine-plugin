@@ -2,6 +2,8 @@
 
 #pragma once
 
+#if ENGINE_MAJOR_VERSION > 5 && ENGINE_MINOR_VERSION > 0
+
 #include "Tickable.h"
 #include "api/peer_connection_interface.h"
 
@@ -118,3 +120,5 @@ namespace Millicast::Player
 	};
 
 }
+
+#endif

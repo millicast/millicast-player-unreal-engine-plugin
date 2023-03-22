@@ -18,7 +18,14 @@ UMillicastMediaTexture2DFactory::UMillicastMediaTexture2DFactory(const FObjectIn
 
 FText UMillicastMediaTexture2DFactory::GetDisplayName() const { return LOCTEXT("MillicastMediaTexture2DFactoryDisplayName", "Millicast Media Texture2D"); }
 
-uint32 UMillicastMediaTexture2DFactory::GetMenuCategories() const { return EAssetTypeCategories::Textures; }
+uint32 UMillicastMediaTexture2DFactory::GetMenuCategories() const
+{
+#if ENGINE_MAJOR_VERSION >= 5
+	return EAssetTypeCategories::Textures;
+#else
+	return EAssetTypeCategories::MaterialsAndTextures;
+#endif
+}
 
 UObject* UMillicastMediaTexture2DFactory::FactoryCreateNew(UClass* InClass, UObject* InParent, FName InName, EObjectFlags Flags, UObject* Context, FFeedbackContext* Warn)
 {

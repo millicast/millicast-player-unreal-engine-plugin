@@ -7,19 +7,12 @@
 #include "Dom/JsonValue.h"
 #include "Dom/JsonObject.h"
 #include "Serialization/JsonReader.h"
+#include "Serialization/JsonSerializer.h"
 #include "Serialization/JsonWriter.h"
 
 #include "Util.h"
 
 #include "MillicastPlayerPrivate.h"
-
-constexpr auto HTTP_OK = 200;
-
-UMillicastDirectorComponent::UMillicastDirectorComponent(const FObjectInitializer& ObjectInitializer)
-	: Super(ObjectInitializer)
-{
-
-}
 
 void UMillicastDirectorComponent::BeginPlay()
 {
@@ -55,8 +48,7 @@ void UMillicastDirectorComponent::SetMediaSource(UMillicastMediaSource* InMediaS
 	}
 }
 
-void UMillicastDirectorComponent::ParseIceServers(const TArray<TSharedPtr<FJsonValue>>& IceServersField,
-	FMillicastSignalingData& SignalingData)
+void UMillicastDirectorComponent::ParseIceServers(const TArray<TSharedPtr<FJsonValue>>& IceServersField, FMillicastSignalingData& SignalingData)
 {
 	using namespace Millicast::Player;
 
@@ -64,39 +56,42 @@ void UMillicastDirectorComponent::ParseIceServers(const TArray<TSharedPtr<FJsonV
 	for (auto& elt : IceServersField)
 	{
 		const TSharedPtr<FJsonObject>* IceServerJson;
-		bool ok = elt->TryGetObject(IceServerJson);
-
-		if (!ok)
+		const bool Success = elt->TryGetObject(IceServerJson);
+		if (!Success)
 		{
 			UE_LOG(LogMillicastPlayer, Warning, TEXT("Could not read ice server json"));
 			continue;
 		}
 
-		TArray<FString> iceServerUrls;
-		FString iceServerPassword, iceServerUsername;
-
-		bool hasUrls = (*IceServerJson)->TryGetStringArrayField("urls", iceServerUrls);
-		bool hasUsername = (*IceServerJson)->TryGetStringField("username", iceServerUsername);
-		bool hasPassword = (*IceServerJson)->TryGetStringField("credential", iceServerPassword);
-
-		webrtc::PeerConnectionInterface::IceServer iceServer;
-		if (hasUrls)
+		webrtc::PeerConnectionInterface::IceServer IceServer;
 		{
-			for (auto& url : iceServerUrls)
+			TArray<FString> IceServerUrls;
+			if ((*IceServerJson)->TryGetStringArrayField("urls", IceServerUrls))
 			{
-				iceServer.urls.push_back(to_string(url));
+				for (auto& Url : IceServerUrls)
+				{
+					IceServer.urls.push_back(to_string(Url));
+				}
 			}
 		}
-		if (hasUsername)
+
 		{
-			iceServer.username = to_string(iceServerUsername);
-		}
-		if (hasPassword)
-		{
-			iceServer.password = to_string(iceServerPassword);
+			FString IceServerUsername;
+			if ((*IceServerJson)->TryGetStringField("username", IceServerUsername))
+			{
+				IceServer.username = to_string(IceServerUsername);
+			}
 		}
 
-		SignalingData.IceServers.Emplace(MoveTemp(iceServer));
+		{
+			FString IceServerPassword;
+			if((*IceServerJson)->TryGetStringField("credential", IceServerPassword))
+			{
+				IceServer.password = to_string(IceServerPassword);
+			}
+		}
+		
+		SignalingData.IceServers.Emplace(MoveTemp(IceServer));
 	}
 }
 
@@ -169,11 +164,18 @@ bool UMillicastDirectorComponent::Authenticate()
 	PostHttpRequest->OnProcessRequestComplete()
 		.BindLambda([this](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bConnectedSuccessfully)
 	{
-		if (!bConnectedSuccessfully || Response->GetResponseCode() != HTTP_OK)
+		if(!Response)
+		{
+			UE_LOG(LogMillicastPlayer, Error, TEXT("Director HTTP request failed without a response"));
+			OnAuthenticationFailure.Broadcast(-1, TEXT("No response"));
+			return;
+		}
+			
+		if (!bConnectedSuccessfully || Response->GetResponseCode() != 200 /*HTTP_OK*/)
 		{
 			UE_LOG(LogMillicastPlayer, Error, TEXT("Director HTTP request failed [code] %d [response] %s \n [body] %s"), Response->GetResponseCode(), *Response->GetContentType(), *Response->GetContentAsString());
 
-			FString ErrorMsg = Response->GetContentAsString();
+			const FString& ErrorMsg = Response->GetContentAsString();
 			OnAuthenticationFailure.Broadcast(Response->GetResponseCode(), ErrorMsg);
 			return;
 		}

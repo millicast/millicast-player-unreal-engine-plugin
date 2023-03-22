@@ -43,7 +43,9 @@ namespace Millicast::Player
 		TUniquePtr<FSetSessionDescriptionObserver>    LocalSessionDescription;
 		TUniquePtr<FSetSessionDescriptionObserver>    RemoteSessionDescription;
 
+#if ENGINE_MAJOR_VERSION > 5 && ENGINE_MINOR_VERSION > 0
 		TUniquePtr<FPlayerStatsCollector>             RTCStatsCollector;
+#endif
 
 		template<typename Callback>
 		webrtc::SessionDescriptionInterface* CreateDescription(const std::string&,
@@ -66,8 +68,7 @@ namespace Millicast::Player
 		std::function<void(const std::string& mid, rtc::scoped_refptr<webrtc::MediaStreamTrackInterface>)> OnAudioTrack = nullptr;
 
 		webrtc::PeerConnectionInterface::RTCOfferAnswerOptions OaOptions;
-
-		FWebRTCPeerConnection() noexcept;
+		
 		~FWebRTCPeerConnection() noexcept;
 		void Init(const FRTCConfig& Config, TWeakInterfacePtr<IMillicastExternalAudioConsumer> ExternalAudioConsumer);
 
@@ -101,8 +102,10 @@ namespace Millicast::Player
 		void OnIceCandidate(const webrtc::IceCandidateInterface* candidate) override;
 		void OnIceConnectionReceivingChange(bool receiving) override;
 
+#if ENGINE_MAJOR_VERSION > 5 && ENGINE_MINOR_VERSION > 0
 		void EnableStats(bool Enable);
 		void PollStats();
+#endif
 
 		webrtc::PeerConnectionInterface* operator->()
 		{

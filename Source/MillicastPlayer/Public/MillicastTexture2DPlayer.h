@@ -2,21 +2,18 @@
 
 #pragma once
 
-
-#include <Engine/DataAsset.h>
-
 #include "IMillicastVideoConsumer.h"
 #include "MillicastMediaTexture2D.h"
-
+#include "RendererInterface.h"
+#include "Engine/DataAsset.h"
 #include "MillicastTexture2DPlayer.generated.h"
 
-UCLASS(BlueprintType, editinlinenew, hideCategories = (Object),
-    META = (DisplayName = "Millicast Texture2D Player"))
+UCLASS(BlueprintType, editinlinenew, hideCategories = (Object), META = (DisplayName = "Millicast Texture2D Player"))
 class MILLICASTPLAYER_API UMillicastTexture2DPlayer : public UDataAsset , public IMillicastVideoConsumer
 {
-    GENERATED_UCLASS_BODY()
+    GENERATED_BODY()
+	
 public:
-
 	/**
 		Provides an Millicast Video Texture object to render videos frames.
 	*/
@@ -30,13 +27,8 @@ public:
 	UFUNCTION(BlueprintSetter)
 	void ChangeVideoTexture(UMillicastMediaTexture2D* InVideoTexture = nullptr);
 
-public:
-	
-	void OnFrame(TArray<uint8>& VideoData, int Width, int Height) override;
-
-public:
-
 	void BeginDestroy() override;
+	void OnFrame(TArray<uint8>& VideoData, int Width, int Height) override;
 
 private:
 	FCriticalSection RenderSyncContext;
