@@ -13,9 +13,12 @@
 
 class IWebSocket;
 
-namespace Millicast::Player
+namespace Millicast
 {
-	class FWebRTCPeerConnection;
+	namespace Player
+	{
+		class FWebRTCPeerConnection;
+	}
 }
 
 USTRUCT(BlueprintType, Blueprintable, Category = "MillicastPlayer")
@@ -241,5 +244,5 @@ private:
 	UPROPERTY()
 	TArray<UMillicastVideoTrack*> VideoTracks;
 
-	TAtomic<EMillicastSubscriberState> State = EMillicastSubscriberState::Disconnected;
+	TAtomic<EMillicastSubscriberState> State{EMillicastSubscriberState::Disconnected};
 };
