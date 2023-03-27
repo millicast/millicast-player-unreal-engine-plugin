@@ -2,16 +2,14 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
+#include "GameFramework/Actor.h"
 #include "UObject/ObjectMacros.h"
 #include "IMillicastExternalAudioConsumer.h"
-
 #include "StreamMediaSource.h"
+#include "MillicastAudioActor.generated.h"
 
 class USoundWaveProcedural;
 class UAudioComponent;
-
-#include "MillicastAudioActor.generated.h"
 
 UCLASS(BlueprintType, Blueprintable, Category = "Millicast Player", META = (DisplayName = "Millicast Audio Actor"),
     hidecategories = Object)
@@ -21,12 +19,10 @@ class MILLICASTPLAYER_API AMillicastAudioActor : public AActor, public IMillicas
         
 public:
     AMillicastAudioActor(const FObjectInitializer& ObjectInitializer);
-    ~AMillicastAudioActor() noexcept;
 
     UPROPERTY(BlueprintReadWrite, EditAnywhere, AssetRegistrySearchable, Category = "Properties")
     UAudioComponent* AudioComponent;
 
-public:
     // IMillicastExternalAudioConsumer
     virtual FMillicastAudioParameters GetAudioParameters() const override;
     void UpdateAudioParameters(FMillicastAudioParameters Parameters) noexcept override;

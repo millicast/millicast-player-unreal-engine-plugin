@@ -2,6 +2,7 @@
 
 #include "AudioDeviceModule.h"
 #include "MillicastPlayerPrivate.h"
+#include "Async/Async.h"
 
 namespace Millicast::Player
 {

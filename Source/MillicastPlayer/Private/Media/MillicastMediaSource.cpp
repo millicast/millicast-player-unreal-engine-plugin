@@ -2,28 +2,18 @@
 
 #include "MillicastMediaSource.h"
 #include "MillicastPlayerPrivate.h"
-
-#include <api/video/i420_buffer.h>
-#include <common_video/libyuv/include/webrtc_libyuv.h>
-
-#include <RenderTargetPool.h>
+#include "Async/Async.h"
 
 UMillicastMediaSource::UMillicastMediaSource()
 {
 	StreamUrl = "https://director.millicast.com/api/director/subscribe";
 }
 
-bool UMillicastMediaSource::Initialize(const FMillicastSignalingData& /*data*/)
-{
-	UE_LOG(LogMillicastPlayer, Verbose, TEXT("%S"), __FUNCTION__);
-	return true;
-}
-
 void UMillicastMediaSource::BeginDestroy()
 {
 	UE_LOG(LogMillicastPlayer, Verbose, TEXT("%S"), __FUNCTION__);
 
-	AsyncTask(ENamedThreads::ActualRenderingThread, [this]() {
+	AsyncTask(ENamedThreads::ActualRenderingThread, [this](){
 		FScopeLock Lock(&RenderSyncContext);
 		RenderTarget = nullptr;
 	});
@@ -31,24 +21,23 @@ void UMillicastMediaSource::BeginDestroy()
 	Super::BeginDestroy();
 }
 
-/*
- * IMediaOptions interface
- */
-
 FString UMillicastMediaSource::GetMediaOption(const FName& Key, const FString& DefaultValue) const
 {
 	if (Key == MillicastPlayerOption::StreamName)
 	{
 		return StreamName;
 	}
+
 	if (Key == MillicastPlayerOption::AccountId)
 	{
 		return AccountId;
 	}
+
 	if (Key == MillicastPlayerOption::SubscribeToken)
 	{
 		return SubscribeToken;
 	}
+	
 	return Super::GetMediaOption(Key, DefaultValue);
 }
 
@@ -64,19 +53,14 @@ bool UMillicastMediaSource::HasMediaOption(const FName& Key) const
 	return Super::HasMediaOption(Key);
 }
 
-/*
- * UMediaSource interface
- */
-
-FString UMillicastMediaSource::GetUrl() const
-{
-	return StreamUrl;
-}
-
 bool UMillicastMediaSource::Validate() const
 {
-	return !StreamName.IsEmpty() && !AccountId.IsEmpty() && 
-		(!bUseSubscribeToken || (bUseSubscribeToken && !SubscribeToken.IsEmpty()));
+	if( StreamName.IsEmpty() || AccountId.IsEmpty() )
+	{
+		return false;
+	}
+
+	return (!bUseSubscribeToken || !SubscribeToken.IsEmpty());
 }
 
 #if WITH_EDITOR
@@ -96,10 +80,5 @@ bool UMillicastMediaSource::CanEditChange(const FProperty* InProperty) const
 	}
 
 	return true;
-}
-
-void UMillicastMediaSource::PostEditChangeChainProperty(struct FPropertyChangedChainEvent& InPropertyChangedEvent)
-{
-	Super::PostEditChangeChainProperty(InPropertyChangedEvent);
 }
 #endif //WITH_EDITOR

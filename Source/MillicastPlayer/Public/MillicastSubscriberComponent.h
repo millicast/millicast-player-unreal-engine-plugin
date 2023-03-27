@@ -2,23 +2,23 @@
 
 #pragma once
 
-#include <CoreMinimal.h>
-
-#include <Components/ActorComponent.h>
+#include "Components/ActorComponent.h"
 #include "IMillicastExternalAudioConsumer.h"
+#include "IMillicastMediaTrack.h"
 #include "MillicastSignalingData.h"
 #include "MillicastMediaSource.h"
 #include "UObject/WeakInterfacePtr.h"
-
-#include "IMillicastMediaTrack.h"
 
 #include "MillicastSubscriberComponent.generated.h"
 
 class IWebSocket;
 
-namespace Millicast::Player
+namespace Millicast
 {
-	class FWebRTCPeerConnection;
+	namespace Player
+	{
+		class FWebRTCPeerConnection;
+	}
 }
 
 USTRUCT(BlueprintType, Blueprintable, Category = "MillicastPlayer")
@@ -244,5 +244,5 @@ private:
 	UPROPERTY()
 	TArray<UMillicastVideoTrack*> VideoTracks;
 
-	TAtomic<EMillicastSubscriberState> State = EMillicastSubscriberState::Disconnected;
+	TAtomic<EMillicastSubscriberState> State{EMillicastSubscriberState::Disconnected};
 };

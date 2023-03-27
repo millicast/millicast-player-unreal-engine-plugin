@@ -11,7 +11,11 @@ namespace UnrealBuildTool.Rules
 		public MillicastPlayer(ReadOnlyTargetRules Target) : base(Target)
 		{
 			PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
-
+			
+			if (ReadOnlyBuildVersion.Current.MajorVersion < 5)
+			{
+				CppStandard = CppStandardVersion.Cpp17;
+			}
 
 			DynamicallyLoadedModuleNames.AddRange(
 				new string[] {

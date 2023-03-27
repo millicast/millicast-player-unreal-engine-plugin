@@ -1,11 +1,10 @@
 // Copyright CoSMoSoftware 2021. All Rights Reserved.
 
 #include "MillicastMediaTextureResource.h"
-
-#include <RHI.h>
-#include <DeviceProfiles/DeviceProfile.h>
-#include <DeviceProfiles/DeviceProfileManager.h>
 #include "MillicastMediaTexture2D.h"
+#include "RHI.h"
+#include "DeviceProfiles/DeviceProfile.h"
+#include "DeviceProfiles/DeviceProfileManager.h"
 
 FMillicastMediaTextureResource::FMillicastMediaTextureResource(UMillicastMediaTexture2D* Owner)
 {

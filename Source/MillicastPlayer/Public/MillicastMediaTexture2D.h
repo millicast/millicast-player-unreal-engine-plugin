@@ -2,10 +2,11 @@
 
 #pragma once
 
-#include <CoreMinimal.h>
-#include <Engine/Texture.h>
+#include "Engine/Texture.h"
 
 #include "MillicastMediaTexture2D.generated.h"
+
+class FMillicastMediaTextureResource;
 
 /**
 	A Texture Object to render a webrtc frame
@@ -20,12 +21,13 @@ class MILLICASTPLAYER_API UMillicastMediaTexture2D : public UTexture
 public:
 	virtual float GetSurfaceHeight() const override;
 	virtual float GetSurfaceWidth() const override;
+
+#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION > 0
 	virtual float GetSurfaceDepth() const override;
-
 	ETextureClass GetTextureClass() const override;
-
 	virtual uint32 GetSurfaceArraySize() const override { return 0; }
-
+#endif
+	
 	virtual void GetResourceSizeEx(FResourceSizeEx& CumulativeResourceSize) override;
 	virtual EMaterialValueType GetMaterialType() const override;
 
@@ -33,4 +35,5 @@ public:
 
 private:
 	virtual class FTextureResource* CreateResource() override;
+	void CreateRenderableTexture(FMillicastMediaTextureResource* TextureResource);
 };
