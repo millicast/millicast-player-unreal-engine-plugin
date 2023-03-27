@@ -20,9 +20,6 @@ AMillicastAudioActor::AMillicastAudioActor(const FObjectInitializer& ObjectIniti
 	AudioComponent->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
 }
 
-AMillicastAudioActor::~AMillicastAudioActor() noexcept
-{}
-
 FMillicastAudioParameters AMillicastAudioActor::GetAudioParameters() const
 {
 	return AudioParameters;

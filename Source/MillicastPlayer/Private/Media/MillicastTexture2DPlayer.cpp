@@ -1,18 +1,13 @@
 // Copyright Millciast 2022. All Rights Reserved.
 
 #include "MillicastTexture2DPlayer.h"
+#include "MillicastMediaUtil.h"
 #include "MillicastPlayerPrivate.h"
-
-#include <RenderTargetPool.h>
-
-UMillicastTexture2DPlayer::UMillicastTexture2DPlayer(const FObjectInitializer& ObjectInitializer)
-	: Super(ObjectInitializer)
-{}
+#include "RenderTargetPool.h"
+#include "Async/Async.h"
 
 void UMillicastTexture2DPlayer::OnFrame(TArray<uint8>& VideoData, int Width, int Height)
 {
-	constexpr auto TEXTURE_PIXEL_FORMAT = PF_B8G8R8A8;
-
 	AsyncTask(ENamedThreads::ActualRenderingThread, [=]() {
 		FScopeLock Lock(&RenderSyncContext);
 
@@ -24,19 +19,13 @@ void UMillicastTexture2DPlayer::OnFrame(TArray<uint8>& VideoData, int Width, int
 		{
 			// Create the RenderTarget descriptor
 			RenderTargetDescriptor = FPooledRenderTargetDesc::Create2DDesc(FrameSize,
-				TEXTURE_PIXEL_FORMAT,
+				PF_B8G8R8A8,
 				FClearValueBinding::None,
 				TexCreate_None,
 				TexCreate_RenderTargetable,
 				false);
 
-			// Update the shader resource for the 'SourceTexture'
-			FRHITextureCreateDesc CreateDesc = FRHITextureCreateDesc::Create2D(TEXT("MillicastTexture2d"),
-				FrameSize.X, FrameSize.Y, EPixelFormat::PF_B8G8R8A8);
-
-			CreateDesc.SetFlags(TexCreate_SRGB | TexCreate_Dynamic);
-
-			SourceTexture = RHICreateTexture(CreateDesc);
+			NMillicastMedia::CreateTexture( SourceTexture, FrameSize.X, FrameSize.Y);
 
 			// Find a free target-able texture from the render pool
 			GRenderTargetPool.FindFreeElement(RHICmdList,
@@ -52,7 +41,7 @@ void UMillicastTexture2DPlayer::OnFrame(TArray<uint8>& VideoData, int Width, int
 		RHIUpdateTexture2D(SourceTexture, 0, Region, Width * 4, VideoData.GetData());
 
 		VideoTexture->UpdateTextureReference(RHICmdList, (FTexture2DRHIRef&)SourceTexture);
-		});
+	});
 }
 
 void UMillicastTexture2DPlayer::BeginDestroy()
@@ -60,7 +49,7 @@ void UMillicastTexture2DPlayer::BeginDestroy()
 	AsyncTask(ENamedThreads::ActualRenderingThread, [this]() {
 		FScopeLock Lock(&RenderSyncContext);
 		RenderTarget = nullptr;
-		});
+	});
 
 	Super::BeginDestroy();
 }

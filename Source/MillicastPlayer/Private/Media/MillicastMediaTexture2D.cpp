@@ -2,10 +2,8 @@
 
 #include "MillicastMediaTexture2D.h"
 #include "MillicastMediaTextureResource.h"
+#include "MillicastMediaUtil.h"
 #include "MillicastPlayerPrivate.h"
-
-constexpr int32 DEFAULT_WIDTH = 1920;
-constexpr int32 DEFAULT_HEIGHT = 1080;
 
 UMillicastMediaTexture2D::UMillicastMediaTexture2D(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
@@ -14,69 +12,63 @@ UMillicastMediaTexture2D::UMillicastMediaTexture2D(const FObjectInitializer& Obj
 
 void UMillicastMediaTexture2D::UpdateTextureReference(FRHICommandList& RHICmdList, FTexture2DRHIRef Reference)
 {
-	auto resource = GetResource();
-	if (resource != nullptr)
+	auto* CurrentResource = GetResource();
+	if (!CurrentResource)
 	{
-		if (Reference.IsValid() && resource->TextureRHI != Reference)
-		{
-			resource->TextureRHI = (FTexture2DRHIRef&)Reference;
-			RHIUpdateTextureReference(TextureReference.TextureReferenceRHI, resource->TextureRHI);
-		}
-		else if (!Reference.IsValid())
-		{
-			if (FMillicastMediaTextureResource* TextureResource = static_cast<FMillicastMediaTextureResource*>(resource))
-			{
-				TRefCountPtr<FRHITexture2D> RenderableTexture;
-
-				FRHITextureCreateDesc CreateDesc = FRHITextureCreateDesc::Create2D(TEXT("MillicastTexture2d"), 
-					DEFAULT_WIDTH, DEFAULT_HEIGHT, EPixelFormat::PF_B8G8R8A8);
-
-				CreateDesc.SetFlags(TexCreate_SRGB | TexCreate_Dynamic);
-
-				RenderableTexture = RHICreateTexture(CreateDesc);
-
-				TextureResource->TextureRHI = (FTextureRHIRef&)RenderableTexture;
-
-				ENQUEUE_RENDER_COMMAND(FMillicastMediaTexture2DUpdateTextureReference)
-				([this](FRHICommandListImmediate& RHICmdList) {
-					RHIUpdateTextureReference(TextureReference.TextureReferenceRHI, GetResource()->TextureRHI);
-				});
-
-				// Make sure _RenderThread is executed before continuing
-				FlushRenderingCommands();
-			}
-		}
+		return;
 	}
+
+	if (!Reference.IsValid())
+	{
+		CreateRenderableTexture(static_cast<FMillicastMediaTextureResource*>(CurrentResource));
+		return;
+	}
+
+	if( CurrentResource->TextureRHI != Reference)
+	{
+		CurrentResource->TextureRHI = (FTexture2DRHIRef&)Reference;
+		RHIUpdateTextureReference(TextureReference.TextureReferenceRHI, CurrentResource->TextureRHI);
+	}
+}
+
+void UMillicastMediaTexture2D::CreateRenderableTexture(FMillicastMediaTextureResource* TextureResource)
+{
+	if( !TextureResource )
+	{
+		return;
+	}
+
+	TRefCountPtr<FRHITexture2D> RenderableTexture;
+	NMillicastMedia::CreateTexture( RenderableTexture, 1920, 1080 );
+	TextureResource->TextureRHI = (FTextureRHIRef&)RenderableTexture;
+
+	ENQUEUE_RENDER_COMMAND(FMillicastMediaTexture2DUpdateTextureReference)
+	([this](FRHICommandListImmediate& RHICmdList)
+	{
+		RHIUpdateTextureReference(TextureReference.TextureReferenceRHI, GetResource()->TextureRHI);
+	});
+
+	// Make sure _RenderThread is executed before continuing
+	FlushRenderingCommands();
 }
 
 FTextureResource* UMillicastMediaTexture2D::CreateResource()
 {
 	UE_LOG(LogMillicastPlayer, Verbose, TEXT("%S"), __FUNCTION__);
-	auto resource = GetResource();
-	if (resource != nullptr)
+
 	{
-		delete resource;
-		SetResource(nullptr);
+		auto CurrentResource = GetResource();
+		if (CurrentResource)
+		{
+			delete CurrentResource;
+			SetResource(nullptr);
+		}
 	}
 
 	if (FMillicastMediaTextureResource* TextureResource = new FMillicastMediaTextureResource(this))
 	{
 		SetResource(TextureResource);
-
-		// Set the default video texture to reference nothing
-		TRefCountPtr<FRHITexture2D> RenderableTexture;
-		FRHITextureCreateDesc CreateDesc = FRHITextureCreateDesc::Create2D(TEXT("MillicastTexture2d"),
-			DEFAULT_WIDTH, DEFAULT_HEIGHT, EPixelFormat::PF_B8G8R8A8);
-
-		RenderableTexture = RHICreateTexture(CreateDesc);
-		CreateDesc.SetFlags(TexCreate_SRGB | TexCreate_Dynamic);
-
-		TextureResource->TextureRHI = (FTextureRHIRef&)RenderableTexture;
-
-		ENQUEUE_RENDER_COMMAND(FMillicastMediaTexture2DUpdateTextureReference)
-		([this](FRHICommandListImmediate& RHICmdList) {
-			RHIUpdateTextureReference(TextureReference.TextureReferenceRHI, GetResource()->TextureRHI);
-		});
+		CreateRenderableTexture(TextureResource);
 	}
 
 	return GetResource();
@@ -102,17 +94,19 @@ float UMillicastMediaTexture2D::GetSurfaceWidth() const
 	return GetResource() != nullptr ? GetResource()->GetSizeX() : 0.0f;
 }
 
+#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION > 0
 float UMillicastMediaTexture2D::GetSurfaceDepth() const
 {
 	return GetResource() != nullptr ? GetResource()->GetSizeZ() : 0.0f;
 }
 
-EMaterialValueType UMillicastMediaTexture2D::GetMaterialType() const
-{
-	return MCT_Texture2D;
-}
-
 ETextureClass UMillicastMediaTexture2D::GetTextureClass() const
 {
 	return ETextureClass::RenderTarget;
+}
+#endif
+
+EMaterialValueType UMillicastMediaTexture2D::GetMaterialType() const
+{
+	return MCT_Texture2D;
 }

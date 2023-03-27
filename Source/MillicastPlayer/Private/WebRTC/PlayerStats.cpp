@@ -1,3 +1,5 @@
+#if ENGINE_MAJOR_VERSION > 5 && ENGINE_MINOR_VERSION > 0
+
 #include "PlayerStats.h"
 #include "MillicastPlayerPrivate.h"
 
@@ -14,7 +16,6 @@ CSV_DEFINE_CATEGORY(Millicast_Player, false);
 
 namespace Millicast::Player
 {
-
 	FPlayerStatsCollector::FPlayerStatsCollector(FWebRTCPeerConnection* InPeerConnection)
 	{
 		FPlayerStats::Get().RegisterStatsCollector(this);
@@ -300,3 +301,5 @@ namespace Millicast::Player
 		StatsCollectors.Remove(Collector);
 	}
 }
+
+#endif

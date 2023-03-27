@@ -2,9 +2,7 @@
 
 #pragma once
 
-#include <CoreMinimal.h>
-
-#include <Components/ActorComponent.h>
+#include "Components/ActorComponent.h"
 #include "MillicastSignalingData.h"
 #include "MillicastMediaSource.h"
 
@@ -13,6 +11,7 @@
 DECLARE_DYNAMIC_MULTICAST_SPARSE_DELEGATE_OneParam(FMillicastDirectorComponentAuthenticated, UMillicastDirectorComponent, OnAuthenticated, const FMillicastSignalingData&, SignalingData);
 DECLARE_DYNAMIC_MULTICAST_SPARSE_DELEGATE_TwoParams(FMillicastDirectorComponentAuthenticationFailure, UMillicastDirectorComponent, OnAuthenticationFailure, int, Code, const FString&, Msg);
 
+class FJsonValue;
 class IHttpResponse;
 
 /**
@@ -24,7 +23,7 @@ UCLASS(BlueprintType, Blueprintable, Category = "MillicastPlayer",
 	   META = (DisplayName = "Millicast Director Component", BlueprintSpawnableComponent))
 class MILLICASTPLAYER_API UMillicastDirectorComponent : public UActorComponent
 {
-	GENERATED_UCLASS_BODY()
+	GENERATED_BODY()
 
 private:
 	/** The Millicast Media Source representing the configuration of the network source */
