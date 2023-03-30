@@ -6,8 +6,8 @@
 #include <pc/session_description.h>
 #include <api/jsep_session_description.h>
 
-#include "PlayerStats.h"
 #include "AudioDeviceModule.h"
+#include "PlayerStats.h"
 #include "MillicastAudioActor.h"
 #include "MillicastPlayerPrivate.h"
 
@@ -54,7 +54,7 @@ void FWebRTCPeerConnection::CreatePeerConnectionFactory()
 
 		++RefCounter; // increase ref count, todo: move this in the start of module
 		rtc::InitializeSSL();
-		rtc::InitRandom((int)rtc::Time());
+		rtc::InitRandom(static_cast<int>(rtc::Time()));
 	}
 	else
 	{
@@ -79,15 +79,17 @@ void FWebRTCPeerConnection::CreatePeerConnectionFactory()
 	UE_LOG(LogMillicastPlayer, Log, TEXT("Creating audio device module"));
 	TaskQueueFactory = webrtc::CreateDefaultTaskQueueFactory();
 	AudioDeviceModule = FAudioDeviceModule::Create(TaskQueueFactory.get());
-
+	
 	UE_LOG(LogMillicastPlayer, Log, TEXT("Creating Peerconnection factory. Count %d"), RefCounter.Load());
 	PeerConnectionFactory = webrtc::CreatePeerConnectionFactory(
-		NetworkingThread.Get(), WorkingThread.Get(), SignalingThread.Get(), AudioDeviceModule,
+		NetworkingThread.Get(), WorkingThread.Get(), SignalingThread.Get(),
+		AudioDeviceModule,
 		webrtc::CreateBuiltinAudioEncoderFactory(),
 		webrtc::CreateBuiltinAudioDecoderFactory(),
 		webrtc::CreateBuiltinVideoEncoderFactory(),
 		webrtc::CreateBuiltinVideoDecoderFactory(),
-		nullptr, nullptr
+		nullptr,
+		nullptr
 	).release();
 
 	// Check
@@ -113,11 +115,11 @@ FWebRTCPeerConnection::~FWebRTCPeerConnection() noexcept
 		AudioDeviceModule->StopPlayout();
 		AudioDeviceModule->Terminate();
 	});
-
+	
 	UE_LOG(LogMillicastPlayer, Verbose, TEXT("Destroy peerconnectino factory, count %d"), RefCounter.Load());
 	PeerConnectionFactory = nullptr;
 	AudioDeviceModule = nullptr;
-
+	
 	UE_LOG(LogMillicastPlayer, Verbose, TEXT("Stop webrtc thread"));
 	SignalingThread->Stop();
 	NetworkingThread->Stop();
@@ -145,27 +147,22 @@ webrtc::PeerConnectionInterface::RTCConfiguration FWebRTCPeerConnection::GetDefa
 	return Config;
 }
 
-FWebRTCPeerConnection* FWebRTCPeerConnection::Create(const FRTCConfig& Config, TWeakInterfacePtr<IMillicastExternalAudioConsumer> ExternalAudioConsumer)
+FWebRTCPeerConnection* FWebRTCPeerConnection::Create(const FRTCConfig& Config)
 {
 	UE_LOG(LogMillicastPlayer, Verbose, TEXT("%S"), __FUNCTION__);
 
 	FWebRTCPeerConnection* PeerConnectionInstance = new FWebRTCPeerConnection();
 
-	PeerConnectionInstance->Init(Config, ExternalAudioConsumer);
+	PeerConnectionInstance->Init(Config);
 
 	return PeerConnectionInstance;
 }
 
-void FWebRTCPeerConnection::Init(const FRTCConfig& Config, TWeakInterfacePtr<IMillicastExternalAudioConsumer> ExternalAudioConsumer)
+void FWebRTCPeerConnection::Init(const FRTCConfig& Config)
 {
 	UE_LOG(LogMillicastPlayer, Verbose, TEXT("%S"), __FUNCTION__);
 
 	CreatePeerConnectionFactory();
-
-	if (ExternalAudioConsumer.IsValid())
-	{
-		AudioDeviceModule->SetAudioConsumer(ExternalAudioConsumer);
-	}
 
 	webrtc::PeerConnectionDependencies Dependencies(this);
 	UE_LOG(LogMillicastPlayer, Verbose, TEXT("Creating peerconnection"));
