@@ -102,12 +102,6 @@ int32_t FAudioDeviceModule::StartPlayout()
 
 	AsyncTask(ENamedThreads::GameThread, [this]()
 	{
-		if (IMillicastExternalAudioConsumer* Consumer = AudioConsumer.Get())
-		{
-			AudioParameters = Consumer->GetAudioParameters();
-			Consumer->Initialize();
-		}
-
 		ReadDataAvailable = false;
 		AudioBuffer.SetNumUninitialized(AudioParameters.GetNumberSamples() * AudioParameters.GetNumberBytesPerSample());
 		TaskQueue.PostTask([this]() { Process(); });
@@ -124,15 +118,6 @@ int32_t FAudioDeviceModule::StopPlayout()
 	
 	bIsStarted = false;
 	ReadDataAvailable = false;
-
-	TaskQueue.PostTask([&]() {
-		AsyncTask(ENamedThreads::GameThread, [this]() {
-			if (IMillicastExternalAudioConsumer* Consumer = AudioConsumer.Get())
-			{
-				Consumer->Shutdown();
-			}
-		});
-	});
 
 	return 0;
 }
@@ -235,12 +220,6 @@ int32_t FAudioDeviceModule::PlayoutDelay(uint16_t* delay_ms) const
 	return 0;
 }
 
-void FAudioDeviceModule::SetAudioConsumer(TWeakInterfacePtr<IMillicastExternalAudioConsumer> Consumer)
-{
-	UE_LOG(LogMillicastPlayer, Verbose, TEXT("%S"), __FUNCTION__);
-	AudioConsumer = Consumer;
-}
-
 void FAudioDeviceModule::Process()
 {
 	if (!Playing())
@@ -272,20 +251,7 @@ void FAudioDeviceModule::PullAudioData()
 		out, &elapsed, &ntp);
 
 	// Before the stream actually started playing, elapsed == -1 and all samples are silent. Don't queue those
-	if (elapsed < 0)
-	{
-		ReadDataAvailable = false;
-		return;
-	}
-
-	ReadDataAvailable = true;
-	IMillicastExternalAudioConsumer* Consumer = AudioConsumer.Get();
-	if (!Consumer)
-	{
-		return;
-	}
-
-	Consumer->QueueAudioData(AudioBuffer.GetData(), out);
+	ReadDataAvailable = (elapsed >= 0);
 }
 
 }

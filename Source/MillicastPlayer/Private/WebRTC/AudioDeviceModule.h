@@ -2,11 +2,9 @@
 
 #pragma once
 
-#include "WebRTC/WebRTCInc.h"
-
-#include "IMillicastExternalAudioConsumer.h"
 #include "Sound/SoundWaveProcedural.h"
 #include "UObject/WeakInterfacePtr.h"
+#include "WebRTC/WebRTCInc.h"
 
 namespace Millicast::Player
 {
@@ -182,8 +180,6 @@ namespace Millicast::Player
 			return -1;
 		}
 
-		void SetAudioConsumer(TWeakInterfacePtr<IMillicastExternalAudioConsumer> Consumer);
-
 	private:
 		void PullAudioData();
 		void Process();
@@ -207,7 +203,6 @@ namespace Millicast::Player
 		// the main thread.
 		mutable FCriticalSection CriticalSection;
 
-		TWeakInterfacePtr<IMillicastExternalAudioConsumer> AudioConsumer;
 		FMillicastAudioParameters AudioParameters;
 
 		int64_t NextDebugLog = 0;

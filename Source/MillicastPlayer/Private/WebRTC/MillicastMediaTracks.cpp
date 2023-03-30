@@ -163,19 +163,20 @@ void UMillicastVideoTrackImpl::RemoveConsumer(TScriptInterface<IMillicastVideoCo
 
 void UMillicastAudioTrackImpl::OnData(const void* AudioData, int BitPerSample, int SampleRate, size_t NumberOfChannels, size_t NumberOfFrames)
 {
+	// TODO [RW] this is bad, we limit usage to one AudioDeviceModule. Needs to not be static anymore
 	if (!Millicast::Player::FAudioDeviceModule::ReadDataAvailable)
 	{
 		// Do not error log here, this is normal if no audio is being streamed
 		return;
 	}
-
+	
 	if (SampleRate != 48000)
 	{
 		UE_LOG(LogMillicastPlayer, Verbose, TEXT("Audio sample rate is not 48kHz"));
 		return;
 	}
 
-	Audio::TSampleBuffer<int16> Buffer((int16*)AudioData, NumberOfFrames, NumberOfChannels, SampleRate);
+	Audio::TSampleBuffer<int16> Buffer(static_cast<const int16*>(AudioData), NumberOfFrames, NumberOfChannels, SampleRate);
 
 	// Queue Audio Data for Consumers
 	{

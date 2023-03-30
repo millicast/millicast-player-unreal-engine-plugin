@@ -2,11 +2,8 @@
 
 #pragma once
 
-#include "IMillicastExternalAudioConsumer.h"
-#include "WebRTC/WebRTCInc.h"
-
 #include "SessionDescriptionObserver.h"
-#include "UObject/WeakInterfacePtr.h"
+#include "WebRTC/WebRTCInc.h"
 
 namespace webrtc 
 {
@@ -19,7 +16,7 @@ namespace Millicast::Player
 {
 	class FAudioDeviceModule;
 	class FPlayerStatsCollector;
-
+	
 /*
  * Small wrapper for the WebRTC peerconnection
  */
@@ -70,10 +67,10 @@ namespace Millicast::Player
 		webrtc::PeerConnectionInterface::RTCOfferAnswerOptions OaOptions;
 		
 		~FWebRTCPeerConnection() noexcept;
-		void Init(const FRTCConfig& Config, TWeakInterfacePtr<IMillicastExternalAudioConsumer> ExternalAudioConsumer);
+		void Init(const FRTCConfig& Config);
 
 		static FRTCConfig GetDefaultConfig();
-		static FWebRTCPeerConnection* Create(const FRTCConfig& config, TWeakInterfacePtr<IMillicastExternalAudioConsumer> ExternalAudioConsumer);
+		static FWebRTCPeerConnection* Create(const FRTCConfig& Config);
 
 		FSetSessionDescriptionObserver* GetLocalDescriptionObserver();
 		FSetSessionDescriptionObserver* GetRemoteDescriptionObserver();
@@ -112,5 +109,4 @@ namespace Millicast::Player
 			return PeerConnection.get();
 		}
 	};
-
 }

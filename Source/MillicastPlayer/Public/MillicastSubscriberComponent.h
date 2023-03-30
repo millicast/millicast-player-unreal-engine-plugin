@@ -3,7 +3,6 @@
 #pragma once
 
 #include "Components/ActorComponent.h"
-#include "IMillicastExternalAudioConsumer.h"
 #include "IMillicastMediaTrack.h"
 #include "MillicastSignalingData.h"
 #include "MillicastMediaSource.h"
@@ -138,7 +137,7 @@ public:
 		If nullptr is passed in, the default Unreal audio device is used.
 	*/
 	UFUNCTION(BlueprintCallable, Category = "MillicastPlayer", META = (DisplayName = "Subscribe"))
-	bool Subscribe(const FMillicastSignalingData& InConnectionInformation, TScriptInterface<IMillicastExternalAudioConsumer> ExternalAudioConsumer);
+	bool Subscribe(const FMillicastSignalingData& InConnectionInformation);
 
 	/**
 		Attempts to stop receiving video from the Millicast feed
@@ -235,7 +234,6 @@ private:
 	Millicast::Player::FWebRTCPeerConnection* PeerConnection = nullptr;
 	webrtc::PeerConnectionInterface::RTCConfiguration PeerConnectionConfig;
 
-	TWeakInterfacePtr<IMillicastExternalAudioConsumer> ExternalAudioConsumer;
 	FCriticalSection CriticalPcSection;
 
 	UPROPERTY()
