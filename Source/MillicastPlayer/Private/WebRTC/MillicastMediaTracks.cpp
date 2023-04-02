@@ -43,7 +43,7 @@ void UMillicastVideoTrackImpl::OnFrame(const webrtc::VideoFrame& VideoFrame)
 					continue;
 				}
 
-				UE_LOG(LogMillicastPlayer, Verbose, TEXT("Removing invalid consumer"));
+				UE_LOG(LogMillicastPlayer, Warning, TEXT("Removing invalid consumer"));
 				WeakThis->VideoConsumers.RemoveAtSwap(Index);
 			}
 		}
