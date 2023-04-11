@@ -14,33 +14,95 @@
 namespace
 {
 #if WEBRTC_VERSION < 96
-	// Missing in old version of libwebrtc
-	std::unique_ptr<webrtc::SessionDescriptionInterface> CloneSessionDescription(const webrtc::SessionDescriptionInterface* Source)
+// Missing in old version of libwebrtc
+std::unique_ptr<webrtc::SessionDescriptionInterface> CloneSessionDescription(const webrtc::SessionDescriptionInterface* Source)
+{
+	auto NewDescription = std::make_unique<webrtc::JsepSessionDescription>(Source->GetType(),
+		Source->description()->Clone(),
+		Source->session_id(),
+		Source->session_version());
+
+	for (size_t i = 0; i < Source->number_of_mediasections(); ++i)
 	{
-		auto NewDescription = std::make_unique<webrtc::JsepSessionDescription>(Source->GetType(),
-			Source->description()->Clone(),
-			Source->session_id(),
-			Source->session_version());
-
-		for (size_t i = 0; i < Source->number_of_mediasections(); ++i)
-		{
-			auto candidates = Source->candidates(i);
-			for (size_t j = 0; j < candidates->count(); ++j) {
-				auto c = candidates->at(j);
-				auto new_candidate = webrtc::CreateIceCandidate(c->sdp_mid(),
-					c->sdp_mline_index(),
-					c->candidate());
-				NewDescription->AddCandidate(new_candidate.release());
-			}
+		auto candidates = Source->candidates(i);
+		for (size_t j = 0; j < candidates->count(); ++j) {
+			auto c = candidates->at(j);
+			auto new_candidate = webrtc::CreateIceCandidate(c->sdp_mid(),
+				c->sdp_mline_index(),
+				c->candidate());
+			NewDescription->AddCandidate(new_candidate.release());
 		}
-
-		return NewDescription;
 	}
+
+	return NewDescription;
+}
 #endif
 }
 
 namespace Millicast::Player
 {
+
+class FFrameTransformer : public webrtc::FrameTransformerInterface
+{
+	std::unordered_map <uint64_t, rtc::scoped_refptr<webrtc::TransformedFrameCallback>> Callbacks; // ssrc, callback
+	TArray<uint8> UserData;
+	FWebRTCPeerConnection* PeerConnection{ nullptr };
+
+public:
+	explicit FFrameTransformer(FWebRTCPeerConnection * InPeerConnection) noexcept : PeerConnection(InPeerConnection) {}
+
+	~FFrameTransformer() = default;
+
+	/** webrtc::FrameTransformer overrides */
+	void Transform(std::unique_ptr<webrtc::TransformableFrameInterface> TransformableFrame) override
+	{
+		auto ssrc = TransformableFrame->GetSsrc();
+
+		if (auto it = Callbacks.find(ssrc); it != Callbacks.end())
+		{
+			// clear previous data but keep capacity to avoid dynamic reallocation
+			UserData.Empty();
+
+			auto data_view = TransformableFrame->GetData();
+			auto length = data_view.size();
+
+			uint32_t user_data_length = 0;
+			user_data_length = user_data_length ^ user_data_length; // set all bits to 0
+
+			// get user data length from the last four bytes
+			user_data_length |= data_view[length - 1] & 0xff;
+			user_data_length |= ((data_view[length - 2] & 0xff) << 8);
+			user_data_length |= ((data_view[length - 3] & 0xff) << 16);
+			user_data_length |= ((data_view[length - 4] & 0xff) << 24);
+
+			// extract the user data
+			UserData.Append(data_view.data() + length - user_data_length - 4, user_data_length);
+
+			// Provide the extracted data to the user
+			if (PeerConnection->OnFrameMetadata)
+			{
+				PeerConnection->OnFrameMetadata(ssrc, TransformableFrame->GetTimestamp(), UserData);
+			}
+
+			// Set the final transformed data.
+			TransformableFrame->SetData(data_view.subview(0, length - user_data_length - 4));
+
+			it->second->OnTransformedFrame(std::move(TransformableFrame));
+		}
+	}
+
+	void RegisterTransformedFrameCallback(rtc::scoped_refptr<webrtc::TransformedFrameCallback> InCallback) override {}
+	void RegisterTransformedFrameSinkCallback(rtc::scoped_refptr<webrtc::TransformedFrameCallback> InCallback, uint32_t Ssrc) override
+	{
+		UE_LOG(LogMillicastPlayer, Log, TEXT("Registering frame transformer callbakc for ssrc %d"), Ssrc);
+		Callbacks[Ssrc] = InCallback;
+	}
+	void UnregisterTransformedFrameCallback() override {}
+	void UnregisterTransformedFrameSinkCallback(uint32_t ssrc) override
+	{
+		Callbacks.erase(ssrc);
+	}
+};
 
 TAtomic<int> FWebRTCPeerConnection::RefCounter = 0;
 
@@ -114,7 +176,7 @@ FWebRTCPeerConnection::~FWebRTCPeerConnection() noexcept
 	WorkingThread->Invoke<void>(RTC_FROM_HERE, [this]() {
 		AudioDeviceModule->StopPlayout();
 		AudioDeviceModule->Terminate();
-	});
+		});
 
 	UE_LOG(LogMillicastPlayer, Verbose, TEXT("Destroy peerconnectino factory, count %d"), RefCounter.Load());
 	PeerConnectionFactory = nullptr;
@@ -228,14 +290,14 @@ void FWebRTCPeerConnection::CreateOffer()
 
 	SignalingThread->PostTask(RTC_FROM_HERE, [this]() {
 		PeerConnection->CreateOffer(CreateSessionDescription.Release(),
-									OaOptions);
-	});
+			OaOptions);
+		});
 }
 
 template<typename Callback>
 webrtc::SessionDescriptionInterface* FWebRTCPeerConnection::CreateDescription(const std::string& Type,
-									const std::string& Sdp,
-									Callback&& Failed)
+	const std::string& Sdp,
+	Callback&& Failed)
 {
 	if (Type.empty() || Sdp.empty())
 	{
@@ -251,7 +313,7 @@ webrtc::SessionDescriptionInterface* FWebRTCPeerConnection::CreateDescription(co
 	{
 		std::ostringstream oss;
 		oss << "Can't parse received session description message. SdpParseError line "
-			<< ParseError.line <<  " : " + ParseError.description;
+			<< ParseError.line << " : " + ParseError.description;
 
 		Failed(oss.str());
 
@@ -262,26 +324,26 @@ webrtc::SessionDescriptionInterface* FWebRTCPeerConnection::CreateDescription(co
 }
 
 void FWebRTCPeerConnection::SetLocalDescription(const std::string& Sdp,
-												const std::string& Type)
+	const std::string& Type)
 {
-	  auto * SessionDescription = CreateDescription(Type,
-													 Sdp,
-													 std::ref(LocalSessionDescription->OnFailureCallback));
+	auto* SessionDescription = CreateDescription(Type,
+		Sdp,
+		std::ref(LocalSessionDescription->OnFailureCallback));
 
-	  if(!SessionDescription) return;
+	if (!SessionDescription) return;
 
-	  PeerConnection->SetLocalDescription(LocalSessionDescription.Release(),
-										  SessionDescription);
+	PeerConnection->SetLocalDescription(LocalSessionDescription.Release(),
+		SessionDescription);
 }
 
 void FWebRTCPeerConnection::SetRemoteDescription(const std::string& Sdp,
-												 const std::string& Type)
+	const std::string& Type)
 {
-	auto * SessionDescription = CreateDescription(Type,
-												  Sdp,
-												  std::ref(RemoteSessionDescription->OnFailureCallback));
+	auto* SessionDescription = CreateDescription(Type,
+		Sdp,
+		std::ref(RemoteSessionDescription->OnFailureCallback));
 
-	if(!SessionDescription) return;
+	if (!SessionDescription) return;
 
 	PeerConnection->SetRemoteDescription(RemoteSessionDescription.Release(), SessionDescription);
 }
@@ -318,16 +380,21 @@ void FWebRTCPeerConnection::OnRemoveStream(rtc::scoped_refptr<webrtc::MediaStrea
 {}
 
 void FWebRTCPeerConnection::OnAddTrack(rtc::scoped_refptr<webrtc::RtpReceiverInterface>,
-				const FMediaStreamVector&)
+	const FMediaStreamVector&)
 {}
 
 void FWebRTCPeerConnection::OnTrack(rtc::scoped_refptr<webrtc::RtpTransceiverInterface> Transceiver)
 {
 	UE_LOG(LogMillicastPlayer, Verbose, TEXT("%S"), __FUNCTION__);
 
-	if(OnVideoTrack && Transceiver->media_type() == cricket::MediaType::MEDIA_TYPE_VIDEO)
+	if (OnVideoTrack && Transceiver->media_type() == cricket::MediaType::MEDIA_TYPE_VIDEO)
 	{
 		OnVideoTrack(*Transceiver->mid(), Transceiver->receiver()->track());
+		if (bUseFrameTransformer)
+		{
+			auto Transformer = rtc::make_ref_counted<FFrameTransformer>(this);
+			Transceiver->receiver()->SetDepacketizerToDecoderFrameTransformer(Transformer);
+		}
 	}
 	else if (OnAudioTrack && Transceiver->media_type() == cricket::MediaType::MEDIA_TYPE_AUDIO)
 	{
@@ -364,28 +431,28 @@ void FWebRTCPeerConnection::OnRenegotiationNeeded()
 	CreateSessionDescription->SetOnSuccessCallback([this](const std::string& type, const std::string& sdp) {
 		UE_LOG(LogMillicastPlayer, Log, TEXT("[renegociation] pc.createOffer() | Success"));
 		SetLocalDescription(sdp, type);
-	});
+		});
 
 	CreateSessionDescription->SetOnFailureCallback([](const std::string& err) {
 		UE_LOG(LogMillicastPlayer, Error, TEXT("[renegociation] pc.createOffer() | Error: %s"), *FString(err.c_str()));
-	});
+		});
 
 	LocalSessionDescription->SetOnSuccessCallback([this]() {
 		UE_LOG(LogMillicastPlayer, Log, TEXT("[renegociation] pc.setLocalDescription() | success"));
 		Renegociate(PeerConnection->local_description(), PeerConnection->remote_description());
-	});
+		});
 
 	LocalSessionDescription->SetOnFailureCallback([](const std::string& err) {
 		UE_LOG(LogMillicastPlayer, Error, TEXT("[renegociation]  Set local description failed | Error: %s"), *FString(err.c_str()));
-	});
+		});
 
 	RemoteSessionDescription->SetOnSuccessCallback([]() {
 		UE_LOG(LogMillicastPlayer, Log, TEXT("[renegociation] Set remote description | success"));
-	});
+		});
 
 	RemoteSessionDescription->SetOnFailureCallback([](const std::string& err) {
 		UE_LOG(LogMillicastPlayer, Error, TEXT("[renegociation]  Set remote description failed | Error: %s"), *FString(err.c_str()));
-	});
+		});
 
 	UE_LOG(LogMillicastPlayer, Log, TEXT("Starting renegociation"));
 
@@ -519,6 +586,11 @@ void FWebRTCPeerConnection::Renegociate(const webrtc::SessionDescriptionInterfac
 
 	UE_LOG(LogMillicastPlayer, Log, TEXT("[renegociation] remote sdp : %s"), *FString(sdp.c_str()));
 	SetRemoteDescription(sdp);
+}
+
+void FWebRTCPeerConnection::EnableFrameTransformer(bool Enable)
+{
+	bUseFrameTransformer = Enable;
 }
 
 }

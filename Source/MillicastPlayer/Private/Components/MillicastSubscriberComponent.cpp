@@ -96,7 +96,7 @@ bool UMillicastSubscriberComponent::Subscribe(const FMillicastSignalingData& InS
 		return false;
 	}
 
-	if( !IsValid(MillicastMediaSource) )
+	if (!IsValid(MillicastMediaSource))
 	{
 		UE_LOG(LogMillicastPlayer, Error, TEXT("Trying to subscribe with invalid media source."));
 		return false;
@@ -134,7 +134,7 @@ void UMillicastSubscriberComponent::Unsubscribe()
 	UE_LOG(LogMillicastPlayer, Verbose, TEXT("%S"), __FUNCTION__);
 	FScopeLock Lock(&CriticalPcSection);
 
-	if(PeerConnection)
+	if (PeerConnection)
 	{
 		UE_LOG(LogMillicastPlayer, Verbose, TEXT("Clearing audio tracks"));
 
@@ -255,89 +255,89 @@ bool UMillicastSubscriberComponent::SubscribeToMillicast()
 	PeerConnection = FWebRTCPeerConnection::Create(FWebRTCPeerConnection::GetDefaultConfig());
 
 	auto* CreateSessionDescriptionObserver = PeerConnection->GetCreateDescriptionObserver();
-	auto* LocalDescriptionObserver  = PeerConnection->GetLocalDescriptionObserver();
+	auto* LocalDescriptionObserver = PeerConnection->GetLocalDescriptionObserver();
 	auto* RemoteDescriptionObserver = PeerConnection->GetRemoteDescriptionObserver();
 
 	CreateSessionDescriptionObserver->SetOnSuccessCallback([WEAK_CAPTURE](const std::string& type, const std::string& sdp)
-	{
-		if (WeakThis.IsValid())
 		{
-			FScopeLock Lock(&WeakThis->CriticalPcSection);
-			UE_LOG(LogMillicastPlayer, Log, TEXT("pc.createOffer() | sucess\nsdp : %s"), *FString(sdp.c_str()));
-			if (WeakThis->PeerConnection)
+			if (WeakThis.IsValid())
 			{
-				WeakThis->PeerConnection->SetLocalDescription(sdp, type);
+				FScopeLock Lock(&WeakThis->CriticalPcSection);
+				UE_LOG(LogMillicastPlayer, Log, TEXT("pc.createOffer() | sucess\nsdp : %s"), *FString(sdp.c_str()));
+				if (WeakThis->PeerConnection)
+				{
+					WeakThis->PeerConnection->SetLocalDescription(sdp, type);
+				}
 			}
-		}
-	});
+		});
 
 	CreateSessionDescriptionObserver->SetOnFailureCallback([WEAK_CAPTURE](const std::string& err)
-	{
-		UE_LOG(LogMillicastPlayer, Error, TEXT("pc.createOffer() | Error: %s"), *FString(err.c_str()));
-		if (WeakThis.IsValid())
 		{
-			WeakThis->OnSubscribedFailure.Broadcast(FString{ err.c_str() });
-		}
-	});
+			UE_LOG(LogMillicastPlayer, Error, TEXT("pc.createOffer() | Error: %s"), *FString(err.c_str()));
+			if (WeakThis.IsValid())
+			{
+				WeakThis->OnSubscribedFailure.Broadcast(FString{ err.c_str() });
+			}
+		});
 
 	LocalDescriptionObserver->SetOnSuccessCallback([WEAK_CAPTURE]()
-	{
-		FScopeLock Lock(&WeakThis->CriticalPcSection);
-		if (!WeakThis.IsValid() || !WeakThis->PeerConnection)
 		{
-			return;
-		}
+			FScopeLock Lock(&WeakThis->CriticalPcSection);
+			if (!WeakThis.IsValid() || !WeakThis->PeerConnection)
+			{
+				return;
+			}
 
-		UE_LOG(LogMillicastPlayer, Log, TEXT("pc.setLocalDescription() | sucess"));
-		std::string sdp;
-		(*WeakThis->PeerConnection)->local_description()->ToString(&sdp);
+			UE_LOG(LogMillicastPlayer, Log, TEXT("pc.setLocalDescription() | sucess"));
+			std::string sdp;
+			(*WeakThis->PeerConnection)->local_description()->ToString(&sdp);
 
-		// Add events we want to receive from millicast
-		TArray<TSharedPtr<FJsonValue>> eventsJson;
-		TArray<FString> EvKeys;
-		WeakThis->EventBroadcaster.GetKeys(EvKeys);
+			// Add events we want to receive from millicast
+			TArray<TSharedPtr<FJsonValue>> eventsJson;
+			TArray<FString> EvKeys;
+			WeakThis->EventBroadcaster.GetKeys(EvKeys);
 
-		for (auto& ev : EvKeys)
-		{
-			eventsJson.Add(MakeShared<FJsonValueString>(ev));
-		}
+			for (auto& ev : EvKeys)
+			{
+				eventsJson.Add(MakeShared<FJsonValueString>(ev));
+			}
 
-		// Fill Signaling data
-		auto DataJson = MakeShared<FJsonObject>();
-		DataJson->SetStringField("streamId", WeakThis->MillicastMediaSource->StreamName);
-		DataJson->SetStringField("sdp", ToString(sdp));
-		DataJson->SetArrayField("events", eventsJson);
+			// Fill Signaling data
+			auto DataJson = MakeShared<FJsonObject>();
+			DataJson->SetStringField("streamId", WeakThis->MillicastMediaSource->StreamName);
+			DataJson->SetStringField("sdp", ToString(sdp));
+			DataJson->SetArrayField("events", eventsJson);
 
-		WeakThis->SendCommand("view", DataJson);
-	});
+			WeakThis->SendCommand("view", DataJson);
+		});
 
 	LocalDescriptionObserver->SetOnFailureCallback([WEAK_CAPTURE](const std::string& err)
-	{
-		UE_LOG(LogMillicastPlayer, Error, TEXT("Set local description failed : %s"), *FString(err.c_str()));
-		if (WeakThis.IsValid())
 		{
-			WeakThis->OnSubscribedFailure.Broadcast(FString{ err.c_str() });
-		}
-	});
+			UE_LOG(LogMillicastPlayer, Error, TEXT("Set local description failed : %s"), *FString(err.c_str()));
+			if (WeakThis.IsValid())
+			{
+				WeakThis->OnSubscribedFailure.Broadcast(FString{ err.c_str() });
+			}
+		});
 
 	RemoteDescriptionObserver->SetOnSuccessCallback([WEAK_CAPTURE]()
-	{
-		UE_LOG(LogMillicastPlayer, Log, TEXT("Set remote description suceeded"));
-		if (WeakThis.IsValid())
 		{
-			WeakThis->State = EMillicastSubscriberState::Connected;
-			WeakThis->OnSubscribed.Broadcast();
-		}
-	});
+			UE_LOG(LogMillicastPlayer, Log, TEXT("Set remote description suceeded"));
+			if (WeakThis.IsValid())
+			{
+				WeakThis->State = EMillicastSubscriberState::Connected;
+				WeakThis->OnSubscribed.Broadcast();
+			}
+		});
 
 	RemoteDescriptionObserver->SetOnFailureCallback([WEAK_CAPTURE](const std::string& err)
-	{
-		UE_LOG(LogMillicastPlayer, Error, TEXT("Set remote description failed : %s"), *FString(err.c_str()));
-		if (WeakThis.IsValid())
 		{
-			WeakThis->OnSubscribedFailure.Broadcast(FString{ err.c_str() });
-		}
-	});
+			UE_LOG(LogMillicastPlayer, Error, TEXT("Set remote description failed : %s"), *FString(err.c_str()));
+			if (WeakThis.IsValid())
+			{
+				WeakThis->OnSubscribedFailure.Broadcast(FString{ err.c_str() });
+			}
+		});
 
 	PeerConnection->OaOptions.offer_to_receive_video = true;
 	PeerConnection->OaOptions.offer_to_receive_audio = true;
@@ -349,42 +349,54 @@ bool UMillicastSubscriberComponent::SubscribeToMillicast()
 		UE_LOG(LogMillicastPlayer, Log, TEXT("OnVideoTrack"));
 
 		AsyncTask(ENamedThreads::GameThread, [WeakThis, Mid, Track]()
-		{
-			if (!WeakThis.IsValid())
 			{
-				UE_LOG(LogMillicastPlayer, Warning, TEXT("SubscriberComponent no longer valid to add video track"));
-				return;
-			}
+				if (!WeakThis.IsValid())
+				{
+					UE_LOG(LogMillicastPlayer, Warning, TEXT("SubscriberComponent no longer valid to add video track"));
+					return;
+				}
 
-			UE_LOG(LogMillicastPlayer, Verbose, TEXT("Create video track object"));
-			auto VideoTrack = NewObject<UMillicastVideoTrackImpl>();
-			VideoTrack->Initialize(Mid.c_str(), Track);
+				UE_LOG(LogMillicastPlayer, Verbose, TEXT("Create video track object"));
+				auto VideoTrack = NewObject<UMillicastVideoTrackImpl>();
+				VideoTrack->Initialize(Mid.c_str(), Track);
 
-			WeakThis->OnVideoTrack.Broadcast(VideoTrack);
-			WeakThis->VideoTracks.Add(VideoTrack);
-		});
+				WeakThis->OnVideoTrack.Broadcast(VideoTrack);
+				WeakThis->VideoTracks.Add(VideoTrack);
+			});
 	};
 
 	PeerConnection->OnAudioTrack = [WEAK_CAPTURE](const std::string& mid, RtcTrack Track)
 	{
 		UE_LOG(LogMillicastPlayer, Log, TEXT("OnAudioTrack"));
 		AsyncTask(ENamedThreads::GameThread, [WeakThis, mid, Track]()
-		{
-			if (!WeakThis.IsValid())
 			{
-				UE_LOG(LogMillicastPlayer, Warning, TEXT("SubscriberComponent no longer valid to add audio track"));
-				return;
-			}
+				if (!WeakThis.IsValid())
+				{
+					UE_LOG(LogMillicastPlayer, Warning, TEXT("SubscriberComponent no longer valid to add audio track"));
+					return;
+				}
 
-			UE_LOG(LogMillicastPlayer, Verbose, TEXT("Create audio track object"));
-			auto AudioTrack = NewObject<UMillicastAudioTrackImpl>();
-			AudioTrack->Initialize(mid.c_str(), Track);
+				UE_LOG(LogMillicastPlayer, Verbose, TEXT("Create audio track object"));
+				auto AudioTrack = NewObject<UMillicastAudioTrackImpl>();
+				AudioTrack->Initialize(mid.c_str(), Track);
 
-			WeakThis->OnAudioTrack.Broadcast(AudioTrack);
-			WeakThis->AudioTracks.Add(AudioTrack); // keep reference to delete it later
-		});
+				WeakThis->OnAudioTrack.Broadcast(AudioTrack);
+				WeakThis->AudioTracks.Add(AudioTrack); // keep reference to delete it later
+			});
 	};
 
+	PeerConnection->OnFrameMetadata = [WEAK_CAPTURE](uint32 Ssrc, uint32 Timestamp, const TArray<uint8>& Metadata)
+	{
+		AsyncTask(ENamedThreads::GameThread, [=]()
+			{
+				if (WeakThis.IsValid())
+				{
+					WeakThis->OnFrameMetadata.Broadcast(Ssrc, Timestamp, Metadata);
+				}
+			});
+	};
+
+	PeerConnection->EnableFrameTransformer(bUseFrameTransformer);
 	PeerConnection->CreateOffer();
 
 #if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION > 0
@@ -411,8 +423,8 @@ void UMillicastSubscriberComponent::OnConnectionError(const FString& Error)
 }
 
 void UMillicastSubscriberComponent::OnClosed(int32 StatusCode,
-                                     const FString& Reason,
-                                     bool bWasClean)
+	const FString& Reason,
+	bool bWasClean)
 {
 	State = EMillicastSubscriberState::Disconnected;
 

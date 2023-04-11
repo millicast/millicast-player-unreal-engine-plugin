@@ -76,6 +76,7 @@ DECLARE_DYNAMIC_MULTICAST_SPARSE_DELEGATE(FMillicastSubscriberComponentStopped, 
 DECLARE_DYNAMIC_MULTICAST_SPARSE_DELEGATE_TwoParams(FMillicastSubscriberComponentVad, UMillicastSubscriberComponent, OnVad, const FString&, Mid, const FString&, SourceId);
 DECLARE_DYNAMIC_MULTICAST_SPARSE_DELEGATE_ThreeParams(FMillicastSubscriberComponentLayers, UMillicastSubscriberComponent, OnLayers, const FString&, Mid, const TArray<FMillicastLayerData>&, ActiveLayers, const TArray<FMillicastLayerData>&, InactiveLayers);
 DECLARE_DYNAMIC_MULTICAST_SPARSE_DELEGATE_OneParam(FMillicastSubscriberComponentViewerCount, UMillicastSubscriberComponent, OnViewerCount, int, Count);
+DECLARE_DYNAMIC_MULTICAST_SPARSE_DELEGATE_ThreeParams(FMillicastSubscriberComponentFrameMetadata, UMillicastSubscriberComponent, OnFrameMetadata, int32, Ssrc, int32, Timestamp, const TArray<uint8>&, Metadata);
 
 enum class EMillicastSubscriberState : uint8
 {
@@ -101,6 +102,10 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Properties",
 			  META = (DisplayName = "Millicast Media Source", AllowPrivateAccess = true))
 	UMillicastMediaSource* MillicastMediaSource = nullptr;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Properties",
+		META = (DisplayName = "Extract Frame Metadata", AllowPrivateAccess = true))
+	bool bUseFrameTransformer = false;
 
 private:
 	void SendCommand(const FString& Name, TSharedPtr<FJsonObject> Data);
@@ -209,6 +214,10 @@ public:
 	/** Called when a audio track is received */
 	UPROPERTY(BlueprintAssignable, Category = "Components|Activation")
 	FMillicastSubscriberComponentAudioTrack OnAudioTrack;
+
+	/** Called when metadata gave been extracted from the video frame */
+	UPROPERTY(BlueprintAssignable, Category = "Components|Activation")
+	FMillicastSubscriberComponentFrameMetadata OnFrameMetadata;
 
 private:
 	void BeginPlay() override;

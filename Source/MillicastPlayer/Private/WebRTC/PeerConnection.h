@@ -41,6 +41,8 @@ namespace Millicast::Player
 		TUniquePtr<FSetSessionDescriptionObserver>    LocalSessionDescription;
 		TUniquePtr<FSetSessionDescriptionObserver>    RemoteSessionDescription;
 
+		bool bUseFrameTransformer{ false };
+
 #if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION > 0
 		TUniquePtr<FPlayerStatsCollector>             RTCStatsCollector;
 #endif
@@ -64,6 +66,7 @@ namespace Millicast::Player
 
 		std::function<void(const std::string& mid, rtc::scoped_refptr<webrtc::MediaStreamTrackInterface>)> OnVideoTrack = nullptr;
 		std::function<void(const std::string& mid, rtc::scoped_refptr<webrtc::MediaStreamTrackInterface>)> OnAudioTrack = nullptr;
+		std::function<void(uint32 Ssrc, uint32 Timestamp, const TArray<uint8>& Data)> OnFrameMetadata = nullptr;
 
 		webrtc::PeerConnectionInterface::RTCOfferAnswerOptions OaOptions;
 		
@@ -99,6 +102,8 @@ namespace Millicast::Player
 		void OnIceGatheringChange(webrtc::PeerConnectionInterface::IceGatheringState new_state) override;
 		void OnIceCandidate(const webrtc::IceCandidateInterface* candidate) override;
 		void OnIceConnectionReceivingChange(bool receiving) override;
+
+		void EnableFrameTransformer(bool Enable);
 
 #if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION > 0
 		void EnableStats(bool Enable);
