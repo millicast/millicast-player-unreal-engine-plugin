@@ -21,7 +21,7 @@ void UMillicastTexture2DPlayer::OnFrame(TArray<uint8>& VideoData, int Width, int
 			RenderTargetDescriptor = FPooledRenderTargetDesc::Create2DDesc(FrameSize,
 				PF_B8G8R8A8,
 				FClearValueBinding::None,
-				TexCreate_None,
+				NMillicastMedia::TextureCreateFlags,
 				TexCreate_RenderTargetable,
 				false);
 
