@@ -1,6 +1,6 @@
 // Copyright CoSMoSoftware 2021. All Rights Reserved.
 
-#include "MillicastSubscriberComponent.h"
+#include "Components/MillicastSubscriberComponent.h"
 #include "MillicastPlayerPrivate.h"
 #include "Util.h"
 #include "IWebSocket.h"

@@ -1,31 +1,18 @@
-﻿// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+// Copyright Millicast 2023. All Rights Reserved.
 
-#include "MillicastAudioActor.h"
+#include "Components/MillicastAudioComponent.h"
 
 #include "AudioDevice.h"
-#include "AudioDeviceManager.h"
-#include "Components/AudioComponent.h"
-
 #include "MillicastPlayerPrivate.h"
 
-AMillicastAudioActor::AMillicastAudioActor(const FObjectInitializer& ObjectInitializer)
-	: Super(ObjectInitializer), SoundStreaming(nullptr)
-{
-	AudioComponent = ObjectInitializer.CreateDefaultSubobject<UAudioComponent>(
-		this,
-		TEXT("UAudioComponent")
-		);
+#include "Components/AudioComponent.h"
 
-	AudioComponent->SetSound(SoundStreaming);
-	AudioComponent->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
-}
-
-FMillicastAudioParameters AMillicastAudioActor::GetAudioParameters() const
+FMillicastAudioParameters UMillicastAudioComponent::GetAudioParameters() const
 {
 	return AudioParameters;
 }
 
-void AMillicastAudioActor::UpdateAudioParameters(FMillicastAudioParameters Parameters) noexcept
+void UMillicastAudioComponent::UpdateAudioParameters(FMillicastAudioParameters Parameters) noexcept
 {
 	AudioParameters = MoveTemp(Parameters);
 
@@ -37,7 +24,12 @@ void AMillicastAudioActor::UpdateAudioParameters(FMillicastAudioParameters Param
 	}
 }
 
-void AMillicastAudioActor::Initialize()
+void UMillicastAudioComponent::InjectDependencies(UAudioComponent* InAudioComponent)
+{
+	AudioComponent = InAudioComponent;
+}
+
+void UMillicastAudioComponent::Initialize()
 {
 	if (SoundStreaming == nullptr)
 	{
@@ -54,7 +46,7 @@ void AMillicastAudioActor::Initialize()
 	}
 }
 
-void AMillicastAudioActor::Shutdown()
+void UMillicastAudioComponent::Shutdown()
 {
 	if (AudioComponent && AudioComponent->IsPlaying())
 	{
@@ -64,8 +56,13 @@ void AMillicastAudioActor::Shutdown()
 	SoundStreaming = nullptr;
 }
 
-void AMillicastAudioActor::QueueAudioData(const uint8* AudioData, int32 NumSamples)
+void UMillicastAudioComponent::QueueAudioData(const uint8* AudioData, int32 NumSamples)
 {
+	if(!AudioComponent)
+	{
+		return;
+	}
+	
 	/* Don't queue if IsVirtualized is true because the buffer is not actually playing, this will desync with video*/
 	if (AudioComponent->IsPlaying() && !AudioComponent->IsVirtualized())
 	{
@@ -73,7 +70,7 @@ void AMillicastAudioActor::QueueAudioData(const uint8* AudioData, int32 NumSampl
 	}
 }
 
-void AMillicastAudioActor::InitSoundWave()
+void UMillicastAudioComponent::InitSoundWave()
 {
 	if (SoundStreaming)
 	{

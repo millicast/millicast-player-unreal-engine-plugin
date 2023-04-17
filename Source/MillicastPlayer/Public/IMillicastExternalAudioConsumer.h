@@ -1,4 +1,4 @@
-﻿// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+// Copyright Millicast 2023. All Rights Reserved.
 
 #pragma once
 

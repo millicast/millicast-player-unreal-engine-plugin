@@ -1,6 +1,6 @@
 // Copyright CoSMoSoftware 2021. All Rights Reserved.
 
-#include "MillicastDirectorComponent.h"
+#include "Components/MillicastDirectorComponent.h"
 
 #include "Http.h"
 
