@@ -84,7 +84,7 @@ void UMillicastSubscriberComponent::SetMediaSource(UMillicastMediaSource* InMedi
 /**
 	Begin receiving audio, video.
 */
-bool UMillicastSubscriberComponent::Subscribe(const FMillicastSignalingData& InSignalingData, TScriptInterface<IMillicastExternalAudioConsumer> InExternalAudioConsumer)
+bool UMillicastSubscriberComponent::Subscribe(const FMillicastSignalingData& InSignalingData)
 {
 	UE_LOG(LogMillicastPlayer, Verbose, TEXT("%S"), __FUNCTION__);
 
@@ -101,12 +101,6 @@ bool UMillicastSubscriberComponent::Subscribe(const FMillicastSignalingData& InS
 	}
 
 	State = EMillicastSubscriberState::Connecting;
-
-	if (InExternalAudioConsumer)
-	{
-		UE_LOG(LogMillicastPlayer, Verbose, TEXT("Setting external audio consumer"));
-		ExternalAudioConsumer = InExternalAudioConsumer;
-	}
 
 	for (auto& s : InSignalingData.IceServers) 
 	{
@@ -256,7 +250,7 @@ bool UMillicastSubscriberComponent::SubscribeToMillicast()
 	using namespace Millicast::Player;
 	UE_LOG(LogMillicastPlayer, Verbose, TEXT("%S"), __FUNCTION__);
 
-	PeerConnection = FWebRTCPeerConnection::Create(FWebRTCPeerConnection::GetDefaultConfig(), ExternalAudioConsumer);
+	PeerConnection = FWebRTCPeerConnection::Create(FWebRTCPeerConnection::GetDefaultConfig());
 
 	auto* CreateSessionDescriptionObserver = PeerConnection->GetCreateDescriptionObserver();
 	auto* LocalDescriptionObserver  = PeerConnection->GetLocalDescriptionObserver();
