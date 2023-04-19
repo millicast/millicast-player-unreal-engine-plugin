@@ -79,7 +79,7 @@ void FWebRTCPeerConnection::CreatePeerConnectionFactory()
 	UE_LOG(LogMillicastPlayer, Log, TEXT("Creating audio device module"));
 	TaskQueueFactory = webrtc::CreateDefaultTaskQueueFactory();
 	AudioDeviceModule = FAudioDeviceModule::Create(TaskQueueFactory.get());
-	
+
 	UE_LOG(LogMillicastPlayer, Log, TEXT("Creating Peerconnection factory. Count %d"), RefCounter.Load());
 	PeerConnectionFactory = webrtc::CreatePeerConnectionFactory(
 		NetworkingThread.Get(), WorkingThread.Get(), SignalingThread.Get(),
@@ -115,11 +115,11 @@ FWebRTCPeerConnection::~FWebRTCPeerConnection() noexcept
 		AudioDeviceModule->StopPlayout();
 		AudioDeviceModule->Terminate();
 	});
-	
+
 	UE_LOG(LogMillicastPlayer, Verbose, TEXT("Destroy peerconnectino factory, count %d"), RefCounter.Load());
 	PeerConnectionFactory = nullptr;
 	AudioDeviceModule = nullptr;
-	
+
 	UE_LOG(LogMillicastPlayer, Verbose, TEXT("Stop webrtc thread"));
 	SignalingThread->Stop();
 	NetworkingThread->Stop();
@@ -167,7 +167,7 @@ void FWebRTCPeerConnection::Init(const FRTCConfig& Config)
 	webrtc::PeerConnectionDependencies Dependencies(this);
 	UE_LOG(LogMillicastPlayer, Verbose, TEXT("Creating peerconnection"));
 
-#if ENGINE_MAJOR_VERSION > 5 && ENGINE_MINOR_VERSION > 0
+#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION > 0
 	const auto Result = PeerConnectionFactory->CreatePeerConnectionOrError(Config, std::move(Dependencies));
 	if (!Result.ok())
 	{
@@ -382,7 +382,7 @@ void FWebRTCPeerConnection::OnRenegotiationNeeded()
 	RemoteSessionDescription->SetOnSuccessCallback([]() {
 		UE_LOG(LogMillicastPlayer, Log, TEXT("[renegociation] Set remote description | success"));
 	});
-	
+
 	RemoteSessionDescription->SetOnFailureCallback([](const std::string& err) {
 		UE_LOG(LogMillicastPlayer, Error, TEXT("[renegociation]  Set remote description failed | Error: %s"), *FString(err.c_str()));
 	});
@@ -404,7 +404,7 @@ void FWebRTCPeerConnection::OnIceCandidate(const webrtc::IceCandidateInterface*)
 void FWebRTCPeerConnection::OnIceConnectionReceivingChange(bool)
 {}
 
-#if ENGINE_MAJOR_VERSION > 5 && ENGINE_MINOR_VERSION > 0
+#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION > 0
 void FWebRTCPeerConnection::EnableStats(bool Enable)
 {
 	if (Enable && !RTCStatsCollector)

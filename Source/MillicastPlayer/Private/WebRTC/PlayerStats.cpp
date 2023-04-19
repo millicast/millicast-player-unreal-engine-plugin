@@ -1,12 +1,13 @@
 #include "PlayerStats.h"
 
-#if ENGINE_MAJOR_VERSION > 5 && ENGINE_MINOR_VERSION > 0
+#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION > 0
 
 #include "MillicastPlayerPrivate.h"
 
+#include "Engine/Engine.h"
 #include "PeerConnection.h"
+#include "ProfilingDebugging/CsvProfiler.h"
 #include "Util.h"
-#include <api/stats/rtcstats_objects.h>
 
 DECLARE_LOG_CATEGORY_EXTERN(LogMillicastPlayerStats, Log, All);
 DEFINE_LOG_CATEGORY(LogMillicastPlayerStats);
@@ -182,6 +183,16 @@ namespace Millicast::Player
 		}
 
 		Timestamp = Report->timestamp_us();
+	}
+
+	const FString& FPlayerStatsCollector::Cluster() const
+	{
+		return PeerConnection->ClusterId;
+	}
+
+	const FString& FPlayerStatsCollector::Server() const
+	{
+		return PeerConnection->ServerId;
 	}
 
 	// --------- FPlayerStats -------------

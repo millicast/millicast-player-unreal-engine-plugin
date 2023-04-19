@@ -18,7 +18,7 @@
 
 #define WEAK_CAPTURE WeakThis = TWeakObjectPtr<UMillicastSubscriberComponent>(this)
 
-UMillicastSubscriberComponent::UMillicastSubscriberComponent(const FObjectInitializer& ObjectInitializer) 
+UMillicastSubscriberComponent::UMillicastSubscriberComponent(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
 	PeerConnectionConfig = Millicast::Player::FWebRTCPeerConnection::GetDefaultConfig();
@@ -104,7 +104,7 @@ bool UMillicastSubscriberComponent::Subscribe(const FMillicastSignalingData& InS
 
 	State = EMillicastSubscriberState::Connecting;
 
-	for (auto& s : InSignalingData.IceServers) 
+	for (auto& s : InSignalingData.IceServers)
 	{
 		UE_LOG(LogMillicastPlayer, Verbose, TEXT("Adding ice server %s"), *InSignalingData.WsUrl);
 		PeerConnectionConfig.servers.push_back(s);
@@ -387,10 +387,10 @@ bool UMillicastSubscriberComponent::SubscribeToMillicast()
 
 	PeerConnection->CreateOffer();
 
-#if ENGINE_MAJOR_VERSION > 5 && ENGINE_MINOR_VERSION > 0
+#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION > 0
 	PeerConnection->EnableStats(true);
 #endif
-	
+
 	return true;
 }
 
