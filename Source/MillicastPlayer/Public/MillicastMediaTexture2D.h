@@ -24,10 +24,14 @@ public:
 	virtual float GetSurfaceHeight() const override;
 	virtual float GetSurfaceWidth() const override;
 
-#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION > 0
+#if ENGINE_MAJOR_VERSION >= 5
 	virtual float GetSurfaceDepth() const override;
-	ETextureClass GetTextureClass() const override;
 	virtual uint32 GetSurfaceArraySize() const override { return 0; }
+
+#if ENGINE_MINOR_VERSION > 0
+	ETextureClass GetTextureClass() const override;
+#endif
+
 #endif
 	
 	virtual void GetResourceSizeEx(FResourceSizeEx& CumulativeResourceSize) override;

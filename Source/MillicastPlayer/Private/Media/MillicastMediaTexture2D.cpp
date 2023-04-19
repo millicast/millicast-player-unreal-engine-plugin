@@ -94,16 +94,20 @@ float UMillicastMediaTexture2D::GetSurfaceWidth() const
 	return GetResource() != nullptr ? GetResource()->GetSizeX() : 0.0f;
 }
 
-#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION > 0
+#if ENGINE_MAJOR_VERSION >= 5
 float UMillicastMediaTexture2D::GetSurfaceDepth() const
 {
 	return GetResource() != nullptr ? GetResource()->GetSizeZ() : 0.0f;
 }
 
+#if ENGINE_MINOR_VERSION > 0
+
 ETextureClass UMillicastMediaTexture2D::GetTextureClass() const
 {
 	return ETextureClass::RenderTarget;
 }
+
+#endif
 #endif
 
 EMaterialValueType UMillicastMediaTexture2D::GetMaterialType() const
