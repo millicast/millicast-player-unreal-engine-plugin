@@ -4,6 +4,8 @@
 
 #include "Engine/Texture.h"
 
+#include "Runtime/Launch/Resources/Version.h"
+
 #include "MillicastMediaTexture2D.generated.h"
 
 class FMillicastMediaTextureResource;

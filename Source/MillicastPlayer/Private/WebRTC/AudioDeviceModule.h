@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "IMillicastExternalAudioConsumer.h"
 #include "Sound/SoundWaveProcedural.h"
 #include "UObject/WeakInterfacePtr.h"
 #include "WebRTC/WebRTCInc.h"

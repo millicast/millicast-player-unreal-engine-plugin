@@ -1,5 +1,7 @@
 #include "MillicastMediaUtil.h"
 
+#include "Runtime/Launch/Resources/Version.h"
+
 void NMillicastMedia::CreateTexture( FTexture2DRHIRef& TargetRef, int32 Width, int32 Height)
 {
 #if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION > 0

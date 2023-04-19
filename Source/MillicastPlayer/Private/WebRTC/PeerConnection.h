@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "Runtime/Launch/Resources/Version.h"
 #include "SessionDescriptionObserver.h"
 #include "WebRTC/WebRTCInc.h"
 
@@ -40,7 +41,7 @@ namespace Millicast::Player
 		TUniquePtr<FSetSessionDescriptionObserver>    LocalSessionDescription;
 		TUniquePtr<FSetSessionDescriptionObserver>    RemoteSessionDescription;
 
-#if ENGINE_MAJOR_VERSION > 5 && ENGINE_MINOR_VERSION > 0
+#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION > 0
 		TUniquePtr<FPlayerStatsCollector>             RTCStatsCollector;
 #endif
 
@@ -99,7 +100,7 @@ namespace Millicast::Player
 		void OnIceCandidate(const webrtc::IceCandidateInterface* candidate) override;
 		void OnIceConnectionReceivingChange(bool receiving) override;
 
-#if ENGINE_MAJOR_VERSION > 5 && ENGINE_MINOR_VERSION > 0
+#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION > 0
 		void EnableStats(bool Enable);
 		void PollStats();
 #endif
