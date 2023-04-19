@@ -2,6 +2,7 @@
 
 #include "MillicastMediaTextureResource.h"
 #include "MillicastMediaTexture2D.h"
+#include "RenderUtils.h"
 #include "RHI.h"
 #include "DeviceProfiles/DeviceProfile.h"
 #include "DeviceProfiles/DeviceProfileManager.h"

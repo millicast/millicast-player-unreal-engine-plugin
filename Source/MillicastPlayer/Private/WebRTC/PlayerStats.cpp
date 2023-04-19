@@ -1,6 +1,7 @@
+#include "PlayerStats.h"
+
 #if ENGINE_MAJOR_VERSION > 5 && ENGINE_MINOR_VERSION > 0
 
-#include "PlayerStats.h"
 #include "MillicastPlayerPrivate.h"
 
 #include "PeerConnection.h"

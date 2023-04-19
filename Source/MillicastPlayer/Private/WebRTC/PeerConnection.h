@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "Runtime/Launch/Resources/Version.h"
 #include "SessionDescriptionObserver.h"
 #include "WebRTC/WebRTCInc.h"
 

@@ -4,6 +4,7 @@
 
 #include <AssetTypeCategories.h>
 #include "MillicastMediaTexture2D.h"
+#include "Runtime/Launch/Resources/Version.h"
 
 #define LOCTEXT_NAMESPACE "MillicastPlayerEditorMediaTextureFactory"
 

@@ -94,7 +94,7 @@ class MILLICASTPLAYER_API UMillicastSubscriberComponent : public UActorComponent
 	GENERATED_UCLASS_BODY()
 
 private:
-	TMap <FString, TFunction<void(TSharedPtr<FJsonObject>)>> EventBroadcaster;
+	TMap <FString, TFunction<void(TSharedPtr<class FJsonObject>)>> EventBroadcaster;
 	TMap <FString, TFunction<void(TSharedPtr<FJsonObject>)>> MessageParser;
 
 	/** The Millicast Media Source representing the configuration of the network source */
