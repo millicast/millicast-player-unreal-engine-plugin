@@ -3,9 +3,15 @@
 #include "AudioDeviceModule.h"
 #include "MillicastPlayerPrivate.h"
 
-const char FAudioDeviceModule::kTimerQueueName[] = "FAudioDeviceModuleTimer";
-TAtomic<bool> FAudioDeviceModule::ReadDataAvailable = false;
+namespace MillicastPlayer
+{
 
+<<<<<<< HEAD
+=======
+const char FAudioDeviceModule::kTimerQueueName[] = "FAudioDeviceModuleTimer";
+TAtomic<bool> FAudioDeviceModule::ReadDataAvailable{false};
+
+>>>>>>> 090551bab85fc37c422480fe0c4617dd43c8d7e4
 FAudioDeviceModule::FAudioDeviceModule(webrtc::TaskQueueFactory* queue_factory) noexcept
 	: AudioCallback(nullptr),
 	bIsPlaying(false),
@@ -285,3 +291,4 @@ void FAudioDeviceModule::PullAudioData()
 	}
 }
 
+}

@@ -10,6 +10,8 @@
 
 #define WEAK_CAPTURE WeakThis = TWeakObjectPtr<UMillicastVideoTrackImpl>(this)
 
+#define WEAK_CAPTURE WeakThis = TWeakObjectPtr<UMillicastVideoTrackImpl>(this)
+
 /** Video */
 
 void UMillicastVideoTrackImpl::OnFrame(const webrtc::VideoFrame& VideoFrame)
@@ -152,7 +154,7 @@ void UMillicastAudioTrackImpl::OnData(const void* AudioData, int BitPerSample, i
 {
 	FScopeLock Lock(&CriticalSection);
 
-	if (!FAudioDeviceModule::ReadDataAvailable || SampleRate != 48000)
+	if (!MillicastPlayer::FAudioDeviceModule::ReadDataAvailable || SampleRate != 48000)
 	{
 		return;
 	}

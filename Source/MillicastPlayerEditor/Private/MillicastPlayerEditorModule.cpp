@@ -48,7 +48,7 @@ private:
 	{
 		const FName& CategoryName = PLACEMENT_CATEGORY;
 		IPlacementModeModule& PlacementModeModule = IPlacementModeModule::Get();
-		StyleInstance = MakeUnique<FSlateStyleSet>("MillicastStyle");
+		StyleInstance = MakeUnique<FSlateStyleSet>("MillicastPlayerStyle");
 
 		TSharedPtr<IPlugin> Plugin = IPluginManager::Get().FindPlugin(TEXT("MillicastPlayer"));
 		if (Plugin.IsValid())

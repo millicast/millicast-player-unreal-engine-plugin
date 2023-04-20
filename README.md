@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 # MillicastPlayer plugin for Unreal Engine 5.0.3
+=======
+# MillicastPlayer plugin for Unreal Engine 4.27
+>>>>>>> 090551bab85fc37c422480fe0c4617dd43c8d7e4
 
 * Supported UE version 5.0.3
 * Supported on Windows and Linux

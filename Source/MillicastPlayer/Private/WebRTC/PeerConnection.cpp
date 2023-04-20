@@ -10,7 +10,14 @@
 #include "MillicastAudioActor.h"
 #include "MillicastPlayerPrivate.h"
 
+<<<<<<< HEAD
 TAtomic<int> FWebRTCPeerConnection::RefCounter = 0;
+=======
+namespace MillicastPlayer
+{
+
+TAtomic<int> FWebRTCPeerConnection::RefCounter{0};
+>>>>>>> 090551bab85fc37c422480fe0c4617dd43c8d7e4
 
 void FWebRTCPeerConnection::CreatePeerConnectionFactory()
 {
@@ -103,6 +110,7 @@ FWebRTCPeerConnection* FWebRTCPeerConnection::Create(const FRTCConfig& Config, T
 	FWebRTCPeerConnection* PeerConnectionInstance = new FWebRTCPeerConnection();
 
 	PeerConnectionInstance->Init(Config, ExternalAudioConsumer);
+<<<<<<< HEAD
 
 	return PeerConnectionInstance;
 }
@@ -111,15 +119,31 @@ void FWebRTCPeerConnection::Init(const FRTCConfig& Config, TWeakInterfacePtr<IMi
 {
 	CreatePeerConnectionFactory();
 
+=======
+
+	return PeerConnectionInstance;
+}
+
+void FWebRTCPeerConnection::Init(const FRTCConfig& Config, TWeakInterfacePtr<IMillicastExternalAudioConsumer> ExternalAudioConsumer)
+{
+	CreatePeerConnectionFactory();
+
+>>>>>>> 090551bab85fc37c422480fe0c4617dd43c8d7e4
 	if (ExternalAudioConsumer.IsValid())
 	{
 		AudioDeviceModule->SetAudioConsumer(ExternalAudioConsumer);
 	}
 
 	webrtc::PeerConnectionDependencies deps(this);
+<<<<<<< HEAD
 
 	PeerConnection = PeerConnectionFactory->CreatePeerConnection(Config, nullptr, nullptr, this);
 
+=======
+
+	PeerConnection = PeerConnectionFactory->CreatePeerConnection(Config, nullptr, nullptr, this);
+
+>>>>>>> 090551bab85fc37c422480fe0c4617dd43c8d7e4
 	CreateSessionDescription = MakeUnique<FCreateSessionDescriptionObserver>();
 	LocalSessionDescription = MakeUnique<FSetSessionDescriptionObserver>();
 	RemoteSessionDescription = MakeUnique<FSetSessionDescriptionObserver>();
@@ -419,4 +443,6 @@ void FWebRTCPeerConnection::Renegociate(const webrtc::SessionDescriptionInterfac
 
 	UE_LOG(LogMillicastPlayer, Log, TEXT("[renegociation] remote sdp : %s"), sdp.c_str());
 	SetRemoteDescription(sdp);
+}
+
 }

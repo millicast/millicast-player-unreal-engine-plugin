@@ -16,17 +16,27 @@
 
 class IWebSocket;
 
-class FWebRTCPeerConnection;
+namespace MillicastPlayer
+{
+	class FWebRTCPeerConnection;
+}
 
 USTRUCT(BlueprintType, Blueprintable, Category = "MillicastPlayer")
 struct MILLICASTPLAYER_API FMillicastTrackInfo
 {
 	GENERATED_BODY();
 
+<<<<<<< HEAD
 	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "MillicastPlayer")
 	FString Media;
 
 	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "MillicastPlayer")
+=======
+	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "Millicast Player")
+	FString Media;
+
+	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "Millicast Player")
+>>>>>>> 090551bab85fc37c422480fe0c4617dd43c8d7e4
 	FString TrackId;
 };
 
@@ -35,6 +45,7 @@ struct MILLICASTPLAYER_API FMillicastLayerData
 {
 	GENERATED_BODY();
 
+<<<<<<< HEAD
 	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "MillicastPlayer")
 	FString EncodingId;
 
@@ -42,6 +53,15 @@ struct MILLICASTPLAYER_API FMillicastLayerData
 	int SpatialLayerId;
 
 	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "MillicastPlayer")
+=======
+	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "Millicast Player")
+	FString EncodingId;
+
+	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "Millicast Player")
+	int SpatialLayerId;
+
+	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "Millicast Player")
+>>>>>>> 090551bab85fc37c422480fe0c4617dd43c8d7e4
 	int TemporalLayerId;
 };
 
@@ -50,6 +70,7 @@ struct MILLICASTPLAYER_API FMillicastProjectionData
 {
 	GENERATED_BODY();
 
+<<<<<<< HEAD
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "MillicastPlayer")
 	FString TrackId;
 
@@ -57,6 +78,15 @@ struct MILLICASTPLAYER_API FMillicastProjectionData
 	FString Mid;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "MillicastPlayer")
+=======
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Millicast Player")
+	FString TrackId;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Millicast Player")
+	FString Mid;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Millicast Player")
+>>>>>>> 090551bab85fc37c422480fe0c4617dd43c8d7e4
 	FString Media;
 };
 
@@ -215,14 +245,17 @@ private:
 	FDelegateHandle OnClosedHandle;
 	FDelegateHandle OnMessageHandle;
 
-	FWebRTCPeerConnection* PeerConnection;
+	MillicastPlayer::FWebRTCPeerConnection* PeerConnection;
 	webrtc::PeerConnectionInterface::RTCConfiguration PeerConnectionConfig;
 
 	TWeakInterfacePtr<IMillicastExternalAudioConsumer> ExternalAudioConsumer;
 	FCriticalSection CriticalPcSection;
 
+<<<<<<< HEAD
 	TAtomic<bool> Subscribed;
 
+=======
+>>>>>>> 090551bab85fc37c422480fe0c4617dd43c8d7e4
 	TArray<UMillicastAudioTrack*> AudioTracks;
 	TArray<UMillicastVideoTrack*> VideoTracks;
 };

@@ -7,6 +7,7 @@
 
 #include "IMillicastVideoConsumer.h"
 #include "MillicastMediaTexture2D.h"
+#include "RendererInterface.h"
 
 #include "MillicastTexture2DPlayer.generated.h"
 
@@ -31,7 +32,7 @@ public:
 	void ChangeVideoTexture(UMillicastMediaTexture2D* InVideoTexture = nullptr);
 
 public:
-	
+
 	void OnFrame(TArray<uint8>& VideoData, int Width, int Height) override;
 
 public:

@@ -7,6 +7,7 @@
 #include "Dom/JsonValue.h"
 #include "Dom/JsonObject.h"
 #include "Serialization/JsonReader.h"
+#include "Serialization/JsonSerializer.h"
 #include "Serialization/JsonWriter.h"
 
 #include "Util.h"
@@ -30,6 +31,18 @@ bool UMillicastDirectorComponent::Initialize(UMillicastMediaSource* InMediaSourc
 	}
 
 	return InMediaSource != nullptr && InMediaSource == MillicastMediaSource;
+}
+
+void UMillicastDirectorComponent::SetMediaSource(UMillicastMediaSource* InMediaSource)
+{
+	if (InMediaSource != nullptr)
+	{
+		MillicastMediaSource = InMediaSource;
+	}
+	else
+	{
+		UE_LOG(LogMillicastPlayer, Log, TEXT("Provided MediaSource was nullptr"));
+	}
 }
 
 void UMillicastDirectorComponent::ParseIceServers(const TArray<TSharedPtr<FJsonValue>>& IceServersField,
@@ -59,16 +72,16 @@ void UMillicastDirectorComponent::ParseIceServers(const TArray<TSharedPtr<FJsonV
 		{
 			for (auto& url : iceServerUrls)
 			{
-				iceServer.urls.push_back(to_string(url));
+				iceServer.urls.push_back(MillicastPlayer::to_string(url));
 			}
 		}
 		if (hasUsername)
 		{
-			iceServer.username = to_string(iceServerUsername);
+			iceServer.username = MillicastPlayer::to_string(iceServerUsername);
 		}
 		if (hasPassword)
 		{
-			iceServer.password = to_string(iceServerPassword);
+			iceServer.password = MillicastPlayer::to_string(iceServerPassword);
 		}
 
 		SignalingData.IceServers.Emplace(MoveTemp(iceServer));
@@ -142,11 +155,11 @@ bool UMillicastDirectorComponent::Authenticate()
 	  .BindLambda([this](FHttpRequestPtr Request,
 				  FHttpResponsePtr Response,
 				  bool bConnectedSuccessfully) {
-		if(bConnectedSuccessfully && Response->GetResponseCode() == HTTP_OK) 
+		if(bConnectedSuccessfully && Response->GetResponseCode() == HTTP_OK)
 		{
 			ParseDirectorResponse(Response);
 		}
-		else 
+		else
 		{
 			UE_LOG(LogMillicastPlayer, Error, TEXT("Director HTTP request failed %d %s"), Response->GetResponseCode(), *Response->GetContentType());
 			FString ErrorMsg = Response->GetContentAsString();
