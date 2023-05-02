@@ -89,7 +89,7 @@ void UMillicastSubscriberComponent::SetMediaSource(UMillicastMediaSource* InMedi
 bool UMillicastSubscriberComponent::Subscribe(const FMillicastSignalingData& InSignalingData)
 {
 	UE_LOG(LogMillicastPlayer, Verbose, TEXT("%S"), __FUNCTION__);
-
+	
 	if (IsConnectionActive())
 	{
 		UE_LOG(LogMillicastPlayer, Error, TEXT("You are already subscribed to a stream. Please unsubscribed first."));
@@ -103,6 +103,7 @@ bool UMillicastSubscriberComponent::Subscribe(const FMillicastSignalingData& InS
 	}
 
 	State = EMillicastSubscriberState::Connecting;
+	bShouldReconnect = bShouldReconnectAutomatically;
 
 	for (auto& s : InSignalingData.IceServers)
 	{
@@ -118,6 +119,8 @@ bool UMillicastSubscriberComponent::Subscribe(const FMillicastSignalingData& InS
 */
 void UMillicastSubscriberComponent::Unsubscribe()
 {
+	bShouldReconnect = false;
+	
 	if (WS)
 	{
 		UE_LOG(LogMillicastPlayer, Verbose, TEXT("Closing web socket"));
@@ -420,6 +423,8 @@ void UMillicastSubscriberComponent::OnConnectionError(const FString& Error)
 	State = EMillicastSubscriberState::Disconnected;
 
 	UE_LOG(LogMillicastPlayer, Log, TEXT("Millicast WebSocket Connection error : %s"), *Error);
+
+	OnDisconnectedInternal(Error);
 }
 
 void UMillicastSubscriberComponent::OnClosed(int32 StatusCode,
@@ -429,6 +434,20 @@ void UMillicastSubscriberComponent::OnClosed(int32 StatusCode,
 	State = EMillicastSubscriberState::Disconnected;
 
 	UE_LOG(LogMillicastPlayer, Log, TEXT("Millicast WebSocket Closed"));
+
+	OnDisconnectedInternal(Reason);
+}
+
+void UMillicastSubscriberComponent::OnDisconnectedInternal(const FString& Reason)
+{
+	OnDisconnected.Broadcast(Reason, bShouldReconnect);
+	
+	if( !bShouldReconnect )
+	{
+		return;
+	}
+
+	WS->Connect();
 }
 
 void UMillicastSubscriberComponent::OnMessage(const FString& Msg)

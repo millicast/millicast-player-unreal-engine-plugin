@@ -70,6 +70,7 @@ DECLARE_DYNAMIC_MULTICAST_SPARSE_DELEGATE_OneParam(FMillicastSubscriberComponent
 DECLARE_DYNAMIC_MULTICAST_SPARSE_DELEGATE_OneParam(FMillicastSubscriberComponentAudioTrack, UMillicastSubscriberComponent, OnAudioTrack, UMillicastAudioTrack*, AudioTrack);
 
 // Broadcast event
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FMillicastSubscriberComponentDisconnected, const FString&, Reason, bool, IsAutomaticallyReconnecting);
 DECLARE_DYNAMIC_MULTICAST_SPARSE_DELEGATE_ThreeParams(FMillicastSubscriberComponentActive, UMillicastSubscriberComponent, OnActive, const FString&, StreamId, const TArray<FMillicastTrackInfo>&, Tracks, const FString&, SourceId);
 DECLARE_DYNAMIC_MULTICAST_SPARSE_DELEGATE_TwoParams(FMillicastSubscriberComponentInactive, UMillicastSubscriberComponent, OnInactive, const FString&, StreamId, const FString&, SourceId);
 DECLARE_DYNAMIC_MULTICAST_SPARSE_DELEGATE(FMillicastSubscriberComponentStopped, UMillicastSubscriberComponent, OnStopped);
@@ -106,7 +107,11 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Properties",
 		META = (DisplayName = "Extract Frame Metadata", AllowPrivateAccess = true))
 	bool bUseFrameTransformer = false;
-
+	
+	/** Whether or not we should automatically reconnect when there is a connection problem */
+	UPROPERTY(EditDefaultsOnly, Category = "Properties")
+	bool bShouldReconnectAutomatically = true;
+	
 private:
 	void SendCommand(const FString& Name, TSharedPtr<FJsonObject> Data);
 
@@ -191,6 +196,10 @@ public:
 	UPROPERTY(BlueprintAssignable, Category = "Components|Activation")
 	FMillicastSubscriberComponentInactive OnInactive;
 
+	/** Called when the connection is interrupted. */
+	UPROPERTY(BlueprintAssignable, Category = "Components|Activation")
+	FMillicastSubscriberComponentDisconnected OnDisconnected;
+	
 	/** Called when the stream is no longer available */
 	UPROPERTY(BlueprintAssignable, Category = "Components|Activation")
 	FMillicastSubscriberComponentStopped OnStopped;
@@ -218,7 +227,7 @@ public:
 	/** Called when metadata gave been extracted from the video frame */
 	UPROPERTY(BlueprintAssignable, Category = "Components|Activation")
 	FMillicastSubscriberComponentFrameMetadata OnFrameMetadata;
-
+	
 private:
 	void BeginPlay() override;
 	void EndPlay(EEndPlayReason::Type Reason) override;
@@ -229,6 +238,7 @@ private:
 	void OnConnectionError(const FString& Error);
 	void OnClosed(int32 StatusCode, const FString& Reason, bool bWasClean);
 	void OnMessage(const FString& Msg);
+	void OnDisconnectedInternal(const FString& Reason);
 
 	/** Create the peerconnection and starts subscribing*/
 	bool SubscribeToMillicast();
@@ -245,6 +255,9 @@ private:
 
 	FCriticalSection CriticalPcSection;
 
+	// Bool used internally for tracking whether the current websocket should reconnect on error or disconnect
+	bool bShouldReconnect = true;
+	
 	UPROPERTY()
 	TArray<UMillicastAudioTrack*> AudioTracks;
 
