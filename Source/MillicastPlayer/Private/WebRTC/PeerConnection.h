@@ -73,6 +73,10 @@ namespace Millicast::Player
 		~FWebRTCPeerConnection() noexcept;
 		void Init(const FRTCConfig& Config);
 
+#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION > 0
+		FPlayerStatsCollector* GetStatsCollector();
+#endif
+		
 		static FRTCConfig GetDefaultConfig();
 		static FWebRTCPeerConnection* Create(const FRTCConfig& Config);
 

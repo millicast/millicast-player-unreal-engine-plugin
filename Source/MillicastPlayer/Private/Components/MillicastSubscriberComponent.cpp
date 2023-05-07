@@ -164,6 +164,19 @@ void UMillicastSubscriberComponent::Unsubscribe()
 	}
 }
 
+#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION > 0
+Millicast::Player::FPlayerStatsCollector* UMillicastSubscriberComponent::GetStatsCollector()
+{
+	if(!PeerConnection)
+	{
+		UE_LOG(LogMillicastPlayer, Warning, TEXT("UMillicastSubscriberComponent::GetStatsCollector called without a peer connection"));
+		return nullptr;
+	}
+
+	return PeerConnection->GetStatsCollector();
+}
+#endif
+
 bool UMillicastSubscriberComponent::IsConnectionActive() const
 {
 	return State.Load() != EMillicastSubscriberState::Disconnected;

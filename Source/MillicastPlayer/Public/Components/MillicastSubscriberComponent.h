@@ -6,7 +6,6 @@
 #include "IMillicastMediaTrack.h"
 #include "MillicastSignalingData.h"
 #include "MillicastMediaSource.h"
-#include "UObject/WeakInterfacePtr.h"
 
 #include "MillicastSubscriberComponent.generated.h"
 
@@ -17,6 +16,7 @@ namespace Millicast
 {
 	namespace Player
 	{
+		class FPlayerStatsCollector;
 		class FWebRTCPeerConnection;
 	}
 }
@@ -152,6 +152,13 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "MillicastPlayer", META = (DisplayName = "Unsubscribe"))
 	void Unsubscribe();
 
+#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION > 0
+	/**
+	* Returns the stats collector instance for this subscriber
+	*/
+	Millicast::Player::FPlayerStatsCollector* GetStatsCollector();
+#endif
+	
 	/*
 		Returns if the subscriber is currently subscribed or not.
 	*/
@@ -224,7 +231,7 @@ public:
 	/** Called when metadata gave been extracted from the video frame */
 	UPROPERTY(BlueprintAssignable, Category = "Components|Activation")
 	FMillicastSubscriberComponentFrameMetadata OnFrameMetadata;
-	
+
 private:
 	void BeginPlay() override;
 	void EndPlay(EEndPlayReason::Type Reason) override;

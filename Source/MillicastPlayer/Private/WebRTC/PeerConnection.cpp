@@ -7,8 +7,7 @@
 #include <api/jsep_session_description.h>
 
 #include "AudioDeviceModule.h"
-#include "PlayerStats.h"
-#include "MillicastAudioActor.h"
+#include "WebRTC/PlayerStatsCollector.h"
 #include "MillicastPlayerPrivate.h"
 
 namespace
@@ -469,6 +468,11 @@ void FWebRTCPeerConnection::OnIceConnectionReceivingChange(bool)
 {}
 
 #if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION > 0
+FPlayerStatsCollector* FWebRTCPeerConnection::GetStatsCollector()
+{
+	return RTCStatsCollector.Get();
+}
+	
 void FWebRTCPeerConnection::EnableStats(bool Enable)
 {
 	if (Enable && !RTCStatsCollector)
