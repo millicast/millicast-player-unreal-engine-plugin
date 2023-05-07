@@ -14,6 +14,7 @@ namespace Millicast::Player
 	class FAudioDeviceModule : public webrtc::AudioDeviceModule
 	{
 		typedef uint16_t Sample;
+		rtc::scoped_refptr<FAudioDeviceModule> KeepAlive;
 
 		static constexpr int kTotalDelayMs = 0;
 		static constexpr int kClockDriftMs = 0;
@@ -38,7 +39,7 @@ namespace Millicast::Player
 
 		// Main initialization and termination
 		int32 Init() override { return 0; }
-		int32 Terminate() override { return 0; }
+		int32 Terminate() override;
 		bool Initialized() const override { return true; }
 
 		// Device enumeration
@@ -190,6 +191,7 @@ namespace Millicast::Player
 
 		bool bIsPlaying = false;    // True when audio is being pulled by the instance.
 		bool bIsPlayInitialized = false;  // True when the instance is ready to pull audio.
+		bool bIsTerminated = false;
 
 		bool bIsStarted = false;
 		int64_t NextFrameTime = 0;

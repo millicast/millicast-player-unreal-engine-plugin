@@ -132,6 +132,11 @@ void FAudioDeviceModule::SetPlaying(bool Value)
 {
 	FScopeLock cs(&CriticalSection);
 	bIsPlaying = Value;
+
+	if(bIsPlaying)
+	{
+		KeepAlive = this;
+	}
 }
 
 int32_t FAudioDeviceModule::StartRecording()
@@ -220,13 +225,27 @@ int32_t FAudioDeviceModule::PlayoutDelay(uint16_t* delay_ms) const
 	return 0;
 }
 
+int32 FAudioDeviceModule::Terminate()
+{
+	bIsTerminated = true;
+	return 0;
+}
+
+	
 void FAudioDeviceModule::Process()
 {
-	if (!Playing())
+	if(bIsTerminated)
 	{
+		KeepAlive = nullptr;
 		return;
 	}
 
+	if (!Playing())
+	{
+		KeepAlive = nullptr;
+		return;
+	}
+	
 	if (!bIsStarted)
 	{
 		NextFrameTime = rtc::TimeMillis();
