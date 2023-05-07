@@ -1,6 +1,7 @@
 // Copyright CoSMoSoftware 2021. All Rights Reserved.
 
 #include "Components/MillicastSubscriberComponent.h"
+#include "Components/MillicastDirectorComponent.h"
 #include "MillicastPlayerPrivate.h"
 #include "Util.h"
 #include "IWebSocket.h"
@@ -86,7 +87,7 @@ void UMillicastSubscriberComponent::SetMediaSource(UMillicastMediaSource* InMedi
 /**
 	Begin receiving audio, video.
 */
-bool UMillicastSubscriberComponent::Subscribe(const FMillicastSignalingData& InSignalingData)
+bool UMillicastSubscriberComponent::Subscribe(UMillicastDirectorComponent* DirectorComponent, const FMillicastSignalingData& InSignalingData)
 {
 	UE_LOG(LogMillicastPlayer, Verbose, TEXT("%S"), __FUNCTION__);
 	
@@ -102,8 +103,9 @@ bool UMillicastSubscriberComponent::Subscribe(const FMillicastSignalingData& InS
 		return false;
 	}
 
+	CachedDirectorComponent = DirectorComponent;
 	State = EMillicastSubscriberState::Connecting;
-	bShouldReconnect = bShouldReconnectAutomatically;
+	bShouldReconnect = true;
 
 	for (auto& s : InSignalingData.IceServers)
 	{
@@ -441,13 +443,20 @@ void UMillicastSubscriberComponent::OnClosed(int32 StatusCode,
 void UMillicastSubscriberComponent::OnDisconnectedInternal(const FString& Reason)
 {
 	OnDisconnected.Broadcast(Reason, bShouldReconnect);
-	
+
 	if( !bShouldReconnect )
 	{
 		return;
 	}
 
-	WS->Connect();
+	if( !IsValid(CachedDirectorComponent) )
+	{
+		UE_LOG(LogMillicastPlayer, Error, TEXT("UMillicastSubscriberComponent disconnected without valid cached director component"));
+		return;
+	}
+
+	// Need to grab a new JWT so that the connection will succeed. Simply reconnecting the WS will not always work
+	CachedDirectorComponent->Authenticate();
 }
 
 void UMillicastSubscriberComponent::OnMessage(const FString& Msg)

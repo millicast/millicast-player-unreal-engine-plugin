@@ -8,8 +8,8 @@
 
 #include "MillicastDirectorComponent.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_SPARSE_DELEGATE_OneParam(FMillicastDirectorComponentAuthenticated, UMillicastDirectorComponent, OnAuthenticated, const FMillicastSignalingData&, SignalingData);
-DECLARE_DYNAMIC_MULTICAST_SPARSE_DELEGATE_TwoParams(FMillicastDirectorComponentAuthenticationFailure, UMillicastDirectorComponent, OnAuthenticationFailure, int, Code, const FString&, Msg);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FMillicastDirectorComponentAuthenticated, UMillicastDirectorComponent*, DirectorComponent, const FMillicastSignalingData&, SignalingData);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FMillicastDirectorComponentAuthenticationFailure, int32, Code, const FString&, Msg);
 
 class FJsonValue;
 class IHttpResponse;

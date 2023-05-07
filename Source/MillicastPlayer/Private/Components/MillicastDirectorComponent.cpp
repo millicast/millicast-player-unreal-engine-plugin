@@ -120,7 +120,7 @@ void UMillicastDirectorComponent::ParseDirectorResponse(FHttpResponsePtr Respons
 
 		ParseIceServers(IceServersField, SignalingData);
 
-		OnAuthenticated.Broadcast(SignalingData);
+		OnAuthenticated.Broadcast(this, SignalingData);
 	}
 }
 
