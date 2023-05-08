@@ -66,6 +66,14 @@ void UMillicastAudioComponent::QueueAudioData(const uint8* AudioData, int32 NumS
 	/* Don't queue if IsVirtualized is true because the buffer is not actually playing, this will desync with video*/
 	if (AudioComponent->IsPlaying() && !AudioComponent->IsVirtualized())
 	{
+		// Potential Fix for clients that are out of sync, that get a buffer that is too large to work off
+		// Six figure buffer size has been observed in the wild. This is a very crude approach to the problem
+		const auto QueuedAudioSize = SoundStreaming->GetAvailableAudioByteCount();
+		if( QueuedAudioSize >= 20000 )
+		{
+			SoundStreaming->ResetAudio();
+		}
+		
 		SoundStreaming->QueueAudio(AudioData, NumSamples * AudioParameters.GetNumberBytesPerSample());
 	}
 }
