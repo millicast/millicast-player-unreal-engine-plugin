@@ -104,7 +104,7 @@ namespace Millicast::Player
 			return;
 		}
 
-		if (!bHasRegisteredEngineStats)
+		if (bHasRegisteredEngineStats)
 		{
 			return;
 		}
