@@ -122,6 +122,7 @@ private:
 	void ParseVadEvent(TSharedPtr<FJsonObject> JsonMsg);
 	void ParseLayersEvent(TSharedPtr<FJsonObject> JsonMsg);
 	void ParseViewerCountEvent(TSharedPtr<FJsonObject> JsonMsg);
+	void ParseMigrateEvent(TSharedPtr<FJsonObject> JsonMsg);
 
 public:
 

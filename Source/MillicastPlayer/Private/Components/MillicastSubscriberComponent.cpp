@@ -36,6 +36,7 @@ UMillicastSubscriberComponent::UMillicastSubscriberComponent(const FObjectInitia
 	EventBroadcaster.Emplace("vad", [this](TSharedPtr<FJsonObject> Msg) { ParseVadEvent(Msg); });
 	EventBroadcaster.Emplace("layers", [this](TSharedPtr<FJsonObject> Msg) { ParseLayersEvent(Msg); });
 	EventBroadcaster.Emplace("viewercount", [this](TSharedPtr<FJsonObject> Msg) { ParseViewerCountEvent(Msg); });
+	EventBroadcaster.Emplace("migrate", [this](TSharedPtr<FJsonObject> Msg) { ParseMigrateEvent(Msg); });
 }
 
 void UMillicastSubscriberComponent::BeginPlay()
@@ -651,4 +652,10 @@ void UMillicastSubscriberComponent::ParseViewerCountEvent(TSharedPtr<FJsonObject
 	int Count = DataJson->GetIntegerField("viewercount");
 
 	OnViewerCount.Broadcast(Count);
+}
+
+void UMillicastSubscriberComponent::ParseMigrateEvent(TSharedPtr<FJsonObject> JsonMsg)
+{
+	bShouldReconnect = true;
+	OnDisconnectedInternal("Received migrate event");
 }
