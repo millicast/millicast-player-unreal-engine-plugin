@@ -1,18 +1,13 @@
 // Copyright Millicast 2023. All Rights Reserved.
 
-#include "Components/MillicastAudioComponent.h"
+#include "Audio/MillicastAudioInstance.h"
 
 #include "AudioDevice.h"
 #include "MillicastPlayerPrivate.h"
 
 #include "Components/AudioComponent.h"
 
-FMillicastAudioParameters UMillicastAudioComponent::GetAudioParameters() const
-{
-	return AudioParameters;
-}
-
-void UMillicastAudioComponent::UpdateAudioParameters(FMillicastAudioParameters Parameters) noexcept
+void UMillicastAudioInstance::UpdateAudioParameters(FMillicastAudioParameters Parameters) noexcept
 {
 	AudioParameters = MoveTemp(Parameters);
 
@@ -24,12 +19,12 @@ void UMillicastAudioComponent::UpdateAudioParameters(FMillicastAudioParameters P
 	}
 }
 
-void UMillicastAudioComponent::InjectDependencies(UAudioComponent* InAudioComponent)
+void UMillicastAudioInstance::InjectDependencies(UAudioComponent* InAudioComponent)
 {
 	AudioComponent = InAudioComponent;
 }
 
-void UMillicastAudioComponent::Initialize()
+void UMillicastAudioInstance::Initialize()
 {
 	if (SoundStreaming == nullptr)
 	{
@@ -46,7 +41,7 @@ void UMillicastAudioComponent::Initialize()
 	}
 }
 
-void UMillicastAudioComponent::Shutdown()
+void UMillicastAudioInstance::Shutdown()
 {
 	if (AudioComponent && AudioComponent->IsPlaying())
 	{
@@ -56,7 +51,7 @@ void UMillicastAudioComponent::Shutdown()
 	SoundStreaming = nullptr;
 }
 
-void UMillicastAudioComponent::QueueAudioData(const uint8* AudioData, int32 NumSamples)
+void UMillicastAudioInstance::QueueAudioData(const uint8* AudioData, int32 NumSamples)
 {
 	if(!AudioComponent)
 	{
@@ -78,7 +73,7 @@ void UMillicastAudioComponent::QueueAudioData(const uint8* AudioData, int32 NumS
 	}
 }
 
-void UMillicastAudioComponent::InitSoundWave()
+void UMillicastAudioInstance::InitSoundWave()
 {
 	if (SoundStreaming)
 	{

@@ -27,6 +27,8 @@ namespace Millicast::Player
 
 		static FPlayerStats& Get();
 
+		void SetRendering(bool bEnabled);
+
 		bool IsAllowedToTick() const override { return !bHasRegisteredEngineStats; }
 		void Tick(float DeltaTime) override;
 		FORCEINLINE TStatId GetStatId() const override { RETURN_QUICK_DECLARE_CYCLE_STAT(MillicastPlayerProducerStats, STATGROUP_Tickables); }
@@ -59,6 +61,7 @@ namespace Millicast::Player
 		void RegisterEngineHooks();
 	
 	private:
+		bool bRendering = false;
 		bool bHasRegisteredEngineStats = false;
 		bool LogStatsEnabled = true;
 	};

@@ -2,26 +2,24 @@
 
 #pragma once
 
-#include "Components/SceneComponent.h"
 #include "IMillicastExternalAudioConsumer.h"
-#include "MillicastAudioComponent.generated.h"
+#include "MillicastAudioInstance.generated.h"
 
 class USoundWaveProcedural;
 class UAudioComponent;
 
-UCLASS(BlueprintType, Category = "Millicast Player", META = (DisplayName = "Millicast Audio ActorComponent"))
-class MILLICASTPLAYER_API UMillicastAudioComponent : public USceneComponent, public IMillicastExternalAudioConsumer
+UCLASS()
+class UMillicastAudioInstance : public UObject, public IMillicastExternalAudioConsumer
 {
 	GENERATED_BODY()
 
 public:
 	void InjectDependencies(UAudioComponent* InAudioComponent);
-	
-	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Properties")
-	UAudioComponent* AudioComponent;
 
+	const UAudioComponent* GetAudioComponent() const { return AudioComponent; }
+	
 	// IMillicastExternalAudioConsumer
-	virtual FMillicastAudioParameters GetAudioParameters() const override;
+	virtual FMillicastAudioParameters GetAudioParameters() const override { return AudioParameters; }
 	void UpdateAudioParameters(FMillicastAudioParameters Parameters) noexcept override;
 
 	/**
@@ -43,6 +41,9 @@ public:
 private:
 	void InitSoundWave();
 
+	UPROPERTY()
+	UAudioComponent* AudioComponent;
+	
 	UPROPERTY()
 	USoundWaveProcedural* SoundStreaming;
 

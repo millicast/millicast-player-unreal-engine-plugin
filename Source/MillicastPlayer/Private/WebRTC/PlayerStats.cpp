@@ -27,6 +27,22 @@ namespace Millicast::Player
 		RegisterEngineHooks();
 	}
 
+	void FPlayerStats::SetRendering(bool bEnabled)
+	{
+		if(bRendering == bEnabled)
+		{
+			return;
+		}
+
+		if(!bHasRegisteredEngineStats)
+		{
+			UE_LOG(LogMillicastPlayerStats,Error,TEXT("[FPlayerStats::SetRendering] called before stat command was registered"));
+			return;
+		}
+		
+		DirectStatsCommand( TEXT( "stat Millicast_Player" ) );
+	}
+	
 	int32 FPlayerStats::OnRenderStats(UWorld* World, FViewport* Viewport, FCanvas* Canvas, int32 X, int32 Y, const FVector* ViewLocation, const FRotator* ViewRotation)
 	{
 		int MessageKey = 100;
@@ -109,7 +125,7 @@ namespace Millicast::Player
 			return;
 		}
 		bHasRegisteredEngineStats = true;
-		
+
 		UE_LOG(LogMillicastPlayer, Verbose, TEXT("%S"), __FUNCTION__);
 		const FName StatName("STAT_Millicast_Player");
 		const FName StatCategory("STATCAT_Millicast_Player");
@@ -122,6 +138,7 @@ namespace Millicast::Player
 	bool FPlayerStats::OnToggleStats(UWorld* World, FCommonViewportClient* ViewportClient, const TCHAR* Stream)
 	{
 		UE_LOG(LogMillicastPlayer, Verbose, TEXT("%S"), __FUNCTION__);
+		bRendering = !bRendering;
 		return true;
 	}
 

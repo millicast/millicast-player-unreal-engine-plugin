@@ -1,8 +1,7 @@
 // Copyright Millicast 2023. All Rights Reserved.
 
-#include "MillicastAudioActor.h"
+#include "Audio/MillicastAudioActor.h"
 #include "Components/AudioComponent.h"
-#include "Components/MillicastAudioComponent.h"
 
 AMillicastAudioActor::AMillicastAudioActor(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -14,12 +13,4 @@ AMillicastAudioActor::AMillicastAudioActor(const FObjectInitializer& ObjectIniti
 		TEXT("AudioComponent")
 		);
 	AudioComponent->SetupAttachment(RootComponent);
-	
-	MillicastAudioComponent = ObjectInitializer.CreateDefaultSubobject<UMillicastAudioComponent>(
-		this,
-		TEXT("MillicastAudioComponent")
-		);
-	MillicastAudioComponent->SetupAttachment(RootComponent);
-
-	MillicastAudioComponent->InjectDependencies(AudioComponent);
 }
