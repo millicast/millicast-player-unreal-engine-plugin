@@ -179,12 +179,12 @@ namespace Millicast::Player
 		OnStats.Broadcast(Report);
 	}
 
-	const FString& FPlayerStatsCollector::Cluster() const
+	const FString& FPlayerStatsCollector::GetClusterId() const
 	{
 		return PeerConnection->ClusterId;
 	}
 
-	const FString& FPlayerStatsCollector::Server() const
+	const FString& FPlayerStatsCollector::GetServerId() const
 	{
 		return PeerConnection->ServerId;
 	}

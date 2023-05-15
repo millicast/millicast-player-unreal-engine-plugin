@@ -27,12 +27,9 @@ namespace Millicast::Player
 
 		void Poll();
 
-		void AddRef() const override;
-		rtc::RefCountReleaseStatus Release() const override;
-
-		// Begin RTCStatsCollectorCallback interface
-		void OnStatsDelivered(const rtc::scoped_refptr<const webrtc::RTCStatsReport>& report) override;
-
+		const FString& GetClusterId() const;
+		const FString& GetServerId() const;
+		
 		double Rtt; // ms
 		size_t Width; // px
 		size_t Height; // px
@@ -67,9 +64,13 @@ namespace Millicast::Player
 
 		double Timestamp; // us
 
-		const FString& Cluster() const;
-		const FString& Server() const;
+	protected:
+		void AddRef() const override;
+		rtc::RefCountReleaseStatus Release() const override;
 
+		// Begin RTCStatsCollectorCallback interface
+		void OnStatsDelivered(const rtc::scoped_refptr<const webrtc::RTCStatsReport>& report) override;
+	
 	private:
 		FWebRTCPeerConnection* PeerConnection;
 		mutable int32 RefCount;
