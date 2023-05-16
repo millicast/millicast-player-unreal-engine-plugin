@@ -6,6 +6,7 @@
 #include "IMillicastMediaTrack.h"
 #include "MillicastSignalingData.h"
 #include "MillicastMediaSource.h"
+#include "Runtime/Launch/Resources/Version.h"
 
 #include "MillicastSubscriberComponent.generated.h"
 
@@ -108,7 +109,7 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Properties",
 		META = (DisplayName = "Extract Frame Metadata", AllowPrivateAccess = true))
 	bool bUseFrameTransformer = false;
-	
+
 private:
 	void SendCommand(const FString& Name, TSharedPtr<FJsonObject> Data);
 
@@ -159,7 +160,7 @@ public:
 	*/
 	Millicast::Player::FPlayerStatsCollector* GetStatsCollector();
 #endif
-	
+
 	/*
 		Returns if the subscriber is currently subscribed or not.
 	*/
@@ -204,7 +205,7 @@ public:
 	/** Called when the connection is interrupted. */
 	UPROPERTY(BlueprintAssignable, Category = "Components|Activation")
 	FMillicastSubscriberComponentDisconnected OnDisconnected;
-	
+
 	/** Called when the stream is no longer available */
 	UPROPERTY(BlueprintAssignable, Category = "Components|Activation")
 	FMillicastSubscriberComponentStopped OnStopped;
@@ -265,7 +266,7 @@ private:
 
 	UPROPERTY()
 	UMillicastDirectorComponent* CachedDirectorComponent = nullptr;
-	
+
 	UPROPERTY()
 	TArray<UMillicastAudioTrack*> AudioTracks;
 

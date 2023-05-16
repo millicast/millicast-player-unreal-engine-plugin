@@ -1,5 +1,4 @@
 // Copyright Millicast 2022. All Rights Reserved.
-
 #pragma once
 
 #include "Runtime/Launch/Resources/Version.h"
@@ -20,7 +19,7 @@ namespace Millicast::Player
 	public:
 		DECLARE_EVENT_OneParam(FPlayerStatsCollector, FPlayerStatsCollectorOnStats, const rtc::scoped_refptr<const webrtc::RTCStatsReport>& /*Report*/);
 		FPlayerStatsCollectorOnStats OnStats;
-		
+
 	public:
 		FPlayerStatsCollector(class FWebRTCPeerConnection* InPeerConnection);
 		~FPlayerStatsCollector();
@@ -29,7 +28,7 @@ namespace Millicast::Player
 
 		const FString& GetClusterId() const;
 		const FString& GetServerId() const;
-		
+
 		double Rtt; // ms
 		size_t Width; // px
 		size_t Height; // px
@@ -70,7 +69,7 @@ namespace Millicast::Player
 
 		// Begin RTCStatsCollectorCallback interface
 		void OnStatsDelivered(const rtc::scoped_refptr<const webrtc::RTCStatsReport>& report) override;
-	
+
 	private:
 		FWebRTCPeerConnection* PeerConnection;
 		mutable int32 RefCount;
