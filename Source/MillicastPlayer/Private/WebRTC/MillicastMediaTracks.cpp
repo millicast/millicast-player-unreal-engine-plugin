@@ -261,16 +261,16 @@ void UMillicastAudioTrackImpl::AddConsumer(TScriptInterface<IMillicastExternalAu
 		return;
 	}
 
-	TWeakInterfacePtr<IMillicastExternalAudioConsumer> consumer;
-	consumer = AudioConsumer;
-
+	TWeakInterfacePtr<IMillicastExternalAudioConsumer> WeakConsumer;
+	WeakConsumer = AudioConsumer;
+	
 	{
 		FScopeLock Lock(&CriticalSection);
 
 		// Don't add consumer if already there
-		if (AudioConsumers.Contains(consumer))
+		if (AudioConsumers.Contains(WeakConsumer))
 		{
-			UE_LOG(LogMillicastPlayer, Warning, TEXT("Audio tracks already contains this audio consumer"));
+			UE_LOG(LogMillicastPlayer, Warning, TEXT("[UMillicastAudioTrackImpl::AddConsumer] already contains consumer that was attempted to be added"));
 			return;
 		}
 
@@ -281,9 +281,9 @@ void UMillicastAudioTrackImpl::AddConsumer(TScriptInterface<IMillicastExternalAu
 			track->AddSink(this);
 		}
 
-		consumer->Initialize();
+		WeakConsumer->Initialize();
 
-		AudioConsumers.Add(consumer);
+		AudioConsumers.Add(WeakConsumer);
 	}
 }
 

@@ -7,12 +7,14 @@
 #include "IWebSocket.h"
 #include "WebSocketsModule.h"
 #include "Async/Async.h"
+#include "Audio/MillicastAudioInstance.h"
 #include "Dom/JsonValue.h"
 #include "Dom/JsonObject.h"
 #include "Runtime/Launch/Resources/Version.h"
 #include "Serialization/JsonReader.h"
 #include "Serialization/JsonSerializer.h"
 #include "Serialization/JsonWriter.h"
+#include "Subsystems/MillicastAudioSubsystem.h"
 #include "WebRTC/PeerConnection.h"
 #include "WebRTC/MillicastMediaTracks.h"
 #include <string>
@@ -69,6 +71,11 @@ bool UMillicastSubscriberComponent::Initialize(UMillicastMediaSource* InMediaSou
 	}
 
 	return InMediaSource != nullptr && InMediaSource == MillicastMediaSource;
+}
+
+void UMillicastSubscriberComponent::RegisterAudioComponent(UAudioComponent* Component)
+{
+	AudioComponents.AddUnique(Component);
 }
 
 void UMillicastSubscriberComponent::SetMediaSource(UMillicastMediaSource* InMediaSource)
@@ -378,7 +385,8 @@ bool UMillicastSubscriberComponent::SubscribeToMillicast()
 				UE_LOG(LogMillicastPlayer, Verbose, TEXT("Create video track object"));
 				auto VideoTrack = NewObject<UMillicastVideoTrackImpl>();
 				VideoTrack->Initialize(Mid.c_str(), Track);
-
+				VideoTrack->AddConsumer(WeakThis.Get());
+			
 				WeakThis->OnVideoTrack.Broadcast(VideoTrack);
 				WeakThis->VideoTracks.Add(VideoTrack);
 			});
@@ -396,9 +404,17 @@ bool UMillicastSubscriberComponent::SubscribeToMillicast()
 				}
 
 				UE_LOG(LogMillicastPlayer, Verbose, TEXT("Create audio track object"));
-				auto AudioTrack = NewObject<UMillicastAudioTrackImpl>();
+				auto* AudioTrack = NewObject<UMillicastAudioTrackImpl>();
 				AudioTrack->Initialize(mid.c_str(), Track);
 
+				// Registers all AudioComponents with the track
+				auto* Subsystem = WeakThis->GetWorld()->GetGameInstance()->GetSubsystem<UMillicastAudioSubsystem>();
+				for(auto* AudioComponent : WeakThis->AudioComponents)
+				{
+					Subsystem->Register(AudioComponent);
+					AudioTrack->AddConsumer(Subsystem->GetInstance(AudioComponent));
+				}
+			
 				WeakThis->OnAudioTrack.Broadcast(AudioTrack);
 				WeakThis->AudioTracks.Add(AudioTrack); // keep reference to delete it later
 			});

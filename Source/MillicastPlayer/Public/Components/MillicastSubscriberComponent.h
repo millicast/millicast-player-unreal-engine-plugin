@@ -135,12 +135,18 @@ public:
 	bool Initialize(UMillicastMediaSource* InMediaSource = nullptr);
 
 	/**
+	 * Registers a UAudioComponent for this Subscriber. Use before calling the Subscribe function
+	 */
+	UFUNCTION(BlueprintCallable, Category = "MillicastPlayer", META = (DisplayName = "RegisterAudioComponent"))
+	void RegisterAudioComponent(UAudioComponent* Component);
+	
+	/**
 	* Change the Millicast Media Source of this object
 	* Note that you have to change it before calling subscribe in order to have effect.
 	*/
 	UFUNCTION(BlueprintCallable, Category = "MillicastPlayer", META = (DisplayName = "SetMediaSource"))
 	void SetMediaSource(UMillicastMediaSource* InMediaSource);
-
+	
 	/**
 		Begin receiving video from Millicast. The optional ExternalAudioConsumer allows to perform custom audio handling.
 		If nullptr is passed in, the default Unreal audio device is used.
@@ -270,6 +276,9 @@ private:
 	UPROPERTY()
 	TArray<UMillicastAudioTrack*> AudioTracks;
 
+	UPROPERTY()
+	TArray<UAudioComponent*> AudioComponents;
+	
 	UPROPERTY()
 	TArray<UMillicastVideoTrack*> VideoTracks;
 
