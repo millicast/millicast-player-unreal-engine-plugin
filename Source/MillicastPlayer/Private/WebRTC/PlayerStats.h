@@ -11,11 +11,12 @@
 
 class FCanvas;
 class FCommonViewportClient;
-class FPlayerStatsCollector;
 class FViewport;
 
 namespace Millicast::Player
 {
+	class FPlayerStatsCollector;
+
 	/*
 	 * Some basic performance stats about how the publisher is running, e.g. how long capture/encode takes.
 	 * Stats are drawn to screen for now as it is useful to observe them in realtime.
@@ -59,7 +60,7 @@ namespace Millicast::Player
 		int32 OnRenderStats(UWorld* World, FViewport* Viewport, FCanvas* Canvas, int32 X, int32 Y, const FVector* ViewLocation, const FRotator* ViewRotation);
 
 		void RegisterEngineHooks();
-	
+
 	private:
 		bool bRendering = false;
 		bool bHasRegisteredEngineStats = false;
