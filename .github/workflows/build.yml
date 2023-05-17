@@ -1,0 +1,81 @@
+name: Check Branch and Trigger Workflow
+
+on:
+  push:
+    branches:
+      - '*'
+
+jobs:
+  Trigger_Example_Build:
+    runs-on: self-hosted
+
+    steps:
+      - name: Check for corresponding branch
+        id: branch-check
+        run: |
+          echo "branch name: ${{ github.ref }}"
+          exists=$(curl -s -o /dev/null -w "%{http_code}" -X GET \
+            "https://api.github.com/repos/millicast/millicast-player-unreal-engine-plugin/git/${{ github.ref }}" \
+          )
+          echo "http response(200 - branch exists, 404 - branch doesn't exist): $exists"
+          echo "branch_exists=$(if [ $exists -eq 200 ]; then echo true; else echo false; fi)" >> $GITHUB_OUTPUT 
+
+# rm ${{ github.workspace }}/gh_app_priv_key.pem ${{ github.workspace }}/generate_gh_app_installation_token.py
+# curl -L \
+          #   -X PUT \
+          #   -H "Accept: application/vnd.github+json" \
+          #   -H "Authorization: Bearer ${{ secrets.PERSONAL_ACCESS_TOKEN }}" \
+          #   -H "X-GitHub-Api-Version: 2022-11-28" \
+          #   "https://api.github.com/repos/$REPO/actions/secrets/GH_ACCESS_TOKEN_1H_EXPIRATION" \
+          #   -d '{"encrypted_value":"$GH_ACCESS_TOKEN_1H_EXPIRATION,"key_id":"012345678912345678"}'
+          # echo "Secret created successfully."
+
+      - name: generate GH access token
+        id: generate_gha_token
+        env: 
+          GH_APP_ID: ${{ secrets.GH_TriggerGHActions_APP_ID }}
+          GH_APP_INSTALLATION_ID: ${{ secrets.GH_TriggerGHActions_APP_INSTALLATION_ID }}
+          REPO: ${{ github.repository }}
+        run: |
+          python3 -m pip install jwt requests
+          echo "${{ vars.GH_APP_TRIGGERGHACTION_TOKEN_PYTHON_SCRIPT }}" | base64 -d > "${{ github.workspace }}/generate_gh_app_installation_token.py"
+          echo "${{ secrets.GH_APP_TRIGGERGHACTION_PRIV_KEY }}" > "${{ github.workspace }}/gh_app_priv_key.pem"
+          export PEM_FILE="${{ github.workspace }}/gh_app_priv_key.pem"
+          export GH_ACCESS_TOKEN_1H_EXPIRATION="$( python3 ${{ github.workspace }}/generate_gh_app_installation_token.py )"
+          echo $GH_ACCESS_TOKEN_1H_EXPIRATION > "${{ github.workspace }}/gh_1h_access_token"
+ 
+    
+      - name: Trigger Workflow
+        id: trigger_workflow_branch
+        if: steps.branch-check.outputs.branch_exists == 'true'
+        run: |
+          echo "trigger Workflow"
+          curl -L \
+          -X POST \
+          -H "Accept: application/vnd.github+json" \
+          -H "Authorization: Bearer $(cat ${{ github.workspace }}/gh_1h_access_token )" \
+          -H "X-GitHub-Api-Version: 2022-11-28" \
+          https://api.github.com/repos/millicast/millicast-player-ue5-example/actions/workflows/build.yml/dispatches \
+          -d '{"ref":"${{ github.ref }}"}'
+          
+
+
+      - name: Trigger Workflow on Dev Branch
+        id: trigger_workflow_dev
+        if: steps.branch-check.outputs.branch_exists == 'false'
+        run: |
+          echo "trigger default workflow"
+          curl -L \
+          -X POST \
+          -H "Accept: application/vnd.github+json" \
+          -H "Authorization: Bearer $(cat ${{ github.workspace }}/gh_1h_access_token )" \
+          -H "X-GitHub-Api-Version: 2022-11-28" \
+          https://api.github.com/repos/millicast/millicast-player-ue5-example/actions/workflows/build.yml/dispatches \
+          -d '{"ref":"DIOS-1726"}'
+
+
+      - name: Cleanup
+        id: cleanup
+        run: |
+          rm ${{ github.workspace }}/gh_app_priv_key.pem ${{ github.workspace }}/generate_gh_app_installation_token.py ${{ github.workspace }}/gh_1h_access_token
+
