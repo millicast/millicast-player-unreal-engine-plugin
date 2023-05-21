@@ -74,7 +74,7 @@ namespace Millicast::Player
 		void Init(const FRTCConfig& Config);
 
 #if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION > 0
-		FPlayerStatsCollector* GetStatsCollector();
+		FPlayerStatsCollector* GetStatsCollector() const;
 #endif
 		
 		static FRTCConfig GetDefaultConfig();

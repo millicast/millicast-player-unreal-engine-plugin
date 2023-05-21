@@ -10,6 +10,7 @@
 
 #include "MillicastSubscriberComponent.generated.h"
 
+struct FPlayerStatsData;
 class IWebSocket;
 class UMillicastDirectorComponent;
 
@@ -155,16 +156,22 @@ public:
 	bool Subscribe(UMillicastDirectorComponent* DirectorComponent, const FMillicastSignalingData& InConnectionInformation);
 
 	/**
-		Attempts to stop receiving video from the Millicast feed
+	* Attempts to stop receiving video from the Millicast feed
 	*/
 	UFUNCTION(BlueprintCallable, Category = "MillicastPlayer", META = (DisplayName = "Unsubscribe"))
 	void Unsubscribe();
+
+	/**
+	* Returns data from the stats collector. Exists to expose to Blueprint
+	*/
+	UFUNCTION(BlueprintCallable, Category = "MillicastPlayer", META = (DisplayName = "GetStats"))
+	FPlayerStatsData GetStats() const;
 
 #if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION > 0
 	/**
 	* Returns the stats collector instance for this subscriber
 	*/
-	Millicast::Player::FPlayerStatsCollector* GetStatsCollector();
+	Millicast::Player::FPlayerStatsCollector* GetStatsCollector() const;
 #endif
 
 	/*

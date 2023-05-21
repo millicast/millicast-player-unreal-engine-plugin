@@ -468,7 +468,7 @@ void FWebRTCPeerConnection::OnIceConnectionReceivingChange(bool)
 {}
 
 #if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION > 0
-FPlayerStatsCollector* FWebRTCPeerConnection::GetStatsCollector()
+FPlayerStatsCollector* FWebRTCPeerConnection::GetStatsCollector() const
 {
 	return RTCStatsCollector.Get();
 }

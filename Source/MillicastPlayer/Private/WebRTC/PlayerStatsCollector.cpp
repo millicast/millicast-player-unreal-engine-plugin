@@ -16,23 +16,7 @@ namespace Millicast::Player
 
 		PeerConnection = InPeerConnection;
 
-		Rtt = 0;
-		Width = 0;
-		Height = 0;
-		FramePerSecond = 0;
-		VideoBitrate = 0;
-		AudioBitrate = 0;
-		VideoTotalReceived = 0;
-		AudioTotalReceived = 0;
-		VideoPacketLoss = 0;
-		AudioPacketLoss = 0;
-		VideoJitterAverageDelay = 0;
-		AudioJitterAverageDelay = 0;
-		LastVideoReceivedTimestamp = 0;
-		LastAudioReceivedTimestamp = 0;
-
-		LastAudioStatTimestamp = 0;
-		LastVideoStatTimestamp = 0;
+		Data = {};
 	}
 
 	FPlayerStatsCollector::~FPlayerStatsCollector()
@@ -77,40 +61,40 @@ namespace Millicast::Player
 
 				if (*InboundStat.kind == webrtc::RTCMediaStreamTrackKind::kVideo)
 				{
-					auto lastByteCount = VideoTotalReceived;
+					auto lastByteCount = Data.VideoTotalReceived;
 					auto timestamp = Stats.timestamp_us();
 
-					Width = InboundStat.frame_width.ValueOrDefault(0);
-					Height = InboundStat.frame_height.ValueOrDefault(0);
-					FramePerSecond = InboundStat.frames_per_second.ValueOrDefault(0);
-					VideoTotalReceived = InboundStat.bytes_received.ValueOrDefault(0);
-					VideoPacketLoss = InboundStat.packets_lost.ValueOrDefault(-1);
-					VideoJitter = InboundStat.jitter.ValueOrDefault(0) * 1000.;
-					VideoDecodeTime = InboundStat.total_decode_time.ValueOrDefault(0);
-					VideoDecodeTimeAverage = 1000. * VideoDecodeTime / (double)*InboundStat.frames_decoded;
-					FramesDropped = InboundStat.frames_dropped.ValueOrDefault(0);
-					VideoPacketDiscarded = InboundStat.packets_discarded.ValueOrDefault(0);
-					VideoNackCount = InboundStat.nack_count.ValueOrDefault(0);
+					Data.Width = InboundStat.frame_width.ValueOrDefault(0);
+					Data.Height = InboundStat.frame_height.ValueOrDefault(0);
+					Data.FramePerSecond = InboundStat.frames_per_second.ValueOrDefault(0);
+					Data.VideoTotalReceived = InboundStat.bytes_received.ValueOrDefault(0);
+					Data.VideoPacketLoss = InboundStat.packets_lost.ValueOrDefault(-1);
+					Data.VideoJitter = InboundStat.jitter.ValueOrDefault(0) * 1000.;
+					Data.VideoDecodeTime = InboundStat.total_decode_time.ValueOrDefault(0);
+					Data.VideoDecodeTimeAverage = 1000. * Data.VideoDecodeTime / (double)*InboundStat.frames_decoded;
+					Data.FramesDropped = InboundStat.frames_dropped.ValueOrDefault(0);
+					Data.VideoPacketDiscarded = InboundStat.packets_discarded.ValueOrDefault(0);
+					Data.VideoNackCount = InboundStat.nack_count.ValueOrDefault(0);
 
 					auto videoJitterDelay = InboundStat.jitter_buffer_delay.ValueOrDefault(-1);
 					auto videoJitterEmitted = InboundStat.jitter_buffer_emitted_count.ValueOrDefault(0);
 
 					if (videoJitterDelay != 0)
 					{
-						VideoJitterAverageDelay = 1000. * videoJitterDelay / videoJitterEmitted;
+						Data.VideoJitterAverageDelay = 1000. * videoJitterDelay / videoJitterEmitted;
 					}
 					else
 					{
-						VideoJitterAverageDelay = 0;
+						Data.VideoJitterAverageDelay = 0;
 					}
 
-					if (LastVideoStatTimestamp != 0 && VideoTotalReceived != lastByteCount)
+					if (Data.LastVideoStatTimestamp != 0 && Data.VideoTotalReceived != lastByteCount)
 					{
-						VideoBitrate = (VideoTotalReceived - lastByteCount) * NUM_US * 8. / (timestamp - LastVideoStatTimestamp);
+						Data.VideoBitrate = (Data.VideoTotalReceived - lastByteCount) * NUM_US * 8. / (timestamp - Data.LastVideoStatTimestamp);
 					}
 
-					LastVideoStatTimestamp = timestamp;
-					LastVideoReceivedTimestamp = InboundStat.last_packet_received_timestamp.ValueOrDefault(-1);
+					Data.LastVideoStatTimestamp = timestamp;
+					Data.LastVideoReceivedTimestamp = InboundStat.last_packet_received_timestamp.ValueOrDefault(-1);
 
 					auto CodecStats = Report->GetStatsOfType<webrtc::RTCCodecStats>();
 
@@ -119,42 +103,41 @@ namespace Millicast::Player
 
 					if (it != CodecStats.end())
 					{
-						VideoCodec = ToString(*(*it)->mime_type);
+						Data.VideoCodec = ToString(*(*it)->mime_type);
 					}
 				}
 				else
 				{
-					auto lastByteCount = AudioTotalReceived;
+					auto lastByteCount = Data.AudioTotalReceived;
 					auto timestamp = Stats.timestamp_us();
 
-					AudioTotalReceived = InboundStat.bytes_received.ValueOrDefault(0);
-					AudioPacketLoss = InboundStat.packets_lost.ValueOrDefault(-1);
-					AudioJitter = InboundStat.jitter.ValueOrDefault(0) * 1000.;
-					AudioPacketDiscarded = InboundStat.packets_discarded.ValueOrDefault(0);
-					AudioNackCount = InboundStat.nack_count.ValueOrDefault(0);
-					ConcealedSamples = InboundStat.concealed_samples.ValueOrDefault(0);
-					SilentConcealedSamples = InboundStat.silent_concealed_samples.ValueOrDefault(0);
+					Data.AudioTotalReceived = InboundStat.bytes_received.ValueOrDefault(0);
+					Data.AudioPacketLoss = InboundStat.packets_lost.ValueOrDefault(-1);
+					Data.AudioJitter = InboundStat.jitter.ValueOrDefault(0) * 1000.;
+					Data.AudioPacketDiscarded = InboundStat.packets_discarded.ValueOrDefault(0);
+					Data.AudioNackCount = InboundStat.nack_count.ValueOrDefault(0);
+					Data.ConcealedSamples = InboundStat.concealed_samples.ValueOrDefault(0);
+					Data.SilentConcealedSamples = InboundStat.silent_concealed_samples.ValueOrDefault(0);
 
 					auto audioJitterDelay = InboundStat.jitter_buffer_delay.ValueOrDefault(-1);
 					auto audioJitterEmitted = InboundStat.jitter_buffer_emitted_count.ValueOrDefault(0);
 
 					if (audioJitterDelay != 0)
 					{
-						AudioJitterAverageDelay = 1000. * audioJitterDelay / audioJitterEmitted;
+						Data.AudioJitterAverageDelay = 1000. * audioJitterDelay / audioJitterEmitted;
 					}
 					else
 					{
-						AudioJitterAverageDelay = 0;
+						Data.AudioJitterAverageDelay = 0;
 					}
 
-					if (LastAudioStatTimestamp != 0 && AudioTotalReceived != lastByteCount)
+					if (Data.LastAudioStatTimestamp != 0 && Data.AudioTotalReceived != lastByteCount)
 					{
-						AudioBitrate = (AudioTotalReceived - lastByteCount) * NUM_US * 8 / (timestamp - LastAudioStatTimestamp);
+						Data.AudioBitrate = (Data.AudioTotalReceived - lastByteCount) * NUM_US * 8 / (timestamp - Data.LastAudioStatTimestamp);
 					}
 
-					LastAudioStatTimestamp = timestamp;
-					LastAudioReceivedTimestamp = InboundStat.last_packet_received_timestamp.ValueOrDefault(-1);
-
+					Data.LastAudioStatTimestamp = timestamp;
+					Data.LastAudioReceivedTimestamp = InboundStat.last_packet_received_timestamp.ValueOrDefault(-1);
 
 					auto CodecStats = Report->GetStatsOfType<webrtc::RTCCodecStats>();
 
@@ -163,18 +146,18 @@ namespace Millicast::Player
 
 					if (it != CodecStats.end())
 					{
-						AudioCodec = ToString(*(*it)->mime_type);
+						Data.AudioCodec = ToString(*(*it)->mime_type);
 					}
 				}
 			}
 			else if (Stats.type() == std::string("candidate-pair"))
 			{
 				auto CandidateStat = Stats.cast_to<webrtc::RTCIceCandidatePairStats>();
-				Rtt = CandidateStat.current_round_trip_time.ValueOrDefault(0.) * 1000.;
+				Data.Rtt = CandidateStat.current_round_trip_time.ValueOrDefault(0.) * 1000.;
 			}
 		}
 
-		Timestamp = Report->timestamp_us();
+		Data.Timestamp = Report->timestamp_us();
 
 		OnStats.Broadcast(Report);
 	}

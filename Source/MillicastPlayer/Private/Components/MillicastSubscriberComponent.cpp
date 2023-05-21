@@ -16,8 +16,11 @@
 #include "Serialization/JsonWriter.h"
 #include "Subsystems/MillicastAudioSubsystem.h"
 #include "WebRTC/PeerConnection.h"
+#include "WebRTC/PlayerStatsData.h"
 #include "WebRTC/MillicastMediaTracks.h"
 #include <string>
+
+#include "WebRTC/PlayerStatsCollector.h"
 
 #define WEAK_CAPTURE WeakThis = TWeakObjectPtr<UMillicastSubscriberComponent>(this)
 
@@ -172,8 +175,23 @@ void UMillicastSubscriberComponent::Unsubscribe()
 	}
 }
 
+FPlayerStatsData UMillicastSubscriberComponent::GetStats() const
+{
 #if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION > 0
-Millicast::Player::FPlayerStatsCollector* UMillicastSubscriberComponent::GetStatsCollector()
+	const auto* StatsCollector = GetStatsCollector();
+	if(!StatsCollector)
+	{
+		return {};
+	}
+	
+	return StatsCollector->GetData();
+#else
+	return {};
+#endif
+}
+
+#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION > 0
+Millicast::Player::FPlayerStatsCollector* UMillicastSubscriberComponent::GetStatsCollector() const
 {
 	if(!PeerConnection)
 	{
