@@ -7,10 +7,10 @@
 #include "MillicastSignalingData.h"
 #include "MillicastMediaSource.h"
 #include "Runtime/Launch/Resources/Version.h"
+#include "WebRTC/PlayerStatsData.h"
 
 #include "MillicastSubscriberComponent.generated.h"
 
-struct FPlayerStatsData;
 class IWebSocket;
 class UMillicastDirectorComponent;
 
