@@ -140,6 +140,12 @@ public:
 	 */
 	UFUNCTION(BlueprintCallable, Category = "MillicastPlayer", META = (DisplayName = "RegisterAudioComponent"))
 	void RegisterAudioComponent(UAudioComponent* Component);
+
+	/**
+	 * Registers a IMillicastVideoConsumer for this Subscriber. Use before calling the Subscribe function
+	 */
+	UFUNCTION(BlueprintCallable, Category = "MillicastPlayer", META = (DisplayName = "RegisterVideoConsumer"))
+	void RegisterVideoConsumer(TScriptInterface<IMillicastVideoConsumer> Consumer);
 	
 	/**
 	* Change the Millicast Media Source of this object
@@ -289,5 +295,8 @@ private:
 	UPROPERTY()
 	TArray<UMillicastVideoTrack*> VideoTracks;
 
+	UPROPERTY()
+	TArray<TScriptInterface<IMillicastVideoConsumer>> VideoConsumers;
+	
 	TAtomic<EMillicastSubscriberState> State{EMillicastSubscriberState::Disconnected};
 };

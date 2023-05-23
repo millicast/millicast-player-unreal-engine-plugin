@@ -81,6 +81,11 @@ void UMillicastSubscriberComponent::RegisterAudioComponent(UAudioComponent* Comp
 	AudioComponents.AddUnique(Component);
 }
 
+void UMillicastSubscriberComponent::RegisterVideoConsumer(TScriptInterface<IMillicastVideoConsumer> Consumer)
+{
+	VideoConsumers.AddUnique(Consumer);
+}
+
 void UMillicastSubscriberComponent::SetMediaSource(UMillicastMediaSource* InMediaSource)
 {
 	UE_LOG(LogMillicastPlayer, VeryVerbose, TEXT("%S"), __FUNCTION__);
@@ -403,7 +408,12 @@ bool UMillicastSubscriberComponent::SubscribeToMillicast()
 				UE_LOG(LogMillicastPlayer, Verbose, TEXT("Create video track object"));
 				auto VideoTrack = NewObject<UMillicastVideoTrackImpl>();
 				VideoTrack->Initialize(Mid.c_str(), Track);
-				VideoTrack->AddConsumer(WeakThis.Get());
+
+				// Registers all VideoConsumers with the track
+				for(const auto& VideoConsumer : WeakThis->VideoConsumers)
+				{
+					VideoTrack->AddConsumer(VideoConsumer);
+				}
 			
 				WeakThis->OnVideoTrack.Broadcast(VideoTrack);
 				WeakThis->VideoTracks.Add(VideoTrack);
