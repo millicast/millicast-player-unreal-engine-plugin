@@ -9,6 +9,7 @@
 #include "AudioDeviceModule.h"
 #include "WebRTC/PlayerStatsCollector.h"
 #include "MillicastPlayerPrivate.h"
+#include "MillicastUtil.h"
 
 namespace
 {
@@ -171,9 +172,13 @@ FWebRTCPeerConnection::~FWebRTCPeerConnection() noexcept
 
 	PeerConnection = nullptr;
 
+	// We take another reference count here in the lambda, to make sure it does not go out of scope before the callback is called
 	UE_LOG(LogMillicastPlayer, Verbose, TEXT("Stop audio device module"));
-	WorkingThread->Invoke<void>(RTC_FROM_HERE, [this]() { AudioDeviceModule->Terminate(); });
-
+	AsyncGameThreadTaskUnguarded([RefAudioDeviceModule = AudioDeviceModule]()
+	{
+		RefAudioDeviceModule->SetPlaying(false);
+	});
+	
 	UE_LOG(LogMillicastPlayer, Verbose, TEXT("Destroy peerconnectino factory, count %d"), RefCounter.Load());
 	PeerConnectionFactory = nullptr;
 	AudioDeviceModule = nullptr;
@@ -285,9 +290,8 @@ void FWebRTCPeerConnection::CreateOffer()
 	UE_LOG(LogMillicastPlayer, VeryVerbose, TEXT("%S"), __FUNCTION__);
 
 	SignalingThread->PostTask(RTC_FROM_HERE, [this]() {
-		PeerConnection->CreateOffer(CreateSessionDescription.Release(),
-			OaOptions);
-		});
+		PeerConnection->CreateOffer(CreateSessionDescription.Release(), OaOptions);
+	});
 }
 
 template<typename Callback>
@@ -319,27 +323,24 @@ webrtc::SessionDescriptionInterface* FWebRTCPeerConnection::CreateDescription(co
 	return SessionDescription;
 }
 
-void FWebRTCPeerConnection::SetLocalDescription(const std::string& Sdp,
-	const std::string& Type)
+void FWebRTCPeerConnection::SetLocalDescription(const std::string& Sdp, const std::string& Type)
 {
-	auto* SessionDescription = CreateDescription(Type,
-		Sdp,
-		std::ref(LocalSessionDescription->OnFailureCallback));
+	auto* SessionDescription = CreateDescription(Type, Sdp, std::ref(LocalSessionDescription->OnFailureCallback));
+	if (!SessionDescription)
+	{
+		return;
+	}
 
-	if (!SessionDescription) return;
-
-	PeerConnection->SetLocalDescription(LocalSessionDescription.Release(),
-		SessionDescription);
+	PeerConnection->SetLocalDescription(LocalSessionDescription.Release(), SessionDescription);
 }
 
-void FWebRTCPeerConnection::SetRemoteDescription(const std::string& Sdp,
-	const std::string& Type)
+void FWebRTCPeerConnection::SetRemoteDescription(const std::string& Sdp, const std::string& Type)
 {
-	auto* SessionDescription = CreateDescription(Type,
-		Sdp,
-		std::ref(RemoteSessionDescription->OnFailureCallback));
-
-	if (!SessionDescription) return;
+	auto* SessionDescription = CreateDescription(Type, Sdp, std::ref(RemoteSessionDescription->OnFailureCallback));
+	if (!SessionDescription)
+	{
+		return;
+	}
 
 	PeerConnection->SetRemoteDescription(RemoteSessionDescription.Release(), SessionDescription);
 }
@@ -427,31 +428,30 @@ void FWebRTCPeerConnection::OnRenegotiationNeeded()
 	CreateSessionDescription->SetOnSuccessCallback([this](const std::string& type, const std::string& sdp) {
 		UE_LOG(LogMillicastPlayer, Log, TEXT("[renegociation] pc.createOffer() | Success"));
 		SetLocalDescription(sdp, type);
-		});
+	});
 
 	CreateSessionDescription->SetOnFailureCallback([](const std::string& err) {
 		UE_LOG(LogMillicastPlayer, Error, TEXT("[renegociation] pc.createOffer() | Error: %s"), *FString(err.c_str()));
-		});
+	});
 
 	LocalSessionDescription->SetOnSuccessCallback([this]() {
 		UE_LOG(LogMillicastPlayer, Log, TEXT("[renegociation] pc.setLocalDescription() | success"));
 		Renegociate(PeerConnection->local_description(), PeerConnection->remote_description());
-		});
+	});
 
 	LocalSessionDescription->SetOnFailureCallback([](const std::string& err) {
 		UE_LOG(LogMillicastPlayer, Error, TEXT("[renegociation]  Set local description failed | Error: %s"), *FString(err.c_str()));
-		});
+	});
 
 	RemoteSessionDescription->SetOnSuccessCallback([]() {
 		UE_LOG(LogMillicastPlayer, Log, TEXT("[renegociation] Set remote description | success"));
-		});
+	});
 
 	RemoteSessionDescription->SetOnFailureCallback([](const std::string& err) {
 		UE_LOG(LogMillicastPlayer, Error, TEXT("[renegociation]  Set remote description failed | Error: %s"), *FString(err.c_str()));
-		});
+	});
 
 	UE_LOG(LogMillicastPlayer, Log, TEXT("Starting renegociation"));
-
 	CreateOffer();
 }
 
@@ -509,8 +509,7 @@ static inline webrtc::RtpTransceiverDirection reverse_direction(webrtc::RtpTrans
 	}
 }
 
-void FWebRTCPeerConnection::Renegociate(const webrtc::SessionDescriptionInterface* local_sdp,
-	const webrtc::SessionDescriptionInterface* remote_sdp)
+void FWebRTCPeerConnection::Renegociate(const webrtc::SessionDescriptionInterface* local_sdp, const webrtc::SessionDescriptionInterface* remote_sdp)
 {
 	UE_LOG(LogMillicastPlayer, Verbose, TEXT("%S"), __FUNCTION__);
 	// Clone the remote sdp to have a setup a new one

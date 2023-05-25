@@ -14,7 +14,6 @@ namespace Millicast::Player
 	class FAudioDeviceModule : public webrtc::AudioDeviceModule
 	{
 		typedef uint16_t Sample;
-		rtc::scoped_refptr<FAudioDeviceModule> KeepAlive;
 
 		static constexpr int kTotalDelayMs = 0;
 		static constexpr int kClockDriftMs = 0;

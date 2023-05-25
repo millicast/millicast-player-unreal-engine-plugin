@@ -45,6 +45,8 @@ namespace Millicast::Player
 	
 	int32 FPlayerStats::OnRenderStats(UWorld* World, FViewport* Viewport, FCanvas* Canvas, int32 X, int32 Y, const FVector* ViewLocation, const FRotator* ViewRotation)
 	{
+		FScopeLock Lock(&CollectorsCriticalSection);
+
 		int MessageKey = 100;
 		int i = 0;
 		
@@ -146,12 +148,16 @@ namespace Millicast::Player
 
 	void FPlayerStats::RegisterStatsCollector(FPlayerStatsCollector* Collector)
 	{
+		FScopeLock Lock(&CollectorsCriticalSection);
+
 		UE_LOG(LogMillicastPlayer, Verbose, TEXT("%S"), __FUNCTION__);
 		StatsCollectors.Add(Collector);
 	}
 
 	void FPlayerStats::UnregisterStatsCollector(FPlayerStatsCollector* Collector)
 	{
+		FScopeLock Lock(&CollectorsCriticalSection);
+		
 		UE_LOG(LogMillicastPlayer, Verbose, TEXT("%S"), __FUNCTION__);
 		StatsCollectors.Remove(Collector);
 	}

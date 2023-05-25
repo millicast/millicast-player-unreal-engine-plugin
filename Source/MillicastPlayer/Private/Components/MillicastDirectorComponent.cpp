@@ -161,9 +161,10 @@ bool UMillicastDirectorComponent::Authenticate()
 
 	PostHttpRequest->SetContentAsString(SerializedRequestData);
 
-	PostHttpRequest->OnProcessRequestComplete()
-		.BindLambda([this](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bConnectedSuccessfully)
+	PostHttpRequest->OnProcessRequestComplete().BindWeakLambda(this, [=](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bConnectedSuccessfully)
 	{
+		check(IsInGameThread());
+		
 		if(!Response)
 		{
 			UE_LOG(LogMillicastPlayer, Error, TEXT("Director HTTP request failed without a response"));

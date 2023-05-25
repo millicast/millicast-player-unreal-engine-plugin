@@ -62,6 +62,8 @@ namespace Millicast::Player
 		void RegisterEngineHooks();
 
 	private:
+		FCriticalSection CollectorsCriticalSection;
+		
 		bool bRendering = false;
 		bool bHasRegisteredEngineStats = false;
 		bool LogStatsEnabled = true;
