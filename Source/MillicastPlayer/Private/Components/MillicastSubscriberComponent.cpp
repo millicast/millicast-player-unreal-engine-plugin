@@ -508,7 +508,7 @@ void UMillicastSubscriberComponent::OnDisconnectedInternal(const FString& Reason
 	}
 
 	// Need to grab a new JWT so that the connection will succeed. Simply reconnecting the WS will not always work
-	CachedDirectorComponent->Authenticate();
+	CachedDirectorComponent->RetryAuthenticateWithDelay();
 }
 
 void UMillicastSubscriberComponent::OnMessage(const FString& Msg)

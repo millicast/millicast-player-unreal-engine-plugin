@@ -32,6 +32,8 @@ private:
 	UMillicastMediaSource* MillicastMediaSource = nullptr;
 
 public:
+	UMillicastDirectorComponent(const FObjectInitializer& Initializer);
+	
 	/**
 		Initialize this component with the media source required for receiving Millicast audio and video.
 		Returns false, if the MediaSource is already been set. This is usually the case when this component is
@@ -52,6 +54,8 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "MillicastPlayer", META = (DisplayName = "Authenticate"))
 	bool Authenticate();
 
+	void RetryAuthenticateWithDelay();
+	
 public:
 	/** Called when the response from the director api is successfull */
 	UPROPERTY(BlueprintAssignable, Category = "Components|Activation")
@@ -63,7 +67,12 @@ public:
 
 private:
 	void BeginPlay() override;
+	void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 	void ParseIceServers(const TArray<TSharedPtr<FJsonValue>>& IceServersField, FMillicastSignalingData& SignalingData);
 	void ParseDirectorResponse(TSharedPtr<IHttpResponse, ESPMode::ThreadSafe> Response);
+
+private:
+	float TimeUntilNextRetryInSeconds = 0.0f;
+	int32 NumRetryAttempt = 0;
 };

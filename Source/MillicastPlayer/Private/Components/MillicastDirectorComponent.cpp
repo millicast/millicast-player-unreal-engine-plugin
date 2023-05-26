@@ -14,11 +14,37 @@
 
 #include "MillicastPlayerPrivate.h"
 
+UMillicastDirectorComponent::UMillicastDirectorComponent(const FObjectInitializer& Initializer)
+	: Super(Initializer)
+{
+	PrimaryComponentTick.bCanEverTick = true;
+	PrimaryComponentTick.bStartWithTickEnabled = true;
+}
+
 void UMillicastDirectorComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
 	UE_LOG(LogMillicastPlayer, Verbose, TEXT("%S"), __FUNCTION__);
+}
+
+void UMillicastDirectorComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
+{
+	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+
+	if(TimeUntilNextRetryInSeconds <= 0.0f)
+	{
+		return;
+	}
+
+	if(TimeUntilNextRetryInSeconds - DeltaTime > 0.0f)
+	{
+		TimeUntilNextRetryInSeconds -= DeltaTime;
+		return;
+	}
+
+	TimeUntilNextRetryInSeconds = 0.0f;
+	Authenticate();
 }
 
 /**
@@ -124,6 +150,19 @@ void UMillicastDirectorComponent::ParseDirectorResponse(FHttpResponsePtr Respons
 	}
 }
 
+void UMillicastDirectorComponent::RetryAuthenticateWithDelay()
+{
+	// We are already trying
+	if(TimeUntilNextRetryInSeconds > 0.0f)
+	{
+		return;
+	}
+	
+	TimeUntilNextRetryInSeconds = FMath::Min(1 << NumRetryAttempt, 64);
+	++NumRetryAttempt;
+	TimeUntilNextRetryInSeconds += rand() % 3;
+}
+
 /**
 	Begin receiving audio, video.
 */
@@ -174,10 +213,18 @@ bool UMillicastDirectorComponent::Authenticate()
 			
 		if (!bConnectedSuccessfully || Response->GetResponseCode() != 200 /*HTTP_OK*/)
 		{
-			UE_LOG(LogMillicastPlayer, Error, TEXT("Director HTTP request failed [code] %d [response] %s \n [body] %s"), Response->GetResponseCode(), *Response->GetContentType(), *Response->GetContentAsString());
+			UE_LOG(LogMillicastPlayer, Warning, TEXT("Director HTTP request failed [code] %d [response] %s \n [body] %s"), Response->GetResponseCode(), *Response->GetContentType(), *Response->GetContentAsString());
 
-			const FString& ErrorMsg = Response->GetContentAsString();
-			OnAuthenticationFailure.Broadcast(Response->GetResponseCode(), ErrorMsg);
+			// Authentication failure, do not retry
+			if(Response->GetResponseCode() == 401)
+			{
+				const FString& ErrorMsg = Response->GetContentAsString();
+				OnAuthenticationFailure.Broadcast(Response->GetResponseCode(), ErrorMsg);
+				return;
+			}
+
+			// Otherwise retry with an expoential backoff, and add a few seconds variation. Limit the base of the backoff to 64s
+			RetryAuthenticateWithDelay();
 			return;
 		}
 
