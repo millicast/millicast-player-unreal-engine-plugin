@@ -150,6 +150,13 @@ void UMillicastDirectorComponent::ParseDirectorResponse(FHttpResponsePtr Respons
 	}
 }
 
+float UMillicastDirectorComponent::CalcNextAuthenticateRetryDelay() const
+{
+	float Time = FMath::Min(1 << NumRetryAttempt, 64);
+	Time += rand() % 3;
+	return Time;
+}
+
 void UMillicastDirectorComponent::RetryAuthenticateWithDelay()
 {
 	// We are already trying
@@ -158,9 +165,10 @@ void UMillicastDirectorComponent::RetryAuthenticateWithDelay()
 		return;
 	}
 	
-	TimeUntilNextRetryInSeconds = FMath::Min(1 << NumRetryAttempt, 64);
+	TimeUntilNextRetryInSeconds = CalcNextAuthenticateRetryDelay();
 	++NumRetryAttempt;
-	TimeUntilNextRetryInSeconds += rand() % 3;
+
+	OnAuthenticationRetry.Broadcast(TimeUntilNextRetryInSeconds);
 }
 
 /**
@@ -168,6 +176,10 @@ void UMillicastDirectorComponent::RetryAuthenticateWithDelay()
 */
 bool UMillicastDirectorComponent::Authenticate()
 {
+	// TODO [RW] need to gate this, so that we cannot run more than one authenticate call at the same time
+	// As a hotfix, to make sure that automatic and manual authenticate cannot cause a double call, we are resetting the automatic retry time here
+	TimeUntilNextRetryInSeconds = 0.0f;
+	
 	if (!IsValid(MillicastMediaSource))
 	{
 		return false;
@@ -223,7 +235,7 @@ bool UMillicastDirectorComponent::Authenticate()
 				return;
 			}
 
-			// Otherwise retry with an expoential backoff, and add a few seconds variation. Limit the base of the backoff to 64s
+			// Otherwise retry with an exponential backoff, and add a few seconds variation. Limit the base of the backoff to 64s
 			RetryAuthenticateWithDelay();
 			return;
 		}

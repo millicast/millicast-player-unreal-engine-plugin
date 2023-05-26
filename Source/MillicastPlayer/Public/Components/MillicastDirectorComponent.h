@@ -10,6 +10,7 @@
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FMillicastDirectorComponentAuthenticated, UMillicastDirectorComponent*, DirectorComponent, const FMillicastSignalingData&, SignalingData);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FMillicastDirectorComponentAuthenticationFailure, int32, Code, const FString&, Msg);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FMillicastDirectorComponentAuthenticationRetry, float, NextAttemptInSeconds);
 
 class FJsonValue;
 class IHttpResponse;
@@ -54,6 +55,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "MillicastPlayer", META = (DisplayName = "Authenticate"))
 	bool Authenticate();
 
+	float CalcNextAuthenticateRetryDelay() const;
 	void RetryAuthenticateWithDelay();
 	
 public:
@@ -64,6 +66,10 @@ public:
 	/** Called when the response from the director api is an error */
 	UPROPERTY(BlueprintAssignable, Category = "Components|Activation")
 	FMillicastDirectorComponentAuthenticationFailure OnAuthenticationFailure;
+
+	/** Called when the response from the director api is due to a bottleneck */
+	UPROPERTY(BlueprintAssignable, Category = "Components|Activation")
+	FMillicastDirectorComponentAuthenticationRetry OnAuthenticationRetry;
 
 private:
 	void BeginPlay() override;
