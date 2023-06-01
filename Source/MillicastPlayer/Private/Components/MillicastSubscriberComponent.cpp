@@ -11,6 +11,7 @@
 #include "Audio/MillicastAudioInstance.h"
 #include "Dom/JsonValue.h"
 #include "Dom/JsonObject.h"
+#include "Engine/World.h"
 #include "Runtime/Launch/Resources/Version.h"
 #include "Serialization/JsonReader.h"
 #include "Serialization/JsonSerializer.h"
