@@ -55,7 +55,10 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "MillicastPlayer", META = (DisplayName = "Authenticate"))
 	bool Authenticate();
 
-	float CalcNextAuthenticateRetryDelay() const;
+
+	UFUNCTION(BlueprintCallable, Category = "MillicastPlayer", META = (DisplayName = "CancelAuthenticateRetry"))
+	void CancelAuthenticateRetry();
+	
 	void RetryAuthenticateWithDelay();
 	
 public:
@@ -74,11 +77,11 @@ public:
 private:
 	void BeginPlay() override;
 	void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
-
+	void ChangeTimeUntilNextRetryInSeconds(float Value);
+	
 	void ParseIceServers(const TArray<TSharedPtr<FJsonValue>>& IceServersField, FMillicastSignalingData& SignalingData);
 	void ParseDirectorResponse(TSharedPtr<IHttpResponse, ESPMode::ThreadSafe> Response);
 
 private:
 	float TimeUntilNextRetryInSeconds = 0.0f;
-	int32 NumRetryAttempt = 0;
 };

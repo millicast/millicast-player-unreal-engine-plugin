@@ -18,7 +18,7 @@ UMillicastDirectorComponent::UMillicastDirectorComponent(const FObjectInitialize
 	: Super(Initializer)
 {
 	PrimaryComponentTick.bCanEverTick = true;
-	PrimaryComponentTick.bStartWithTickEnabled = true;
+	PrimaryComponentTick.bStartWithTickEnabled = false;
 }
 
 void UMillicastDirectorComponent::BeginPlay()
@@ -26,6 +26,12 @@ void UMillicastDirectorComponent::BeginPlay()
 	Super::BeginPlay();
 
 	UE_LOG(LogMillicastPlayer, Verbose, TEXT("%S"), __FUNCTION__);
+}
+
+void UMillicastDirectorComponent::ChangeTimeUntilNextRetryInSeconds(float Value)
+{
+	TimeUntilNextRetryInSeconds = Value;
+	SetComponentTickEnabled(Value > 0.0f);
 }
 
 void UMillicastDirectorComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
@@ -43,7 +49,6 @@ void UMillicastDirectorComponent::TickComponent(float DeltaTime, ELevelTick Tick
 		return;
 	}
 
-	TimeUntilNextRetryInSeconds = 0.0f;
 	Authenticate();
 }
 
@@ -150,11 +155,9 @@ void UMillicastDirectorComponent::ParseDirectorResponse(FHttpResponsePtr Respons
 	}
 }
 
-float UMillicastDirectorComponent::CalcNextAuthenticateRetryDelay() const
+void UMillicastDirectorComponent::CancelAuthenticateRetry()
 {
-	float Time = FMath::Min(1 << NumRetryAttempt, 64);
-	Time += rand() % 3;
-	return Time;
+	ChangeTimeUntilNextRetryInSeconds(0.0f);
 }
 
 void UMillicastDirectorComponent::RetryAuthenticateWithDelay()
@@ -165,8 +168,8 @@ void UMillicastDirectorComponent::RetryAuthenticateWithDelay()
 		return;
 	}
 	
-	TimeUntilNextRetryInSeconds = CalcNextAuthenticateRetryDelay();
-	++NumRetryAttempt;
+	// Retry every 1-3 seconds. Do not reconnect at the exact same time to distribute load
+	ChangeTimeUntilNextRetryInSeconds(1.0f + rand() % 2);
 
 	OnAuthenticationRetry.Broadcast(TimeUntilNextRetryInSeconds);
 }
@@ -178,8 +181,8 @@ bool UMillicastDirectorComponent::Authenticate()
 {
 	// TODO [RW] need to gate this, so that we cannot run more than one authenticate call at the same time
 	// As a hotfix, to make sure that automatic and manual authenticate cannot cause a double call, we are resetting the automatic retry time here
-	TimeUntilNextRetryInSeconds = 0.0f;
-	
+	ChangeTimeUntilNextRetryInSeconds(0.0f);
+
 	if (!IsValid(MillicastMediaSource))
 	{
 		return false;
