@@ -34,8 +34,12 @@ void UMillicastAudioSubsystem::Unregister(UAudioComponent* Component)
 		return;
 	}
 
-	// TODO [RW] check if UE4.27 support
+#if ENGINE_MAJOR_VERSION >= 5
 	(*It)->MarkAsGarbage();
+#else
+	(*It)->MarkPendingKill();
+#endif
+
 	AudioInstances.RemoveSingleSwap(*It);
 }
 

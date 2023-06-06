@@ -57,7 +57,7 @@ namespace Millicast::Player
 
 			GEngine->AddOnScreenDebugMessage(MessageKey++, 0.0f, FColor::Green, FString::Printf(TEXT("RTT = %.2f ms"), Data.Rtt), true);
 			GEngine->AddOnScreenDebugMessage(MessageKey++, 0.0f, FColor::Green, FString::Printf(TEXT("Video resolution = %dx%d"), Data.Width, Data.Height), true);
-			GEngine->AddOnScreenDebugMessage(MessageKey++, 0.0f, FColor::Green, FString::Printf(TEXT("FPS = %d"), Data.FramePerSecond), true);
+			GEngine->AddOnScreenDebugMessage(MessageKey++, 0.0f, FColor::Green, FString::Printf(TEXT("FPS = %f"), Data.FramesPerSecond), true);
 
 			auto [VideoBitrate, VideoBitrateUnit] = GetInUnit(Data.VideoBitrate, TEXT("bps"));
 			auto [AudioBitrate, AudioBitrateUnit] = GetInUnit(Data.AudioBitrate, TEXT("bps"));
@@ -70,8 +70,8 @@ namespace Millicast::Player
 			GEngine->AddOnScreenDebugMessage(MessageKey++, 0.0f, FColor::Green, FString::Printf(TEXT("Video Total Received = %lld %s"), VideoBytes, *VideoBytesUnit), true);
 			GEngine->AddOnScreenDebugMessage(MessageKey++, 0.0f, FColor::Green, FString::Printf(TEXT("Audio Total Received = %lld %s"), AudioBytes, *AudioBytesUnit), true);
 			GEngine->AddOnScreenDebugMessage(MessageKey++, 0.0f, FColor::Green, FString::Printf(TEXT("Average Video decode time = %.2f ms"), Data.VideoDecodeTimeAverage), true);
-			GEngine->AddOnScreenDebugMessage(MessageKey++, 0.0f, FColor::Green, FString::Printf(TEXT("Video Packet Loss = %d"), Data.VideoPacketLoss), true);
-			GEngine->AddOnScreenDebugMessage(MessageKey++, 0.0f, FColor::Green, FString::Printf(TEXT("Audio Packet Loss = %d"), Data.AudioPacketLoss), true);
+			GEngine->AddOnScreenDebugMessage(MessageKey++, 0.0f, FColor::Green, FString::Printf(TEXT("Video Packet Loss = %f"), Data.VideoPacketLoss), true);
+			GEngine->AddOnScreenDebugMessage(MessageKey++, 0.0f, FColor::Green, FString::Printf(TEXT("Audio Packet Loss = %f"), Data.AudioPacketLoss), true);
 			GEngine->AddOnScreenDebugMessage(MessageKey++, 0.0f, FColor::Green, FString::Printf(TEXT("Video Jitter Delay = %.2f ms"), Data.VideoJitterAverageDelay), true);
 			GEngine->AddOnScreenDebugMessage(MessageKey++, 0.0f, FColor::Green, FString::Printf(TEXT("Audio Jitter Delay = %.2f ms"), Data.AudioJitterAverageDelay), true);
 			GEngine->AddOnScreenDebugMessage(MessageKey++, 0.0f, FColor::Green, FString::Printf(TEXT("Video Jitter = %.2f ms"), Data.VideoJitter), true);
@@ -80,12 +80,12 @@ namespace Millicast::Player
 			GEngine->AddOnScreenDebugMessage(MessageKey++, 0.0f, FColor::Green, FString::Printf(TEXT("Cluster = %s"), *Collector->GetClusterId()), true);
 			GEngine->AddOnScreenDebugMessage(MessageKey++, 0.0f, FColor::Green, FString::Printf(TEXT("Server = %s"), *Collector->GetServerId()), true);
 
-			GEngine->AddOnScreenDebugMessage(MessageKey++, 0.0f, FColor::Green, FString::Printf(TEXT("Stats Collector %d"), i), true);
+			GEngine->AddOnScreenDebugMessage(MessageKey++, 0.0f, FColor::Green, FString::Printf(TEXT("Stats Collector %f"), i), true);
 
 			CSV_CUSTOM_STAT(Millicast_Player, Rtt, Data.Rtt, ECsvCustomStatOp::Set);
 			CSV_CUSTOM_STAT(Millicast_Player, Width, (int)Data.Width, ECsvCustomStatOp::Set);
 			CSV_CUSTOM_STAT(Millicast_Player, Height, (int)Data.Height, ECsvCustomStatOp::Set);
-			CSV_CUSTOM_STAT(Millicast_Player, FramePerSecond, (int)Data.FramePerSecond, ECsvCustomStatOp::Set);
+			CSV_CUSTOM_STAT(Millicast_Player, FramesPerSecond, (int)Data.FramePerSecond, ECsvCustomStatOp::Set);
 			CSV_CUSTOM_STAT(Millicast_Player, VideoBitrate, Data.VideoBitrate, ECsvCustomStatOp::Set);
 			CSV_CUSTOM_STAT(Millicast_Player, AudioBitrate, Data.AudioBitrate, ECsvCustomStatOp::Set);
 			CSV_CUSTOM_STAT(Millicast_Player, VideoTotalReceived, (int)Data.VideoTotalReceived, ECsvCustomStatOp::Set);

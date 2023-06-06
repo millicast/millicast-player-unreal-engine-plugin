@@ -66,7 +66,7 @@ namespace Millicast::Player
 
 					Data.Width = InboundStat.frame_width.ValueOrDefault(0);
 					Data.Height = InboundStat.frame_height.ValueOrDefault(0);
-					Data.FramePerSecond = InboundStat.frames_per_second.ValueOrDefault(0);
+					Data.FramesPerSecond = InboundStat.frames_per_second.ValueOrDefault(0);
 					Data.VideoTotalReceived = InboundStat.bytes_received.ValueOrDefault(0);
 					Data.VideoPacketLoss = InboundStat.packets_lost.ValueOrDefault(-1);
 					Data.VideoJitter = InboundStat.jitter.ValueOrDefault(0) * 1000.;
