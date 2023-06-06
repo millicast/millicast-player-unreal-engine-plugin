@@ -85,7 +85,7 @@ namespace Millicast::Player
 			CSV_CUSTOM_STAT(Millicast_Player, Rtt, Data.Rtt, ECsvCustomStatOp::Set);
 			CSV_CUSTOM_STAT(Millicast_Player, Width, (int)Data.Width, ECsvCustomStatOp::Set);
 			CSV_CUSTOM_STAT(Millicast_Player, Height, (int)Data.Height, ECsvCustomStatOp::Set);
-			CSV_CUSTOM_STAT(Millicast_Player, FramesPerSecond, (int)Data.FramePerSecond, ECsvCustomStatOp::Set);
+			CSV_CUSTOM_STAT(Millicast_Player, FramesPerSecond, (int)Data.FramesPerSecond, ECsvCustomStatOp::Set);
 			CSV_CUSTOM_STAT(Millicast_Player, VideoBitrate, Data.VideoBitrate, ECsvCustomStatOp::Set);
 			CSV_CUSTOM_STAT(Millicast_Player, AudioBitrate, Data.AudioBitrate, ECsvCustomStatOp::Set);
 			CSV_CUSTOM_STAT(Millicast_Player, VideoTotalReceived, (int)Data.VideoTotalReceived, ECsvCustomStatOp::Set);
