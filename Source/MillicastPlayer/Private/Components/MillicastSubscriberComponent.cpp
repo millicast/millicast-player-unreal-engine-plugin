@@ -179,6 +179,11 @@ void UMillicastSubscriberComponent::Unsubscribe()
 	}
 }
 
+void UMillicastSubscriberComponent::EnableFrameTransformer(bool Enable)
+{
+	bUseFrameTransformer = Enable;
+}
+
 FPlayerStatsData UMillicastSubscriberComponent::GetStats() const
 {
 #if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION > 0

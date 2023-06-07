@@ -168,6 +168,13 @@ public:
 	void Unsubscribe();
 
 	/**
+	* Enable the frame transformer to extract metadata
+	* Must be called before subscribing to have effect
+	*/
+	UFUNCTION(BlueprintCallable, Category = "MillicastPlayer", META = (DisplayName = "EnableFrameTransformer"))
+	void EnableFrameTransformer(bool Enable);
+
+	/**
 	* Returns data from the stats collector. Exists to expose to Blueprint
 	*/
 	UFUNCTION(BlueprintCallable, Category = "MillicastPlayer", META = (DisplayName = "GetStats"))
