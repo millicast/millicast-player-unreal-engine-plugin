@@ -9,18 +9,6 @@ UMillicastMediaSource::UMillicastMediaSource()
 	StreamUrl = "https://director.millicast.com/api/director/subscribe";
 }
 
-void UMillicastMediaSource::BeginDestroy()
-{
-	UE_LOG(LogMillicastPlayer, Verbose, TEXT("%S"), __FUNCTION__);
-
-	AsyncTask(ENamedThreads::ActualRenderingThread, [this](){
-		FScopeLock Lock(&RenderSyncContext);
-		RenderTarget = nullptr;
-	});
-
-	Super::BeginDestroy();
-}
-
 FString UMillicastMediaSource::GetMediaOption(const FName& Key, const FString& DefaultValue) const
 {
 	if (Key == MillicastPlayerOption::StreamName)

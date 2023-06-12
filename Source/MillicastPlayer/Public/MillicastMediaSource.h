@@ -42,7 +42,6 @@ public:
 	bool Validate() const override;
 	
 	//~ UObject interface
-	void BeginDestroy() override;
 #if WITH_EDITOR
 	virtual bool CanEditChange(const FProperty* InProperty) const override;
 #endif //WITH_EDITOR
@@ -52,5 +51,4 @@ private:
 	FCriticalSection RenderSyncContext;
 	FTexture2DRHIRef SourceTexture;
 	FPooledRenderTargetDesc RenderTargetDescriptor;
-	TRefCountPtr<IPooledRenderTarget> RenderTarget;
 };
