@@ -63,7 +63,7 @@ public:
 	{
 		constexpr auto size = sizeof(T);
 		T value{};
-		value ^= value; // set all bits to 0
+		value = value ^ value; // set all bits to 0
 
 		if (data.size() >= size)
 		{
