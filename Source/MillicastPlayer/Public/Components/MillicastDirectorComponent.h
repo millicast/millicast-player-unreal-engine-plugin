@@ -10,6 +10,7 @@
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FMillicastDirectorComponentAuthenticated, UMillicastDirectorComponent*, DirectorComponent, const FMillicastSignalingData&, SignalingData);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FMillicastDirectorComponentAuthenticationFailure, int32, Code, const FString&, Msg);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FMillicastDirectorComponentAuthenticationRetry, float, NextAttemptInSeconds);
 
 class FJsonValue;
 class IHttpResponse;
@@ -32,6 +33,8 @@ private:
 	UMillicastMediaSource* MillicastMediaSource = nullptr;
 
 public:
+	UMillicastDirectorComponent(const FObjectInitializer& Initializer);
+	
 	/**
 		Initialize this component with the media source required for receiving Millicast audio and video.
 		Returns false, if the MediaSource is already been set. This is usually the case when this component is
@@ -52,6 +55,12 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "MillicastPlayer", META = (DisplayName = "Authenticate"))
 	bool Authenticate();
 
+
+	UFUNCTION(BlueprintCallable, Category = "MillicastPlayer", META = (DisplayName = "CancelAuthenticateRetry"))
+	void CancelAuthenticateRetry();
+	
+	void RetryAuthenticateWithDelay();
+	
 public:
 	/** Called when the response from the director api is successfull */
 	UPROPERTY(BlueprintAssignable, Category = "Components|Activation")
@@ -61,9 +70,18 @@ public:
 	UPROPERTY(BlueprintAssignable, Category = "Components|Activation")
 	FMillicastDirectorComponentAuthenticationFailure OnAuthenticationFailure;
 
+	/** Called when the response from the director api is due to a bottleneck */
+	UPROPERTY(BlueprintAssignable, Category = "Components|Activation")
+	FMillicastDirectorComponentAuthenticationRetry OnAuthenticationRetry;
+
 private:
 	void BeginPlay() override;
-
+	void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+	void ChangeTimeUntilNextRetryInSeconds(float Value);
+	
 	void ParseIceServers(const TArray<TSharedPtr<FJsonValue>>& IceServersField, FMillicastSignalingData& SignalingData);
 	void ParseDirectorResponse(TSharedPtr<IHttpResponse, ESPMode::ThreadSafe> Response);
+
+private:
+	float TimeUntilNextRetryInSeconds = 0.0f;
 };

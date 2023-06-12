@@ -6,45 +6,39 @@
 #include "WebRTC/AudioDeviceModule.h"
 #include <common_video/libyuv/include/webrtc_libyuv.h>
 
-#define WEAK_CAPTURE_VIDEO_TRACK WeakThis = TWeakObjectPtr<UMillicastVideoTrackImpl>(this)
+#include "MillicastUtil.h"
 
 /** Video */
 
 void UMillicastVideoTrackImpl::OnFrame(const webrtc::VideoFrame& VideoFrame)
 {
-	AsyncTask(ENamedThreads::GameThread, [WEAK_CAPTURE_VIDEO_TRACK, VideoFrame]()
+	AsyncGameThreadTask(this, [=]()
 	{
 		constexpr auto WEBRTC_PIXEL_FORMAT = webrtc::VideoType::kARGB;
-		
-		if (!WeakThis.IsValid())
-		{
-			UE_LOG(LogMillicastPlayer, Verbose, TEXT("This video track is no more valid."));
-			return;
-		}
 
 		const size_t Size = webrtc::CalcBufferSize(WEBRTC_PIXEL_FORMAT, VideoFrame.width(), VideoFrame.height());
-		if (Size != WeakThis->Buffer.Num())
+		if (Size != Buffer.Num())
 		{
-			WeakThis->Buffer.Empty();
-			WeakThis->Buffer.AddZeroed(Size);
+			Buffer.Empty();
+			Buffer.AddZeroed(Size);
 		}
 
-		webrtc::ConvertFromI420(VideoFrame, WEBRTC_PIXEL_FORMAT, 0, WeakThis->Buffer.GetData());
+		webrtc::ConvertFromI420(VideoFrame, WEBRTC_PIXEL_FORMAT, 0, Buffer.GetData());
 		
 		{
-			FScopeLock Lock(&WeakThis->CriticalSection);
+			FScopeLock Lock(&CriticalSection);
 
-			for (int32 Index = WeakThis->VideoConsumers.Num() - 1; Index >= 0; --Index)
+			for (int32 Index = VideoConsumers.Num() - 1; Index >= 0; --Index)
 			{
-				auto& ConsumerRef = WeakThis->VideoConsumers[Index];
+				auto& ConsumerRef = VideoConsumers[Index];
 				if (auto* Consumer = ConsumerRef.Get())
 				{
-					Consumer->OnFrame(WeakThis->Buffer, VideoFrame.width(), VideoFrame.height());
+					Consumer->OnFrame(Buffer, VideoFrame.width(), VideoFrame.height());
 					continue;
 				}
 
 				UE_LOG(LogMillicastPlayer, Warning, TEXT("Removing invalid consumer"));
-				WeakThis->VideoConsumers.RemoveAtSwap(Index);
+				VideoConsumers.RemoveAtSwap(Index);
 			}
 		}
 	});

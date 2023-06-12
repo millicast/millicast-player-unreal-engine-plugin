@@ -14,11 +14,42 @@
 
 #include "MillicastPlayerPrivate.h"
 
+UMillicastDirectorComponent::UMillicastDirectorComponent(const FObjectInitializer& Initializer)
+	: Super(Initializer)
+{
+	PrimaryComponentTick.bCanEverTick = true;
+	PrimaryComponentTick.bStartWithTickEnabled = false;
+}
+
 void UMillicastDirectorComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
 	UE_LOG(LogMillicastPlayer, Verbose, TEXT("%S"), __FUNCTION__);
+}
+
+void UMillicastDirectorComponent::ChangeTimeUntilNextRetryInSeconds(float Value)
+{
+	TimeUntilNextRetryInSeconds = Value;
+	SetComponentTickEnabled(Value > 0.0f);
+}
+
+void UMillicastDirectorComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
+{
+	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+
+	if(TimeUntilNextRetryInSeconds <= 0.0f)
+	{
+		return;
+	}
+
+	if(TimeUntilNextRetryInSeconds - DeltaTime > 0.0f)
+	{
+		TimeUntilNextRetryInSeconds -= DeltaTime;
+		return;
+	}
+
+	Authenticate();
 }
 
 /**
@@ -124,11 +155,34 @@ void UMillicastDirectorComponent::ParseDirectorResponse(FHttpResponsePtr Respons
 	}
 }
 
+void UMillicastDirectorComponent::CancelAuthenticateRetry()
+{
+	ChangeTimeUntilNextRetryInSeconds(0.0f);
+}
+
+void UMillicastDirectorComponent::RetryAuthenticateWithDelay()
+{
+	// We are already trying
+	if(TimeUntilNextRetryInSeconds > 0.0f)
+	{
+		return;
+	}
+	
+	// Retry every 1-3 seconds. Do not reconnect at the exact same time to distribute load
+	ChangeTimeUntilNextRetryInSeconds(1.0f + rand() % 2);
+
+	OnAuthenticationRetry.Broadcast(TimeUntilNextRetryInSeconds);
+}
+
 /**
 	Begin receiving audio, video.
 */
 bool UMillicastDirectorComponent::Authenticate()
 {
+	// TODO [RW] need to gate this, so that we cannot run more than one authenticate call at the same time
+	// As a hotfix, to make sure that automatic and manual authenticate cannot cause a double call, we are resetting the automatic retry time here
+	ChangeTimeUntilNextRetryInSeconds(0.0f);
+
 	if (!IsValid(MillicastMediaSource))
 	{
 		return false;
@@ -161,9 +215,10 @@ bool UMillicastDirectorComponent::Authenticate()
 
 	PostHttpRequest->SetContentAsString(SerializedRequestData);
 
-	PostHttpRequest->OnProcessRequestComplete()
-		.BindLambda([this](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bConnectedSuccessfully)
+	PostHttpRequest->OnProcessRequestComplete().BindWeakLambda(this, [=](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bConnectedSuccessfully)
 	{
+		check(IsInGameThread());
+		
 		if(!Response)
 		{
 			UE_LOG(LogMillicastPlayer, Error, TEXT("Director HTTP request failed without a response"));
@@ -173,10 +228,18 @@ bool UMillicastDirectorComponent::Authenticate()
 			
 		if (!bConnectedSuccessfully || Response->GetResponseCode() != 200 /*HTTP_OK*/)
 		{
-			UE_LOG(LogMillicastPlayer, Error, TEXT("Director HTTP request failed [code] %d [response] %s \n [body] %s"), Response->GetResponseCode(), *Response->GetContentType(), *Response->GetContentAsString());
+			UE_LOG(LogMillicastPlayer, Warning, TEXT("Director HTTP request failed [code] %d [response] %s \n [body] %s"), Response->GetResponseCode(), *Response->GetContentType(), *Response->GetContentAsString());
 
-			const FString& ErrorMsg = Response->GetContentAsString();
-			OnAuthenticationFailure.Broadcast(Response->GetResponseCode(), ErrorMsg);
+			// Authentication failure, do not retry
+			if(Response->GetResponseCode() == 401)
+			{
+				const FString& ErrorMsg = Response->GetContentAsString();
+				OnAuthenticationFailure.Broadcast(Response->GetResponseCode(), ErrorMsg);
+				return;
+			}
+
+			// Otherwise retry with an exponential backoff, and add a few seconds variation. Limit the base of the backoff to 64s
+			RetryAuthenticateWithDelay();
 			return;
 		}
 

@@ -4,13 +4,14 @@
 #include "CoreMinimal.h"
 #include "PlayerStatsData.generated.h"
 
+
 USTRUCT(BlueprintType)
 struct MILLICASTPLAYER_API FPlayerStatsData
 {
 	GENERATED_BODY()
 	
 	UPROPERTY(BlueprintReadOnly, Category="MillicastPlayer")
-	double Rtt = 0.0f; // ms
+	float Rtt = 0.0f; // ms
 
 	UPROPERTY(BlueprintReadOnly, Category="MillicastPlayer")
 	int32 Width = 0; // px
@@ -19,13 +20,13 @@ struct MILLICASTPLAYER_API FPlayerStatsData
 	int32 Height = 0; // px
 
 	UPROPERTY(BlueprintReadOnly, Category="MillicastPlayer")
-	double FramePerSecond = 0.0f;
+	float FramesPerSecond = 0.0f;
 
 	UPROPERTY(BlueprintReadOnly, Category="MillicastPlayer")
-	double VideoBitrate = 0.0f; // bps
+	float VideoBitrate = 0.0f; // bps
 
 	UPROPERTY(BlueprintReadOnly, Category="MillicastPlayer")
-	double AudioBitrate = 0.0f; // bps
+	float AudioBitrate = 0.0f; // bps
 	
 	UPROPERTY(BlueprintReadOnly, Category="MillicastPlayer")
 	int32 VideoTotalReceived = 0; // bytes
@@ -40,16 +41,16 @@ struct MILLICASTPLAYER_API FPlayerStatsData
 	int32 AudioPacketLoss = 0; // num packets
 
 	UPROPERTY(BlueprintReadOnly, Category="MillicastPlayer")
-	double VideoJitter = 0.0f;
+	float VideoJitter = 0.0f;
 
 	UPROPERTY(BlueprintReadOnly, Category="MillicastPlayer")
-	double AudioJitter = 0.0f;
+	float AudioJitter = 0.0f;
 
 	UPROPERTY(BlueprintReadOnly, Category="MillicastPlayer")
-	double VideoJitterAverageDelay = 0.0f; // ms
+	float VideoJitterAverageDelay = 0.0f; // ms
 
 	UPROPERTY(BlueprintReadOnly, Category="MillicastPlayer")
-	double AudioJitterAverageDelay = 0.0f; // ms
+	float AudioJitterAverageDelay = 0.0f; // ms
 
 	UPROPERTY(BlueprintReadOnly, Category="MillicastPlayer")
 	FString VideoCodec; // mimetype
@@ -58,16 +59,16 @@ struct MILLICASTPLAYER_API FPlayerStatsData
 	FString AudioCodec; // mimetype
 
 	UPROPERTY(BlueprintReadOnly, Category="MillicastPlayer")
-	double LastVideoReceivedTimestamp = 0.0f; // us
+	float LastVideoReceivedTimestamp = 0.0f; // us
 
 	UPROPERTY(BlueprintReadOnly, Category="MillicastPlayer")
-	double LastAudioReceivedTimestamp = 0.0f; // us
+	float LastAudioReceivedTimestamp = 0.0f; // us
 
 	UPROPERTY(BlueprintReadOnly, Category="MillicastPlayer")
-	double VideoDecodeTime = 0.0f; // s
+	float VideoDecodeTime = 0.0f; // s
 	
 	UPROPERTY(BlueprintReadOnly, Category="MillicastPlayer")
-	double VideoDecodeTimeAverage = 0.0f; // ms
+	float VideoDecodeTimeAverage = 0.0f; // ms
 
 	// int PauseCount; // Not yet in unreal libwebrtc
 	// int freezeCount; // Not yet in unreal libwebrtc
@@ -97,7 +98,7 @@ struct MILLICASTPLAYER_API FPlayerStatsData
 	int32 VideoNackCount = 0;
 
 	UPROPERTY(BlueprintReadOnly, Category="MillicastPlayer")
-	double Timestamp = 0.0f; // us
+	float Timestamp = 0.0f; // us
 
 	// TODO [RW] Why was this not made accessible by David?
 	double LastVideoStatTimestamp = 0.0f;

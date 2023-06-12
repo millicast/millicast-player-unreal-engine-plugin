@@ -2,6 +2,7 @@
 
 #include "AudioDeviceModule.h"
 #include "MillicastPlayerPrivate.h"
+#include "MillicastUtil.h"
 #include "Async/Async.h"
 
 namespace Millicast::Player
@@ -16,13 +17,10 @@ FAudioDeviceModule::FAudioDeviceModule(webrtc::TaskQueueFactory* queue_factory) 
 
 }
 
-rtc::scoped_refptr<FAudioDeviceModule>
-FAudioDeviceModule::Create(webrtc::TaskQueueFactory* queue_factory)
+rtc::scoped_refptr<FAudioDeviceModule> FAudioDeviceModule::Create(webrtc::TaskQueueFactory* queue_factory)
 {
 	UE_LOG(LogMillicastPlayer, Verbose, TEXT("%S"), __FUNCTION__);
-	rtc::scoped_refptr<FAudioDeviceModule>
-		AudioDeviceModule(new rtc::RefCountedObject<FAudioDeviceModule>(queue_factory));
-
+	rtc::scoped_refptr<FAudioDeviceModule> AudioDeviceModule(new rtc::RefCountedObject<FAudioDeviceModule>(queue_factory));
 	return AudioDeviceModule;
 }
 
@@ -100,11 +98,12 @@ int32_t FAudioDeviceModule::StartPlayout()
 	UE_LOG(LogMillicastPlayer, Verbose, TEXT("%S"), __FUNCTION__);
 	SetPlaying(true);
 
-	AsyncTask(ENamedThreads::GameThread, [this]()
+	const rtc::scoped_refptr<FAudioDeviceModule> SelfRef(this);
+	AsyncGameThreadTaskUnguarded([=]
 	{
 		ReadDataAvailable = false;
 		AudioBuffer.SetNumUninitialized(AudioParameters.GetNumberSamples() * AudioParameters.GetNumberBytesPerSample());
-		TaskQueue.PostTask([this]() { Process(); });
+		Process();
 	});
 
 	return 0;
@@ -132,11 +131,6 @@ void FAudioDeviceModule::SetPlaying(bool Value)
 {
 	FScopeLock cs(&CriticalSection);
 	bIsPlaying = Value;
-
-	if(bIsPlaying)
-	{
-		KeepAlive = this;
-	}
 }
 
 int32_t FAudioDeviceModule::StartRecording()
@@ -227,22 +221,16 @@ int32_t FAudioDeviceModule::PlayoutDelay(uint16_t* delay_ms) const
 
 int32 FAudioDeviceModule::Terminate()
 {
-	bIsTerminated = true;
+	SetPlaying(false);
 	return 0;
 }
 
-	
 void FAudioDeviceModule::Process()
 {
-	if(bIsTerminated)
-	{
-		KeepAlive = nullptr;
-		return;
-	}
-
+	check(IsInGameThread());
+	
 	if (!Playing())
 	{
-		KeepAlive = nullptr;
 		return;
 	}
 	
@@ -252,12 +240,23 @@ void FAudioDeviceModule::Process()
 		bIsStarted = true;
 	}
 
-	AsyncTask(ENamedThreads::GameThread, [this]() { PullAudioData(); });
+	// We are on the game thread here
+	PullAudioData();
 	
 	NextFrameTime += AudioParameters.TimePerFrameMs;
 	const int64_t current_time = rtc::TimeMillis();
 	const int64_t wait_time = (NextFrameTime > current_time) ? NextFrameTime - current_time : 0;
-	TaskQueue.PostDelayedTask([this]() { Process(); }, int32_t(wait_time));
+	
+	// NOTE [RW] Because this is a delayed callback that then also executes on another thread after the delay
+	// We take a reference to ourselves, because this could go out of scope before Process is called in the nested chain
+	const rtc::scoped_refptr<FAudioDeviceModule> SelfRef(this);
+	TaskQueue.PostDelayedTask([=]
+	{
+		AsyncGameThreadTaskUnguarded([=]
+		{
+			SelfRef->Process();
+		});
+	}, int32_t(wait_time));
 }
 
 void FAudioDeviceModule::PullAudioData()
