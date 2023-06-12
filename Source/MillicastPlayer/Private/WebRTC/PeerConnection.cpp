@@ -48,10 +48,34 @@ class FFrameTransformer : public webrtc::FrameTransformerInterface
 	TArray<uint8> UserData;
 	FWebRTCPeerConnection* PeerConnection{ nullptr };
 
+	using FMetadataHeader = uint32_t;
+	static constexpr auto HEADER_TYPE_LENGTH = sizeof(FMetadataHeader);
+	// Magic value for the begining of the metadata
+	static constexpr FMetadataHeader START_VALUE = 0xCAFEBABE;
+
 public:
 	explicit FFrameTransformer(FWebRTCPeerConnection * InPeerConnection) noexcept : PeerConnection(InPeerConnection) {}
 
 	~FFrameTransformer() = default;
+
+	template<typename T, typename C>
+	T decode(const C& data, size_t end_index)
+	{
+		constexpr auto size = sizeof(T);
+		T value{};
+		value ^= value; // set all bits to 0
+
+		if (data.size() >= size)
+		{
+			for (int i = 0; i < size; ++i)
+			{
+				auto decl = i * 8;
+				value |= (data[end_index - i] & 0xff) << decl;
+			}
+		}
+
+		return value;
+	}
 
 	/** webrtc::FrameTransformer overrides */
 	void Transform(std::unique_ptr<webrtc::TransformableFrameInterface> TransformableFrame) override
@@ -66,26 +90,32 @@ public:
 			auto data_view = TransformableFrame->GetData();
 			auto length = data_view.size();
 
-			uint32_t user_data_length = 0;
-			user_data_length = user_data_length ^ user_data_length; // set all bits to 0
-
 			// get user data length from the last four bytes
-			user_data_length |= data_view[length - 1] & 0xff;
-			user_data_length |= ((data_view[length - 2] & 0xff) << 8);
-			user_data_length |= ((data_view[length - 3] & 0xff) << 16);
-			user_data_length |= ((data_view[length - 4] & 0xff) << 24);
+			auto user_data_length = decode<FMetadataHeader>(data_view, length - 1);
+			auto total_data_length = user_data_length + 2 * HEADER_TYPE_LENGTH;
 
-			// extract the user data
-			UserData.Append(data_view.data() + length - user_data_length - 4, user_data_length);
-
-			// Provide the extracted data to the user
-			if (PeerConnection->OnFrameMetadata)
+			if (total_data_length <= data_view.size())
 			{
-				PeerConnection->OnFrameMetadata(ssrc, TransformableFrame->GetTimestamp(), UserData);
-			}
+				// Extract start value
+				auto start = decode<FMetadataHeader>(data_view, length - user_data_length - HEADER_TYPE_LENGTH - 1);
 
-			// Set the final transformed data.
-			TransformableFrame->SetData(data_view.subview(0, length - user_data_length - 4));
+				// Check that the extracted value match the start value
+				if (start == START_VALUE)
+				{
+					// extract the user data
+					UserData.Append(data_view.data() + length - user_data_length - HEADER_TYPE_LENGTH, 
+						user_data_length);
+
+					// Provide the extracted data to the user
+					if (PeerConnection->OnFrameMetadata)
+					{
+						PeerConnection->OnFrameMetadata(ssrc, TransformableFrame->GetTimestamp(), UserData);
+					}
+
+					// Set the final transformed data.
+					TransformableFrame->SetData(data_view.subview(0, length - total_data_length));
+				}
+			}
 
 			it->second->OnTransformedFrame(std::move(TransformableFrame));
 		}
