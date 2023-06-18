@@ -8,7 +8,19 @@
 
 void UMillicastTexture2DPlayer::OnFrame(TArray<uint8>& VideoData, int Width, int Height)
 {
-	AsyncTask(ENamedThreads::ActualRenderingThread, [=]() {
+	if(CachedResolution.X != Width || CachedResolution.Y != Height)
+	{
+		CachedResolution.X = Width;
+		CachedResolution.Y = Height;
+		
+		AsyncTask(ENamedThreads::GameThread, [=]()
+		{
+			OnVideoResolutionChanged.Broadcast(Width, Height);
+		});
+	}
+	
+	AsyncTask(ENamedThreads::ActualRenderingThread, [=]()
+	{
 		FScopeLock Lock(&RenderSyncContext);
 
 		FIntPoint FrameSize = FIntPoint(Width, Height);

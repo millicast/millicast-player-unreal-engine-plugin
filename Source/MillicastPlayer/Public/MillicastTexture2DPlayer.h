@@ -8,6 +8,8 @@
 #include "Engine/DataAsset.h"
 #include "MillicastTexture2DPlayer.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FMillicastVideoResolutionChangedPlayer, int32, Width, int32, Height);
+
 UCLASS(BlueprintType, editinlinenew, hideCategories = (Object), META = (DisplayName = "Millicast Texture2D Player"))
 class MILLICASTPLAYER_API UMillicastTexture2DPlayer : public UDataAsset , public IMillicastVideoConsumer
 {
@@ -30,9 +32,14 @@ public:
 	void BeginDestroy() override;
 	void OnFrame(TArray<uint8>& VideoData, int Width, int Height) override;
 
+	UPROPERTY(BlueprintAssignable, Category="MillicastPlayer")
+	FMillicastVideoResolutionChangedPlayer OnVideoResolutionChanged;
+	
 private:
 	FCriticalSection RenderSyncContext;
 	FTexture2DRHIRef SourceTexture;
 	FPooledRenderTargetDesc RenderTargetDescriptor;
 	TRefCountPtr<IPooledRenderTarget> RenderTarget;
+
+	FIntPoint CachedResolution;
 };

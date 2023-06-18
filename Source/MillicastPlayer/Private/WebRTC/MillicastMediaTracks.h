@@ -9,6 +9,8 @@
 
 #include "MillicastMediaTracks.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FMillicastVideoResolutionChanged, int32, Width, int32, Height);
+
 UCLASS(BlueprintType, Blueprintable, Category = "MillicastPlayer")
 class MILLICASTPLAYER_API UMillicastVideoTrackImpl : public UMillicastVideoTrack, public rtc::VideoSinkInterface<webrtc::VideoFrame>
 {
@@ -23,6 +25,7 @@ private:
 	FCriticalSection CriticalSection;
 
 	TArray<uint8> Buffer;
+	FIntPoint CachedResolution;
 
 protected:
 	/* VideoSinkInterface */
@@ -49,6 +52,9 @@ public:
 	/* UMillicastVideoTrack overrides */
 	void AddConsumer(TScriptInterface<IMillicastVideoConsumer> VideoConsumer) override;
 	void RemoveConsumer(TScriptInterface<IMillicastVideoConsumer> VideoConsumer) override;
+
+	UPROPERTY(BlueprintAssignable, Category="MillicastPlayer")
+	FMillicastVideoResolutionChanged OnVideoResolutionChanged;
 };
 
 UCLASS(BlueprintType, Blueprintable, Category = "MillicastPlayer")
