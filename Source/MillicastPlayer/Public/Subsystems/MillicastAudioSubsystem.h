@@ -18,9 +18,6 @@ class MILLICASTPLAYER_API UMillicastAudioSubsystem : public UGameInstanceSubsyst
     GENERATED_BODY()
 
 public:
-    //void Initialize(FSubsystemCollectionBase& Collection) override;
-    //void Deinitialize() override;
-
     UFUNCTION(BlueprintCallable, Category = "MillicastPlayer")
     void Register(UAudioComponent* Component);
 
@@ -29,6 +26,9 @@ public:
 
     UMillicastAudioInstance* GetInstance(UAudioComponent* Component);
 
+    UFUNCTION(BlueprintCallable, Category = "MillicastPlayer")
+    void ForceFadeInFadeOut();
+    
 private:
     UPROPERTY()
     TArray<UMillicastAudioInstance*> AudioInstances;

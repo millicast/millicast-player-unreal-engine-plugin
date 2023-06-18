@@ -5,8 +5,8 @@
 #include "IMillicastExternalAudioConsumer.h"
 #include "MillicastAudioInstance.generated.h"
 
-class USoundWaveProcedural;
 class UAudioComponent;
+class UMillicastSoundWaveProcedural;
 
 UCLASS()
 class UMillicastAudioInstance : public UObject, public IMillicastExternalAudioConsumer
@@ -17,6 +17,8 @@ public:
 	void InjectDependencies(UAudioComponent* InAudioComponent);
 
 	const UAudioComponent* GetAudioComponent() const { return AudioComponent; }
+
+	void ForceFadeInFadeOut();
 	
 	// IMillicastExternalAudioConsumer
 	virtual FMillicastAudioParameters GetAudioParameters() const override { return AudioParameters; }
@@ -45,7 +47,7 @@ private:
 	UAudioComponent* AudioComponent;
 	
 	UPROPERTY()
-	USoundWaveProcedural* SoundStreaming;
+	UMillicastSoundWaveProcedural* SoundStreaming;
 
 	FMillicastAudioParameters AudioParameters;
 };

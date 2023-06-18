@@ -5,6 +5,7 @@
 #include "AudioDevice.h"
 #include "MillicastPlayerPrivate.h"
 
+#include "Audio/MillicastSoundWaveProcedural.h"
 #include "Components/AudioComponent.h"
 
 void UMillicastAudioInstance::UpdateAudioParameters(FMillicastAudioParameters Parameters) noexcept
@@ -22,6 +23,16 @@ void UMillicastAudioInstance::UpdateAudioParameters(FMillicastAudioParameters Pa
 void UMillicastAudioInstance::InjectDependencies(UAudioComponent* InAudioComponent)
 {
 	AudioComponent = InAudioComponent;
+}
+
+void UMillicastAudioInstance::ForceFadeInFadeOut()
+{
+	if(!SoundStreaming)
+	{
+		return;
+	}
+	
+	SoundStreaming->FadeInFadeOutAudio(true);	
 }
 
 void UMillicastAudioInstance::Initialize()
@@ -59,18 +70,12 @@ void UMillicastAudioInstance::QueueAudioData(const uint8* AudioData, int32 NumSa
 	}
 	
 	/* Don't queue if IsVirtualized is true because the buffer is not actually playing, this will desync with video*/
-	if (AudioComponent->IsPlaying() && !AudioComponent->IsVirtualized())
+	if (!AudioComponent->IsPlaying() || AudioComponent->IsVirtualized())
 	{
-		// Potential Fix for clients that are out of sync, that get a buffer that is too large to work off
-		// Six figure buffer size has been observed in the wild. This is a very crude approach to the problem
-		const auto QueuedAudioSize = SoundStreaming->GetAvailableAudioByteCount();
-		if( QueuedAudioSize >= 20000 )
-		{
-			SoundStreaming->ResetAudio();
-		}
-		
-		SoundStreaming->QueueAudio(AudioData, NumSamples * AudioParameters.GetNumberBytesPerSample());
+		return;
 	}
+
+	SoundStreaming->QueueAudio(AudioData, NumSamples * AudioParameters.GetNumberBytesPerSample());
 }
 
 void UMillicastAudioInstance::InitSoundWave()
@@ -83,7 +88,7 @@ void UMillicastAudioInstance::InitSoundWave()
 
 	UE_LOG(LogMillicastPlayer, Log, TEXT("InitSoundWave"));
 
-	SoundStreaming = NewObject<USoundWaveProcedural>(this);
+	SoundStreaming = NewObject<UMillicastSoundWaveProcedural>(this);
 	SoundStreaming->SetSampleRate(AudioParameters.SamplesPerSecond);
 	SoundStreaming->NumChannels = AudioParameters.NumberOfChannels;
 	SoundStreaming->SampleByteSize = AudioParameters.GetNumberBytesPerSample();

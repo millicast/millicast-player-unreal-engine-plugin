@@ -54,3 +54,11 @@ UMillicastAudioInstance* UMillicastAudioSubsystem::GetInstance(UAudioComponent* 
 	
 	return *It;
 }
+
+void UMillicastAudioSubsystem::ForceFadeInFadeOut()
+{
+	for(auto* Instance : AudioInstances)
+	{
+		Instance->ForceFadeInFadeOut();
+	}
+}

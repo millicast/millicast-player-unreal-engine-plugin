@@ -26,6 +26,7 @@ namespace UnrealBuildTool.Rules
 				new string[] {
 					"Core",
 					"CoreUObject",
+					"DeveloperSettings",
 					"MediaAssets",
 					"OpenSSL",
 					"TimeManagement",
