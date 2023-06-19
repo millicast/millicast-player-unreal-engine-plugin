@@ -55,11 +55,14 @@ namespace UnrealBuildTool.Rules
 					"Media",
 				});
 
-			PrivateIncludePaths.AddRange(
-				new string[] {
-					"MillicastPlayer/Private",
-                    Path.Combine(Path.GetFullPath(Target.RelativeEnginePath), "Source/ThirdParty/WebRTC/4664/Include/third_party/libyuv/include"), // for libyuv headers
+			if( Target.Platform.ToString() != "Mac")
+			{
+				PrivateIncludePaths.AddRange(
+					new string[] {
+					    "MillicastPlayer/Private",
+                    			    Path.Combine(Path.GetFullPath(Target.RelativeEnginePath), "Source/ThirdParty/WebRTC/4664/Include/third_party/libyuv/include"), // for libyuv headers
 				});
+			}
 		}
 	}
 }
