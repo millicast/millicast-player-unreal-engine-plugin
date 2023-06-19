@@ -1,4 +1,4 @@
-// Copyright Millciast 2022. All Rights Reserved.
+// Copyright Millicast 2022. All Rights Reserved.
 
 #include "MillicastTexture2DPlayer.h"
 #include "MillicastMediaUtil.h"
