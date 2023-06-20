@@ -175,6 +175,18 @@ public:
 	void EnableFrameTransformer(bool Enable);
 
 	/**
+	* Select a simulcast/svc layer
+	*/
+	UFUNCTION(BlueprintCallable, Category = "MillicastPlayer", META = (DisplayName = "Select"))
+	void Select(const FMillicastLayerData& Layer);
+
+	/**
+	* Come back to automatic layer selection after calling Select on a specific simulcast layer
+	*/
+	UFUNCTION(BlueprintCallable, Category = "MillicastPlayer", META = (DisplayName = "AutoSelect"))
+	void AutoSelect();
+
+	/**
 	* Returns data from the stats collector. Exists to expose to Blueprint
 	*/
 	UFUNCTION(BlueprintCallable, Category = "MillicastPlayer", META = (DisplayName = "GetStats"))

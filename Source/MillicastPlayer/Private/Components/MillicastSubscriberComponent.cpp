@@ -184,6 +184,35 @@ void UMillicastSubscriberComponent::EnableFrameTransformer(bool Enable)
 	bUseFrameTransformer = Enable;
 }
 
+void UMillicastSubscriberComponent::Select(const FMillicastLayerData& Layer)
+{
+	UE_LOG(LogMillicastPlayer, VeryVerbose, TEXT("%S"), __FUNCTION__);
+
+	auto DataJson = MakeShared<FJsonObject>();
+
+	auto data = MakeShared<FJsonObject>();
+	data->SetStringField("encodingId", Layer.EncodingId);
+	data->SetNumberField("spatialLayerId", Layer.SpatialLayerId);
+	data->SetNumberField("temporalLayerId", Layer.TemporalLayerId);
+
+	DataJson->SetObjectField("layer", data);
+
+	SendCommand("select", DataJson);
+}
+
+void UMillicastSubscriberComponent::AutoSelect()
+{
+	UE_LOG(LogMillicastPlayer, VeryVerbose, TEXT("%S"), __FUNCTION__);
+
+	auto DataJson = MakeShared<FJsonObject>();
+	auto data = MakeShared<FJsonObject>();
+
+	// send empty object for auto layer selection
+	DataJson->SetObjectField("layer", data);
+
+	SendCommand("select", DataJson);
+}
+
 FPlayerStatsData UMillicastSubscriberComponent::GetStats() const
 {
 #if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION > 0
@@ -573,7 +602,6 @@ void UMillicastSubscriberComponent::ParseResponse(TSharedPtr<FJsonObject> JsonMs
 	const TSharedPtr<FJsonObject>* DataJson;
 	if (!JsonMsg->TryGetObjectField("data", DataJson))
 	{
-		UE_LOG(LogMillicastPlayer, Error, TEXT("[UMillicastSubscriberComponent::ParseResponse] Missing data field"));
 		return;
 	}
 
