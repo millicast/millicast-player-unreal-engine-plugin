@@ -9,7 +9,7 @@ class USoundWaveProcedural;
 class UAudioComponent;
 
 UCLASS()
-class UMillicastAudioInstance : public UObject, public IMillicastExternalAudioConsumer
+class MILLICASTPLAYER_API UMillicastAudioInstance : public UObject, public IMillicastExternalAudioConsumer
 {
 	GENERATED_BODY()
 
