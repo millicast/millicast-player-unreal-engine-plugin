@@ -239,6 +239,7 @@ void UMillicastSoundWaveProcedural::Serialize(FArchive& Ar)
 	// Do not call the USoundWave version of serialize
 	USoundBase::Serialize(Ar);
 
+#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION > 0
 #if WITH_EDITORONLY_DATA
 	// Due to "skipping" USoundWave::Serialize above, modulation
 	// versioning is required to be called explicitly here.
@@ -246,6 +247,7 @@ void UMillicastSoundWaveProcedural::Serialize(FArchive& Ar)
 	{
 		ModulationSettings.VersionModulators();
 	}
+#endif
 #endif
 }
 
