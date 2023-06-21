@@ -1,6 +1,7 @@
 // Copyright CoSMoSoftware 2021. All Rights Reserved.
 
 #include "Components/MillicastSubscriberComponent.h"
+#include "Audio/MillicastAudioInstance.h"
 #include "Components/MillicastDirectorComponent.h"
 #include "MillicastPlayerPrivate.h"
 #include "MillicastUtil.h"
