@@ -86,7 +86,7 @@ void UMillicastSoundWaveProcedural::FadeInFadeOutAudio(bool bForced)
 	{
 		// not enough data in the buffer, can happen when called with force
 		// or if the configured MaxSize is smaller than FadeIn and FadeOut allow to be combined with. We only check against the latter
-		check((SamplesForFadeIn + SamplesForFadeOut) * 2 <= CachedMaxQueuedAudio);
+		check((SamplesForFadeIn + SamplesForFadeOut) <= CachedMaxQueuedAudio);
 		return;
 	}
 	
