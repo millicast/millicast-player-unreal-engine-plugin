@@ -29,7 +29,7 @@ namespace UnrealBuildTool.Rules
 					"MediaAssets",
 					"OpenSSL",
 					"TimeManagement",
-					"WebRTC",
+					"MillicastWebRTC",
 					"RenderCore"
 				});
 
