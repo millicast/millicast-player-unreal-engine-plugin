@@ -35,12 +35,14 @@ And then the game fails to launch.
 That is because Unreal has excluded the plugin.
 If that is the case, create an empty C++ class in your project. This will force Unreal to include the plugin. Then, re-package the game, launch it, and it should be fixed.
 
-### Installation steps for Mac
+### Installation steps for Mac or H264 playback
 
-For Mac, you need to add the WebRTC module to the plugin.
-Download the libWebRTC-97.0-x64-Release.tar.gz file that you can find in the release assets of the latest github pre-release for mac.
+If you want to run the plugin on Mac, or have H264 decoding support, you will need to use our webrtc library instead of the Unreal one. You need to add it directly into your project, in the plugin ThirdParty.
+
+Download the ``ThirdParty.zip`` file that you can find in the release assets of the latest github pre-release.
+
 Then, extract it and move the ``ThirdParty`` folder into the ``Source`` folder of the plugins.
-After that, you should be able to build and run the plugin for Mac. If you already have an xcode project just build through xcode,  otherwise launch your .uproject file to generate all the needed files. 
+After that, you should be able to build and run the plugin using our WebRTC library. 
 
 ## Documentation
 
