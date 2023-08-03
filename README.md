@@ -44,7 +44,6 @@ Download the ``ThirdParty.zip`` file that you can find in the release assets of 
 Then, extract it and move the ``ThirdParty`` folder into the ``Source`` folder of the plugins.
 After that, you should be able to build and run the plugin using our WebRTC library.
 
-
 ## Documentation
 
 You can find the documentation for the plugin here: [https://docs.millicast.com/docs/millicast-player-plugin](https://docs.millicast.com/docs/millicast-player-plugin)
