@@ -348,11 +348,25 @@ bool UMillicastSubscriberComponent::SubscribeToMillicast()
 		UE_LOG(LogMillicastPlayer, Log, TEXT("pc.createOffer() | sucess\nsdp : %s"), *FString(sdp.c_str()));
 		AsyncGameThreadTaskWithCapture(WeakThis, [=]()
 		{
-			FScopeLock Lock(&CriticalPcSection);
-			if (PeerConnection)
-			{
-				PeerConnection->SetLocalDescription(sdp, type);
-			}
+				// Search for this expression and add the stereo flag to enable stereo
+				const std::string s = "minptime=10;useinbandfec=1";
+				std::string sdp_non_const = sdp;
+				std::ostringstream oss;
+				oss << s << "; stereo=1";
+
+				auto pos = sdp.find(s);
+				if (pos != std::string::npos)
+				{
+					sdp_non_const.replace(sdp.find(s), s.size(), oss.str());
+				}
+
+				{
+					FScopeLock Lock(&CriticalPcSection);
+					if (PeerConnection)
+					{
+						PeerConnection->SetLocalDescription(sdp_non_const, type);
+					}
+				}
 		});
 	});
 

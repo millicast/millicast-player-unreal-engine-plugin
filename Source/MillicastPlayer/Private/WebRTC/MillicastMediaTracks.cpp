@@ -184,7 +184,7 @@ void UMillicastAudioTrackImpl::OnData(const void* AudioData, int BitPerSample, i
 		return;
 	}
 
-	Audio::TSampleBuffer<int16> Buffer(static_cast<const int16*>(AudioData), NumberOfFrames, NumberOfChannels, SampleRate);
+	Audio::TSampleBuffer<int16> Buffer(static_cast<const int16*>(AudioData), NumberOfFrames * NumberOfChannels, NumberOfChannels, SampleRate);
 
 	// Queue Audio Data for Consumers
 	{

@@ -118,6 +118,7 @@ namespace Millicast::Player
 					Data.AudioNackCount = InboundStat.nack_count.ValueOrDefault(0);
 					Data.ConcealedSamples = InboundStat.concealed_samples.ValueOrDefault(0);
 					Data.SilentConcealedSamples = InboundStat.silent_concealed_samples.ValueOrDefault(0);
+					Data.AudioLevel = InboundStat.audio_level.ValueOrDefault(0);
 
 					auto audioJitterDelay = InboundStat.jitter_buffer_delay.ValueOrDefault(-1);
 					auto audioJitterEmitted = InboundStat.jitter_buffer_emitted_count.ValueOrDefault(0);

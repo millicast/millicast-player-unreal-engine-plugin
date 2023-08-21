@@ -97,6 +97,9 @@ struct MILLICASTPLAYER_API FPlayerStatsData
 	UPROPERTY(BlueprintReadOnly, Category="MillicastPlayer")
 	int32 VideoNackCount = 0;
 
+	UPROPERTY(BlueprintReadOnly, Category = "MillicastPlayer")
+	float AudioLevel = 0.0f; // ms
+
 	UPROPERTY(BlueprintReadOnly, Category="MillicastPlayer")
 	float Timestamp = 0.0f; // us
 
