@@ -170,14 +170,14 @@ void FWebRTCPeerConnection::CreatePeerConnectionFactory()
 
 	UE_LOG(LogMillicastPlayer, Log, TEXT("Creating audio device module"));
 	TaskQueueFactory = webrtc::CreateDefaultTaskQueueFactory();
-	AudioDeviceModule = FAudioDeviceModule::Create(TaskQueueFactory.get());
+	AudioDeviceModule = FAudioDeviceModule::Create(TaskQueueFactory.get(), this);
 
 	UE_LOG(LogMillicastPlayer, Log, TEXT("Creating Peerconnection factory. Count %d"), RefCounter.Load());
 	PeerConnectionFactory = webrtc::CreatePeerConnectionFactory(
 		NetworkingThread.Get(), WorkingThread.Get(), SignalingThread.Get(),
 		AudioDeviceModule,
-		webrtc::CreateBuiltinAudioEncoderFactory(),
-		webrtc::CreateBuiltinAudioDecoderFactory(),
+		webrtc::CreateAudioEncoderFactory<webrtc::AudioEncoderOpus, webrtc::AudioEncoderMultiChannelOpus>(),
+		webrtc::CreateAudioDecoderFactory<webrtc::AudioDecoderOpus, webrtc::AudioDecoderMultiChannelOpus>(),
 		webrtc::CreateBuiltinVideoEncoderFactory(),
 		webrtc::CreateBuiltinVideoDecoderFactory(),
 		nullptr,
@@ -526,11 +526,25 @@ void FWebRTCPeerConnection::PollStats()
 		}
 	}
 }
+
+void FWebRTCPeerConnection::GetStats(rtc::scoped_refptr<webrtc::RTCStatsCollectorCallback> Observer)
+{
+	if (PeerConnection)
+	{
+		std::vector<rtc::scoped_refptr<webrtc::RtpTransceiverInterface>> Transceivers = PeerConnection->GetTransceivers();
+		for (rtc::scoped_refptr<webrtc::RtpTransceiverInterface> Transceiver : Transceivers)
+		{
+			PeerConnection->GetStats(Transceiver->receiver(), Observer);
+		}
+	}
+}
+
 #endif
 
 static inline webrtc::RtpTransceiverDirection reverse_direction(webrtc::RtpTransceiverDirection direction)
 {
-	switch (direction) {
+	switch (direction)
+	{
 	case webrtc::RtpTransceiverDirection::kSendOnly:
 		return webrtc::RtpTransceiverDirection::kRecvOnly;
 	case webrtc::RtpTransceiverDirection::kRecvOnly:

@@ -112,6 +112,7 @@ namespace Millicast::Player
 #if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION > 0
 		void EnableStats(bool Enable);
 		void PollStats();
+		void GetStats(rtc::scoped_refptr<webrtc::RTCStatsCollectorCallback> Observer);
 #endif
 
 		webrtc::PeerConnectionInterface* operator->()

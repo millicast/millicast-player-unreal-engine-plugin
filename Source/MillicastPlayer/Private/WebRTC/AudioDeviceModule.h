@@ -11,7 +11,7 @@ namespace Millicast::Player
 {
 
 	// A custom audio device module for WebRTC.
-	class FAudioDeviceModule : public webrtc::AudioDeviceModule
+	class FAudioDeviceModule : public webrtc::AudioDeviceModule, public webrtc::RTCStatsCollectorCallback
 	{
 		typedef uint16_t Sample;
 
@@ -26,7 +26,7 @@ namespace Millicast::Player
 
 		~FAudioDeviceModule() = default;
 
-		static rtc::scoped_refptr<FAudioDeviceModule> Create(webrtc::TaskQueueFactory* queue_factory);
+		static rtc::scoped_refptr<FAudioDeviceModule> Create(webrtc::TaskQueueFactory* queue_factory, FWebRTCPeerConnection* PeerConnection);
 
 	public:
 		static TAtomic<bool> ReadDataAvailable;
@@ -181,6 +181,9 @@ namespace Millicast::Player
 			return -1;
 		}
 
+		void AddRef() const override = 0;
+		rtc::RefCountReleaseStatus Release() const override = 0;
+
 	private:
 		void PullAudioData();
 		void Process();
@@ -193,6 +196,8 @@ namespace Millicast::Player
 		bool bIsTerminated = false;
 
 		bool bIsStarted = false;
+
+		bool ChannelCheck = false;
 		int64_t NextFrameTime = 0;
 
 		rtc::TaskQueue TaskQueue;
@@ -206,6 +211,10 @@ namespace Millicast::Player
 		mutable FCriticalSection CriticalSection;
 
 		FMillicastAudioParameters AudioParameters;
-	};
+		FWebRTCPeerConnection* PeerConnection;
+
+		// Inherited via RTCStatsCollectorCallback
+		void OnStatsDelivered(const rtc::scoped_refptr<const webrtc::RTCStatsReport>& report);
+};
 
 }

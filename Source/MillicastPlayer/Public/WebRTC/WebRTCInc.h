@@ -40,6 +40,13 @@ THIRD_PARTY_INCLUDES_START
 #include "api/video/i420_buffer.h"
 #include "api/video/video_sink_interface.h"
 
+#include "api/audio_codecs/opus/audio_decoder_opus.h"
+#include "api/audio_codecs/opus/audio_encoder_opus.h"
+#include "api/audio_codecs/opus/audio_encoder_multi_channel_opus.h"
+#include "api/audio_codecs/opus/audio_decoder_multi_channel_opus.h"
+#include "api/audio_codecs/audio_decoder_factory_template.h"
+#include "api/audio_codecs/audio_encoder_factory_template.h"
+
 #include "rtc_base/thread.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/ssl_adapter.h"

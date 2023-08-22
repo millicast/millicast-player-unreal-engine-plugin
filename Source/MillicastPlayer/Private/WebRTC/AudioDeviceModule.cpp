@@ -1,6 +1,8 @@
 // Copyright CoSMoSoftware 2021. All Rights Reserved.
 
 #include "AudioDeviceModule.h"
+
+#include "PeerConnection.h"
 #include "MillicastPlayerPrivate.h"
 #include "MillicastUtil.h"
 #include "Async/Async.h"
@@ -17,10 +19,13 @@ FAudioDeviceModule::FAudioDeviceModule(webrtc::TaskQueueFactory* queue_factory) 
 
 }
 
-rtc::scoped_refptr<FAudioDeviceModule> FAudioDeviceModule::Create(webrtc::TaskQueueFactory* queue_factory)
+rtc::scoped_refptr<FAudioDeviceModule> FAudioDeviceModule::Create(webrtc::TaskQueueFactory* queue_factory,
+	FWebRTCPeerConnection* InPeerConnection)
 {
 	UE_LOG(LogMillicastPlayer, Verbose, TEXT("%S"), __FUNCTION__);
 	rtc::scoped_refptr<FAudioDeviceModule> AudioDeviceModule(new rtc::RefCountedObject<FAudioDeviceModule>(queue_factory));
+	AudioDeviceModule->PeerConnection = InPeerConnection;
+
 	return AudioDeviceModule;
 }
 
@@ -259,6 +264,32 @@ void FAudioDeviceModule::Process()
 	}, int32_t(wait_time));
 }
 
+void FAudioDeviceModule::OnStatsDelivered(const rtc::scoped_refptr<const webrtc::RTCStatsReport>& report)
+{
+	auto InboundStats = report->GetStatsOfType<webrtc::RTCInboundRTPStreamStats>();
+
+	for (auto& Inbound : InboundStats)
+	{
+		if (*Inbound->kind == webrtc::RTCMediaStreamTrackKind::kAudio)
+		{
+			auto CodecId = *Inbound->codec_id;
+
+			auto CodecStats = report->GetStatsOfType<webrtc::RTCCodecStats>();
+			for (auto& Codec : CodecStats)
+			{
+				if (Codec->id() == CodecId)
+				{
+					AudioParameters.NumberOfChannels = Codec->channels.ValueOrDefault(2);
+					AudioBuffer.SetNumUninitialized(AudioParameters.GetNumberSamples() * AudioParameters.GetNumberBytesPerSample());
+					UE_LOG(LogMillicastPlayer, Log, TEXT("NumChannelAdm %d"), AudioParameters.NumberOfChannels);
+				}
+			}
+
+			break;
+		}
+	}
+}
+
 void FAudioDeviceModule::PullAudioData()
 {
 	int64_t elapsed, ntp;
@@ -270,6 +301,12 @@ void FAudioDeviceModule::PullAudioData()
 
 	// Before the stream actually started playing, elapsed == -1 and all samples are silent. Don't queue those
 	ReadDataAvailable = (elapsed >= 0);
+
+	if (ReadDataAvailable && !ChannelCheck)
+	{
+		PeerConnection->GetStats(this);
+		ChannelCheck = true;
+	}
 }
 
 }
