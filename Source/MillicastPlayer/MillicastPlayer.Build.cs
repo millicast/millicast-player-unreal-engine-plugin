@@ -60,6 +60,10 @@ namespace UnrealBuildTool.Rules
 					"MillicastPlayer/Private",
                     Path.Combine(Path.GetFullPath(Target.RelativeEnginePath), "Source/ThirdParty/WebRTC/4664/Include/third_party/libyuv/include"), // for libyuv headers
 				});
-		}
-	}
+
+#if UE_5_2_OR_LATER
+		    PublicDefinitions.Add("WEBRTC_VERSION=96");
+#endif
+        }
+    }
 }

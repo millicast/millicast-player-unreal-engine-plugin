@@ -34,6 +34,9 @@ public:
 
 	UPROPERTY(BlueprintAssignable, Category="MillicastPlayer")
 	FMillicastVideoResolutionChangedPlayer OnVideoResolutionChanged;
+
+	UFUNCTION(BlueprintCallable, Category = "MillicastPlayer", META = (DisplayName = "GetCurrentResolution"))
+	FIntPoint GetCurrentResolution();
 	
 private:
 	FCriticalSection RenderSyncContext;

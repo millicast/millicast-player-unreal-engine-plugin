@@ -56,6 +56,11 @@ void UMillicastTexture2DPlayer::OnFrame(TArray<uint8>& VideoData, int Width, int
 	});
 }
 
+FIntPoint UMillicastTexture2DPlayer::GetCurrentResolution()
+{
+	return CachedResolution;
+}
+
 void UMillicastTexture2DPlayer::BeginDestroy()
 {
 	AsyncTask(ENamedThreads::ActualRenderingThread, [this]() {

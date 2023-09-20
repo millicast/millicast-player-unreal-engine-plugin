@@ -8,12 +8,13 @@
 class USoundWaveProcedural;
 class UAudioComponent;
 
-UCLASS()
+UCLASS(BlueprintType, editinlinenew, hideCategories = (Object), META = (DisplayName = "Millicast Audio Instance"))
 class MILLICASTPLAYER_API UMillicastAudioInstance : public UObject, public IMillicastExternalAudioConsumer
 {
 	GENERATED_BODY()
 
 public:
+	UFUNCTION(BlueprintCallable, Category = "MillicastPlayer", META = (DisplayName = "InjectDependencies"))
 	void InjectDependencies(UAudioComponent* InAudioComponent);
 
 	const UAudioComponent* GetAudioComponent() const { return AudioComponent; }
