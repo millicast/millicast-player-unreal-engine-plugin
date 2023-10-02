@@ -63,9 +63,14 @@ FIntPoint UMillicastTexture2DPlayer::GetCurrentResolution()
 
 void UMillicastTexture2DPlayer::BeginDestroy()
 {
-	AsyncTask(ENamedThreads::ActualRenderingThread, [this]() {
-		FScopeLock Lock(&RenderSyncContext);
-		RenderTarget = nullptr;
+	TWeakObjectPtr<UMillicastTexture2DPlayer> WeakThis(this);
+
+	AsyncTask(ENamedThreads::ActualRenderingThread, [WeakThis]() {
+		if (WeakThis.IsValid())
+		{
+			FScopeLock Lock(&WeakThis->RenderSyncContext);
+			WeakThis->RenderTarget = nullptr;
+		}
 	});
 
 	Super::BeginDestroy();
