@@ -12,7 +12,7 @@ FMillicastMediaTextureResource::FMillicastMediaTextureResource(UMillicastMediaTe
 	MediaTexture = Owner;
 }
 
-void FMillicastMediaTextureResource::InitDynamicRHI()
+void FMillicastMediaTextureResource::InitRHI(FRHICommandListBase& Rhi)
 {
 	if (MediaTexture != nullptr)
 	{
@@ -25,7 +25,7 @@ void FMillicastMediaTextureResource::InitDynamicRHI()
 	}
 }
 
-void FMillicastMediaTextureResource::ReleaseDynamicRHI()
+void FMillicastMediaTextureResource::ReleaseRHI()
 {
 	TextureRHI.SafeRelease();
 
