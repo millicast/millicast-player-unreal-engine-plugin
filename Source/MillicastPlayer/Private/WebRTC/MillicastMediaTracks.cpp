@@ -4,6 +4,7 @@
 #include "SampleBuffer.h"
 #include "Async/Async.h"
 #include "WebRTC/AudioDeviceModule.h"
+#include "Util.h"
 #include <common_video/libyuv/include/webrtc_libyuv.h>
 
 #include "MillicastUtil.h"
@@ -20,13 +21,21 @@ void UMillicastVideoTrackImpl::OnFrame(const webrtc::VideoFrame& VideoFrame)
 		CachedResolution.X = Width;
 		CachedResolution.Y = Height;
 		
+#if MILLICAST_HAS_CXX20
 		AsyncTask(ENamedThreads::GameThread, [=, this]()
+#else
+		AsyncTask(ENamedThreads::GameThread, [=]()
+#endif
 		{
 			OnVideoResolutionChanged.Broadcast(Width, Height);
 		});
 	}
 	
+#if MILLICAST_HAS_CXX20
 	AsyncGameThreadTask(this, [=, this]()
+#else
+	AsyncGameThreadTask(this, [=]()
+#endif
 	{
 		constexpr auto WEBRTC_PIXEL_FORMAT = webrtc::VideoType::kARGB;
 
