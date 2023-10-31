@@ -104,7 +104,7 @@ int32_t FAudioDeviceModule::StartPlayout()
 	SetPlaying(true);
 
 	const rtc::scoped_refptr<FAudioDeviceModule> SelfRef(this);
-	AsyncGameThreadTaskUnguarded([=]
+	AsyncGameThreadTaskUnguarded([=, this]
 	{
 		ReadDataAvailable = false;
 		AudioBuffer.SetNumUninitialized(AudioParameters.GetNumberSamples() * AudioParameters.GetNumberBytesPerSample());

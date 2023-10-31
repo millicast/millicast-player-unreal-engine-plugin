@@ -215,7 +215,7 @@ bool UMillicastDirectorComponent::Authenticate()
 
 	PostHttpRequest->SetContentAsString(SerializedRequestData);
 
-	PostHttpRequest->OnProcessRequestComplete().BindWeakLambda(this, [=](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bConnectedSuccessfully)
+	PostHttpRequest->OnProcessRequestComplete().BindWeakLambda(this, [=, this](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bConnectedSuccessfully)
 	{
 		check(IsInGameThread());
 		

@@ -13,13 +13,13 @@ void UMillicastTexture2DPlayer::OnFrame(TArray<uint8>& VideoData, int Width, int
 		CachedResolution.X = Width;
 		CachedResolution.Y = Height;
 		
-		AsyncTask(ENamedThreads::GameThread, [=]()
+		AsyncTask(ENamedThreads::GameThread, [=, this]()
 		{
 			OnVideoResolutionChanged.Broadcast(Width, Height);
 		});
 	}
 	
-	AsyncTask(ENamedThreads::ActualRenderingThread, [=]()
+	AsyncTask(ENamedThreads::ActualRenderingThread, [=, this]()
 	{
 		FScopeLock Lock(&RenderSyncContext);
 

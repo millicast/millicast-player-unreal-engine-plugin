@@ -20,13 +20,13 @@ void UMillicastVideoTrackImpl::OnFrame(const webrtc::VideoFrame& VideoFrame)
 		CachedResolution.X = Width;
 		CachedResolution.Y = Height;
 		
-		AsyncTask(ENamedThreads::GameThread, [=]()
+		AsyncTask(ENamedThreads::GameThread, [=, this]()
 		{
 			OnVideoResolutionChanged.Broadcast(Width, Height);
 		});
 	}
 	
-	AsyncGameThreadTask(this, [=]()
+	AsyncGameThreadTask(this, [=, this]()
 	{
 		constexpr auto WEBRTC_PIXEL_FORMAT = webrtc::VideoType::kARGB;
 

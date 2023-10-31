@@ -11,6 +11,7 @@
 #include "Async/Async.h"
 #include "Dom/JsonValue.h"
 #include "Dom/JsonObject.h"
+#include "Engine/GameInstance.h"
 #include "Engine/World.h"
 #include "Runtime/Launch/Resources/Version.h"
 #include "Serialization/JsonReader.h"
@@ -343,10 +344,10 @@ bool UMillicastSubscriberComponent::SubscribeToMillicast()
 
 	TWeakObjectPtr<UMillicastSubscriberComponent> WeakThis(this);
 	
-	CreateSessionDescriptionObserver->SetOnSuccessCallback([=](const std::string& type, const std::string& sdp)
+	CreateSessionDescriptionObserver->SetOnSuccessCallback([=, this](const std::string& type, const std::string& sdp)
 	{
 		UE_LOG(LogMillicastPlayer, Log, TEXT("pc.createOffer() | sucess\nsdp : %s"), *FString(sdp.c_str()));
-		AsyncGameThreadTaskWithCapture(WeakThis, [=]()
+		AsyncGameThreadTaskWithCapture(WeakThis, [=, this]()
 		{
 				// Search for this expression and add the stereo flag to enable stereo
 				const std::string s = "minptime=10;useinbandfec=1";
@@ -370,20 +371,20 @@ bool UMillicastSubscriberComponent::SubscribeToMillicast()
 		});
 	});
 
-	CreateSessionDescriptionObserver->SetOnFailureCallback([=](const std::string& err)
+	CreateSessionDescriptionObserver->SetOnFailureCallback([=, this](const std::string& err)
 	{
 		UE_LOG(LogMillicastPlayer, Error, TEXT("pc.createOffer() | Error: %s"), *FString(err.c_str()));
-		AsyncGameThreadTaskWithCapture(WeakThis, [=]()
+		AsyncGameThreadTaskWithCapture(WeakThis, [=, this]()
 		{
 			OnSubscribedFailure.Broadcast(FString{ err.c_str() });
 		});
 	});
 
-	LocalDescriptionObserver->SetOnSuccessCallback([=]()
+	LocalDescriptionObserver->SetOnSuccessCallback([=, this]()
 	{
 		UE_LOG(LogMillicastPlayer, Log, TEXT("pc.setLocalDescription() | sucess"));
 
-		AsyncGameThreadTaskWithCapture(WeakThis, [=]()
+		AsyncGameThreadTaskWithCapture(WeakThis, [=, this]()
 		{
 			FScopeLock Lock(&CriticalPcSection);
 			if (!PeerConnection)
@@ -414,32 +415,32 @@ bool UMillicastSubscriberComponent::SubscribeToMillicast()
 		});
 	});
 
-	LocalDescriptionObserver->SetOnFailureCallback([=](const std::string& err)
+	LocalDescriptionObserver->SetOnFailureCallback([=, this](const std::string& err)
 	{
 		UE_LOG(LogMillicastPlayer, Error, TEXT("Set local description failed : %s"), *FString(err.c_str()));
 
-		AsyncGameThreadTaskWithCapture(WeakThis, [=]()
+		AsyncGameThreadTaskWithCapture(WeakThis, [=, this]()
 		{
 			OnSubscribedFailure.Broadcast(FString{ err.c_str() });
 		});
 	});
 
-	RemoteDescriptionObserver->SetOnSuccessCallback([=]()
+	RemoteDescriptionObserver->SetOnSuccessCallback([=, this]()
 	{
 		UE_LOG(LogMillicastPlayer, Log, TEXT("Set remote description suceeded"));
 
-		AsyncGameThreadTaskWithCapture(WeakThis, [=]()
+		AsyncGameThreadTaskWithCapture(WeakThis, [=, this]()
 		{
 			State = EMillicastSubscriberState::Connected;
 			OnSubscribed.Broadcast();
 		});
 	});
 
-	RemoteDescriptionObserver->SetOnFailureCallback([=](const std::string& err)
+	RemoteDescriptionObserver->SetOnFailureCallback([=, this](const std::string& err)
 	{
 		UE_LOG(LogMillicastPlayer, Error, TEXT("Set remote description failed : %s"), *FString(err.c_str()));
 
-		AsyncGameThreadTaskWithCapture(WeakThis, [=]()
+		AsyncGameThreadTaskWithCapture(WeakThis, [=, this]()
 		{
 			OnSubscribedFailure.Broadcast(FString{ err.c_str() });
 		});
@@ -450,11 +451,11 @@ bool UMillicastSubscriberComponent::SubscribeToMillicast()
 
 	using RtcTrack = rtc::scoped_refptr<webrtc::MediaStreamTrackInterface>;
 
-	PeerConnection->OnVideoTrack = [=](const std::string& Mid, RtcTrack Track)
+	PeerConnection->OnVideoTrack = [=, this](const std::string& Mid, RtcTrack Track)
 	{
 		UE_LOG(LogMillicastPlayer, Log, TEXT("OnVideoTrack"));
 
-		AsyncGameThreadTaskWithCapture(WeakThis, [=]()
+		AsyncGameThreadTaskWithCapture(WeakThis, [=, this]()
 		{
 			UE_LOG(LogMillicastPlayer, Verbose, TEXT("Create video track object"));
 			auto VideoTrack = NewObject<UMillicastVideoTrackImpl>();
@@ -471,11 +472,11 @@ bool UMillicastSubscriberComponent::SubscribeToMillicast()
 		});
 	};
 
-	PeerConnection->OnAudioTrack = [=](const std::string& mid, RtcTrack Track)
+	PeerConnection->OnAudioTrack = [=, this](const std::string& mid, RtcTrack Track)
 	{
 		UE_LOG(LogMillicastPlayer, Log, TEXT("OnAudioTrack"));
 
-		AsyncGameThreadTaskWithCapture(WeakThis, [=]()
+		AsyncGameThreadTaskWithCapture(WeakThis, [=, this]()
 		{
 			UE_LOG(LogMillicastPlayer, Verbose, TEXT("Create audio track object"));
 			auto* AudioTrack = NewObject<UMillicastAudioTrackImpl>();
@@ -494,9 +495,9 @@ bool UMillicastSubscriberComponent::SubscribeToMillicast()
 		});
 	};
 
-	PeerConnection->OnFrameMetadata = [=](uint32 Ssrc, uint32 Timestamp, const TArray<uint8>& Metadata)
+	PeerConnection->OnFrameMetadata = [=, this](uint32 Ssrc, uint32 Timestamp, const TArray<uint8>& Metadata)
 	{
-		AsyncGameThreadTaskWithCapture(WeakThis, [=]()
+		AsyncGameThreadTaskWithCapture(WeakThis, [=, this]()
 		{
 			OnFrameMetadata.Broadcast(Ssrc, Timestamp, Metadata);
 		});

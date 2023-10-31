@@ -2,6 +2,7 @@
 
 #include "Subsystems/MillicastAudioSubsystem.h"
 #include "Audio/MillicastAudioInstance.h"
+#include "Runtime/Launch/Resources/Version.h"
 
 namespace
 {
