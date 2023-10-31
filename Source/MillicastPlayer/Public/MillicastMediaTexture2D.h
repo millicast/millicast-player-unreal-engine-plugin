@@ -3,8 +3,11 @@
 #pragma once
 
 #include "Engine/Texture.h"
-#include "RHIFwd.h"
 #include "Runtime/Launch/Resources/Version.h"
+
+#if ENGINE_MAJOR_VERSION > 5 || (ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 2)
+#include "RHIFwd.h"
+#endif
 
 #include "MillicastMediaTexture2D.generated.h"
 
