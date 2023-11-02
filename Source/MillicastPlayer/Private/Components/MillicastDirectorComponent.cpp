@@ -215,7 +215,11 @@ bool UMillicastDirectorComponent::Authenticate()
 
 	PostHttpRequest->SetContentAsString(SerializedRequestData);
 
+#if MILLICAST_HAS_CXX20
+	PostHttpRequest->OnProcessRequestComplete().BindWeakLambda(this, [=, this](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bConnectedSuccessfully)
+#else
 	PostHttpRequest->OnProcessRequestComplete().BindWeakLambda(this, [=](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bConnectedSuccessfully)
+#endif
 	{
 		check(IsInGameThread());
 		

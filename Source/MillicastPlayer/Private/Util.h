@@ -21,3 +21,17 @@ namespace Millicast::Player
 	}
 
 }
+
+#ifdef _MSC_VER
+#if _MSVC_LANG >= 202002L
+#define MILLICAST_HAS_CXX20 1
+#endif
+#else
+#if __cplusplus >= 202002L
+#define MILLICAST_HAS_CXX20 1
+#endif
+#endif
+
+#ifndef MILLICAST_HAS_CXX20
+#define MILLICAST_HAS_CXX20 0
+#endif
