@@ -10,7 +10,7 @@ You can configure your credentials and configure your game logic using unreal ob
 
 * VP8 (software decoding)
 * VP9 (software decoding)
-* H264 is supported by using the millicast-webrtc branch and dowloading the millicast version of libwebrtc. See below for setup instructions. Otherwise, for the main branch H264 decoding will result in a black screen.
+* H264 is supported by using the millicast-webrtc branch and downloading the millicast version of libwebrtc. See below for setup instructions. Otherwise, for the main branch H264 decoding will result in a black screen.
 
 ## Installation
 
@@ -35,8 +35,6 @@ And then the game fails to launch.
 That is because Unreal has excluded the plugin.
 If that is the case, create an empty C++ class in your project. This will force Unreal to include the plugin. Then, re-package the game, launch it, and it should be fixed.
 
-<<<<<<< Updated upstream
-=======
 ### Installation steps for Mac or H264 playback
 
 If you want to run the plugin on Mac, or have H264 decoding support, you will need to use our webrtc library instead of the Unreal one. You need to add it directly into your project, in the plugin ThirdParty.
@@ -46,7 +44,6 @@ Download the ``ThirdParty.zip`` file that you can find in the release assets of 
 Then, extract it and move the ``ThirdParty`` folder into the ``Source`` folder of the plugins.
 After that, you should be able to build and run the plugin using our WebRTC library.
 
->>>>>>> Stashed changes
 ## Documentation
 
 You can find the documentation for the plugin here: [https://docs.millicast.com/docs/millicast-player-plugin](https://docs.millicast.com/docs/millicast-player-plugin)
