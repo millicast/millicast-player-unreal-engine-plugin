@@ -1,7 +1,7 @@
 # MillicastPlayer plugin for Unreal Engine
 
 * Supported UE version 5.3, 5.2, 5.1, 5.0.3, 4.27
-* Supported on Windows, Linux and Mac
+* Supported on Windows, Linux, Mac and Android
 
 This plugin enable to play real time stream from Millicast in your Unreal Engine game.
 You can configure your credentials and configure your game logic using unreal object and then render the video in a texture2D.
@@ -37,7 +37,7 @@ If that is the case, create an empty C++ class in your project. This will force 
 
 ### Installation steps for Mac or H264 playback
 
-If you want to run the plugin on Mac, or have H264 decoding support, you will need to use our webrtc library instead of the Unreal one. You need to add it directly into your project, in the plugin ThirdParty.
+If you want to run the plugin on Mac, Android, or have H264 decoding support, you will need to use our webrtc library instead of the Unreal one. You need to add it directly into your project, in the plugin ThirdParty.
 
 Download the ``ThirdParty.zip`` file that you can find in the release assets of the latest github pre-release.
 
