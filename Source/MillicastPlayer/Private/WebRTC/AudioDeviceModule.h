@@ -9,7 +9,8 @@
 
 namespace Millicast::Player
 {
-
+	class FWebRTCPeerConnection;
+	
 	// A custom audio device module for WebRTC.
 	class FAudioDeviceModule : public webrtc::AudioDeviceModule, public webrtc::RTCStatsCollectorCallback
 	{

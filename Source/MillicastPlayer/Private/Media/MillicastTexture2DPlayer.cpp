@@ -5,6 +5,7 @@
 #include "MillicastPlayerPrivate.h"
 #include "RenderTargetPool.h"
 #include "Async/Async.h"
+#include "Util.h"
 
 void UMillicastTexture2DPlayer::OnFrame(TArray<uint8>& VideoData, int Width, int Height)
 {
@@ -13,13 +14,21 @@ void UMillicastTexture2DPlayer::OnFrame(TArray<uint8>& VideoData, int Width, int
 		CachedResolution.X = Width;
 		CachedResolution.Y = Height;
 		
+#if MILLICAST_HAS_CXX20
+		AsyncTask(ENamedThreads::GameThread, [=, this]()
+#else
 		AsyncTask(ENamedThreads::GameThread, [=]()
+#endif
 		{
 			OnVideoResolutionChanged.Broadcast(Width, Height);
 		});
 	}
 	
+#if MILLICAST_HAS_CXX20
+	AsyncTask(ENamedThreads::ActualRenderingThread, [=, this]()
+#else
 	AsyncTask(ENamedThreads::ActualRenderingThread, [=]()
+#endif
 	{
 		FScopeLock Lock(&RenderSyncContext);
 
