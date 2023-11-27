@@ -47,34 +47,38 @@ After that, you should be able to build and run the plugin using our WebRTC libr
 ### Installation steps for Android
 
 Installs needed for Android:
--Java JDK
-for UE 5.3.1 and above: [https://www.oracle.com/eg/java/technologies/javase/jdk11-archive-downloads.html](JDK 11)
-for UE 4.27 and below: [https://www.oracle.com/eg/java/technologies/javase/javase8-archive-downloads.html](JDK 8)
+
+Java JDK
+
+* for UE 5.3.1 and above: [JDK 11](https://www.oracle.com/eg/java/technologies/javase/jdk11-archive-downloads.html)
+* for UE 4.27 and below: [JDK 8](https://www.oracle.com/eg/java/technologies/javase/javase8-archive-downloads.html)
 
 ### SDK
 
-* Install [https://developer.android.com/studio](Android Studio)
+* Install [Android Studio](https://developer.android.com/studio)
 * Open the Android Studio and go to More ``Actions dropdown`` and select ``SDK Manager``
 * go to SDK Tools Tab and mark checkboxes: 33.0.0, 32.0.0, 31.0.0, 30.0.3, 29.0.2
 * go to: C:\Path\to\Android\Sdk\build-tools (You have Android SDK Location path at the top of the settings)
 * go trough each folder and change file name ``d8`` to ``dx``
 ### NDK
 
-For UE less than 5.1: [https://dl.google.com/android/repository/android-ndk-r21d-windows-x86_64.zip](Android NDK r21d)
-For UE 5.1 and above: [https://dl.google.com/android/repository/android-ndk-r25b-windows.zip](Android NDK r25b)
+* For UE less than 5.1: [Android NDK r21d](https://dl.google.com/android/repository/android-ndk-r21d-windows-x86_64.zip)
+* For UE 5.1 and above: [Android NDK r25b](https://dl.google.com/android/repository/android-ndk-r25b-windows.zip)
+
 After extraction, you will have to copy the ``ndk`` folder path and set it in Unreal Engine Project Settings
 
 ### Setup the Environment Variables
 
-``JAVA_HOME`` 			: C:\Program Files\Java\jdk1.8.0_202
-``ANDROID_HOME`` 		: C:\Path\to\Android\Sdk
-``ANDROID_SDK_HOME`` 	: C:\Path\to\Android\Sdk
-``NDK_ROOT`` 			: C:\Path\To\Android\Sdk\ndk\android-ndk-r25b
-``NDKROOT`` 			: C:\Path\To\Android\Sdk\ndk\android-ndk-r25b
+* ``JAVA_HOME`` 		: C:\Program Files\Java\jdk1.8.0_202
+* ``ANDROID_HOME`` 		: C:\Path\to\Android\Sdk
+* ``ANDROID_SDK_HOME`` 	: C:\Path\to\Android\Sdk
+* ``NDK_ROOT`` 			: C:\Path\To\Android\Sdk\ndk\android-ndk-r25b
+* ``NDKROOT`` 			: C:\Path\To\Android\Sdk\ndk\android-ndk-r25b
 
 ### Unreal Engine Project Settings
 
 Navigate to the Unreal Engine and open Project Settings, go to the Android SDK tab and set the paths.
+
 * Location of Android SDK (the directory that usually contains 'android-sdk-'):``C:/Path/To/Android/Sdk``
 * Location of Android NDK (the directory that usually contains 'android-ndk-'):	``C:/Path/To/Sdk/ndk/android-ndk-r25b``
 * Location of JAVA (the directory usually contains 'jdk')					  :	``C:/Path/To/Java/jdk1.8.0_202/jre``
@@ -82,6 +86,7 @@ Navigate to the Unreal Engine and open Project Settings, go to the Android SDK t
 * NDK API Level(specific version of latest -see tooltip)					  :	``android-31``
 
 Next go to the Android tab inside Project Settings and set the following:
+
 * in the APK Packaging ``Press Configure`` Now and Press Accept SDK button and if button greyed out that mean it accepted before.
 * in the Android Package Name type com.yourcompanyname.yourprojectname
 * in the Minimum SDK Version type 21 and make sure install SDK 21 in Android Studio.
@@ -95,6 +100,7 @@ Next go to the Android tab inside Project Settings and set the following:
 * in the Build check box for support arm64
 
 in the Destribution Signing you must have ``key.keystore`` file and to make this file follow steps:
+
 * run Command Prompt as administrator
 * run: cd C:\Path\To\Java\jdk1.8.0_202\bin
 * run: ``keytool -genkey -v -keystore key.keystore -alias Mykey -keyalg RSA -keysize 2048 -validity 10000``
@@ -111,7 +117,9 @@ in the Destribution Signing you must have ``key.keystore`` file and to make this
 	* repeat password
 
 The Key will be now created, go to C:\Path\To\Java\jdk1.8.0_202\bin folder to get the file copy the ``key.keystore`` file and paste it in ``ProjectRootFolder/Build/Android/``
-Back at the Project settings in the Unreal Engine editor inside 'Distribution Signing':
+
+Back at the Project settings in the Unreal Engine editor inside ``Distribution Signing``:
+
 * Key Strore (output of keytool, placed in <Project>/Build/Android): key.keystore
 * Key Alias (-alias parameter to keytool): Mykey
 * Key Store  Password(-storepass parameter to keytool)
