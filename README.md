@@ -125,6 +125,51 @@ Back at the Project settings in the Unreal Engine editor inside ``Distribution S
 * Key Store  Password(-storepass parameter to keytool)
 * Key Password(leave blank to use key store password)
 
+### Setup for iOS
+
+Log into [Developer Account](https://developer.apple.com/) you will have to create the ``Provisioning Profile``. Log into your account and go to ``Certificated, Identifiers & Profiles``, next create a new certificate and choose ``iOS Distribution`` and click continue. 
+
+Now you will be required to provide the ``Certificate Signing Request``.
+
+To do that on your Mac search for ``Keychain Access`` and inside ``Certificate Assistant`` select ``Create a Certificate For Someone Else as a Certificate Authority``.
+
+Write out the information required and enable checkbox ``Saved to desk``.
+
+Now back at the Apple site you can click ``Choose file`` and select the certificate signing request that you just created, after that click continue.
+
+On the next page click ``Download``. You will need to upload this to the Unreal Engine Project Settings.
+
+Now go back to the main panel on the Developer account and select the ``Identifiers`` Tab.
+
+Add new Identifier, select ``App``, next give it a ``Description`` and ``App ID Prefix`` (You will need ``Description`` and ``App ID Prefix`` later in the Unreal Engine). After that click next and ``Register``
+
+### Provisioning Profile
+
+Navigate to the ``Profiles`` tab from the main page in the Developer account.
+
+* Add new profile and select the ``App Store`` from the ``Distribution`` section.
+* Now Select the ``App ID`` we have just created, click continue.
+* Now Select the ``Certificate`` that we created, click continue.
+* Now enter the name for your ``Provisioning Profile``. Press the ``Generate`` button and download it.
+
+### Setup inside Unreal Engine
+
+* Navigate to the Project Settings and then to ``Packaging``. Under ``Base Configuration`` select Shipping.
+* Go to iOS Tab and Import your ``Provisioning Profile``
+* Select the right certificate and ``Provisioning Profile``
+* Fill in the ``Bundle Display Name``
+* Fill in the ``Bundle Name``
+* Fill in the ``Bundle Identifier`` with the one you created before your Bundle Identifier
+
+### Outside the Unreal Engine
+
+For the Plugin to work correctly you will also have to copy the certificate to your content folder.
+
+* Navigate to the ``Path/To/The/UnrealEngine/Engine/Content/Certificates/ThirdParty`` and from there copy the ``cacert.pem``
+* Now go to ``Path/To/YourProject/Content/`` and create the directory ``Certificates`` paste the ``cacert.pem`` inside the folder.
+* Now open your project, and inside Project Settings in the packaging section. Find ``Additional Non-Assets Directories to Copy`` and add the ``Certificates`` directory to it.
+
+
 ## Documentation
 
 You can find the documentation for the plugin here: [https://docs.millicast.com/docs/millicast-player-plugin](https://docs.millicast.com/docs/millicast-player-plugin)
