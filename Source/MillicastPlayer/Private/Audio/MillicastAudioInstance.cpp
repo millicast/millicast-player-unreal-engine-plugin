@@ -3,6 +3,7 @@
 #include "Audio/MillicastAudioInstance.h"
 
 #include "AudioDevice.h"
+#include "Engine/Engine.h"
 #include "MillicastPlayerPrivate.h"
 
 #include "Components/AudioComponent.h"

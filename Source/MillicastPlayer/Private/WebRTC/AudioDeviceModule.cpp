@@ -6,6 +6,7 @@
 #include "MillicastPlayerPrivate.h"
 #include "MillicastUtil.h"
 #include "Async/Async.h"
+#include "Util.h"
 
 namespace Millicast::Player
 {
@@ -104,7 +105,11 @@ int32_t FAudioDeviceModule::StartPlayout()
 	SetPlaying(true);
 
 	const rtc::scoped_refptr<FAudioDeviceModule> SelfRef(this);
+#if MILLICAST_HAS_CXX20
+	AsyncGameThreadTaskUnguarded([=, this]
+#else
 	AsyncGameThreadTaskUnguarded([=]
+#endif
 	{
 		ReadDataAvailable = false;
 		AudioBuffer.SetNumUninitialized(AudioParameters.GetNumberSamples() * AudioParameters.GetNumberBytesPerSample());

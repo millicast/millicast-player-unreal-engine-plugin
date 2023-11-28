@@ -20,10 +20,18 @@ public:
 	FMillicastMediaTextureResource(class UMillicastMediaTexture2D* Owner = nullptr);
 
 	/** FTextureResource Interface Implementation for 'InitDynamicRHI' */
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 3
+	virtual void InitRHI(FRHICommandListBase& rhi) override;
+#else
 	virtual void InitDynamicRHI() override;
+#endif
 
 	/** FTextureResource Interface Implementation for 'ReleaseDynamicRHI' */
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 3
+	virtual void ReleaseRHI() override;
+#else
 	virtual void ReleaseDynamicRHI() override;
+#endif
 
 	/** FTextureResource Interface Implementation for 'GetResourceSize' */
 	SIZE_T GetResourceSize();

@@ -12,7 +12,11 @@ FMillicastMediaTextureResource::FMillicastMediaTextureResource(UMillicastMediaTe
 	MediaTexture = Owner;
 }
 
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 3
+void FMillicastMediaTextureResource::InitRHI(FRHICommandListBase& Rhi)
+#else
 void FMillicastMediaTextureResource::InitDynamicRHI()
+#endif
 {
 	if (MediaTexture != nullptr)
 	{
@@ -25,7 +29,11 @@ void FMillicastMediaTextureResource::InitDynamicRHI()
 	}
 }
 
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 3
+void FMillicastMediaTextureResource::ReleaseRHI()
+#else
 void FMillicastMediaTextureResource::ReleaseDynamicRHI()
+#endif
 {
 	TextureRHI.SafeRelease();
 
