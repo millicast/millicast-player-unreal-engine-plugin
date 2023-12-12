@@ -182,6 +182,11 @@ namespace Millicast::Player
 			return -1;
 		}
 
+#ifdef WEBRTC_IOS
+	        int GetPlayoutAudioParameters(webrtc::AudioParameters* params) const override { return 0; }
+	        int GetRecordAudioParameters(webrtc::AudioParameters* params) const override { return 0; }
+#endif	  
+
 		void AddRef() const override = 0;
 		rtc::RefCountReleaseStatus Release() const override = 0;
 
