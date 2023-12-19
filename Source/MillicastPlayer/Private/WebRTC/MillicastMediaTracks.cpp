@@ -56,7 +56,7 @@ void UMillicastVideoTrackImpl::OnFrame(const webrtc::VideoFrame& VideoFrame)
 				auto& ConsumerRef = VideoConsumers[Index];
 				if (auto* Consumer = ConsumerRef.Get())
 				{
-					Consumer->OnFrame(Buffer, VideoFrame.width(), VideoFrame.height());
+					Consumer->OnFrame(Buffer, VideoFrame.width(), VideoFrame.height(), (int64)VideoFrame.timestamp());
 					continue;
 				}
 
