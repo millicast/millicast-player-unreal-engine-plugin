@@ -39,7 +39,7 @@ If that is the case, create an empty C++ class in your project. This will force 
 
 If you want to run the plugin on Mac, or have H264 decoding support, you will need to use our webrtc library instead of the Unreal one. You need to add it directly into your project, in the plugin ThirdParty.
 
-Download the ``ThirdParty.zip`` file that you can find in the release assets of the latest github pre-release.
+Download the ``ThirdParty.zip`` file that you can find in the release assets of the latest github release.
 
 Then, extract it and move the ``ThirdParty`` folder into the ``Source`` folder of the plugins.
 After that, you should be able to build and run the plugin using our WebRTC library. 
