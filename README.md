@@ -10,7 +10,7 @@ You can configure your credentials and configure your game logic using unreal ob
 
 * VP8 (software decoding)
 * VP9 (software decoding)
-* H264 is supported by using the millicast-webrtc branch and downloading the millicast version of libwebrtc. See below for setup instructions. Otherwise, for the main branch H264 decoding will result in a black screen.
+* H264 is supported by using the millicast WebRTC library instead of the unreal webrtc module.
 
 ## Installation
 
