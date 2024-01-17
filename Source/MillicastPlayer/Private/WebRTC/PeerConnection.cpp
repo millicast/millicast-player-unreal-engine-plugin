@@ -10,6 +10,7 @@
 #include "WebRTC/PlayerStatsCollector.h"
 #include "MillicastPlayerPrivate.h"
 #include "MillicastUtil.h"
+#include "MillicastVideoDecoderFactory.h"
 
 namespace
 {
@@ -179,7 +180,7 @@ void FWebRTCPeerConnection::CreatePeerConnectionFactory()
 		webrtc::CreateAudioEncoderFactory<webrtc::AudioEncoderOpus, webrtc::AudioEncoderMultiChannelOpus>(),
 		webrtc::CreateAudioDecoderFactory<webrtc::AudioDecoderOpus, webrtc::AudioDecoderMultiChannelOpus>(),
 		webrtc::CreateBuiltinVideoEncoderFactory(),
-		webrtc::CreateBuiltinVideoDecoderFactory(),
+		std::make_unique<FMillicastVideoDecoderFactory>(),
 		nullptr,
 		nullptr
 	).release();

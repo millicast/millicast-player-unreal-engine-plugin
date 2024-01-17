@@ -22,7 +22,7 @@ void UMillicastTexture2DPlayer::OnFrame(TArray<uint8>& VideoData, int Width, int
 		{
 			OnVideoResolutionChanged.Broadcast(Width, Height);
 		});
-	}
+	} //non
 	
 #if MILLICAST_HAS_CXX20
 	AsyncTask(ENamedThreads::ActualRenderingThread, [=, this]()

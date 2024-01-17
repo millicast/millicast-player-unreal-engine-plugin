@@ -72,7 +72,9 @@ namespace UnrealBuildTool.Rules
 					"SSL",
 					"RHI",
 					"libOpus",
-					"HeadMountedDisplay"
+					"HeadMountedDisplay",
+					"AVCodecsCore",
+					"AVCodecsCoreRHI"
 		});
 
 			PrivateIncludePathModuleNames.AddRange(
