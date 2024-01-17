@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - '*'
+    workflow_dispatch:
 
 jobs:
   Trigger_Example_Build:
@@ -49,7 +50,7 @@ jobs:
         id: trigger_workflow_branch
         if: steps.branch-check.outputs.branch_exists == 'true'
         run: |
-          echo "trigger Workflow"
+          echo "trigger Workflow on matched branch"
           curl -L \
           -X POST \
           -H "Accept: application/vnd.github+json" \
