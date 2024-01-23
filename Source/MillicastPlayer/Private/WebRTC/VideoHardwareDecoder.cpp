@@ -1,5 +1,7 @@
 // Copyright Dolby.io 2024. All Rights Reserved.
 
+#if WITH_AVCODECS
+
 #include "VideoHardwareDecoder.h"
 
 #include "MillicastPlayerPrivate.h"
@@ -91,3 +93,5 @@ int32 FVideoHardwareDecoder::Release()
 }
 	
 }
+
+#endif

@@ -38,13 +38,12 @@ void UMillicastMediaTexture2D::CreateRenderableTexture(FMillicastMediaTextureRes
 		return;
 	}
 
-	TRefCountPtr<FRHITexture2D> RenderableTexture;
-	NMillicastMedia::CreateTexture( RenderableTexture, 1920, 1080 );
-	TextureResource->TextureRHI = (FTextureRHIRef&)RenderableTexture;
-
 	ENQUEUE_RENDER_COMMAND(FMillicastMediaTexture2DUpdateTextureReference)
-	([this](FRHICommandListImmediate& RHICmdList)
+	([this, TextureResource](FRHICommandListImmediate& RHICmdList)
 	{
+		TRefCountPtr<FRHITexture2D> RenderableTexture;
+		NMillicastMedia::CreateTexture(RenderableTexture, 1920, 1080);
+		TextureResource->TextureRHI = (FTextureRHIRef&)RenderableTexture;
 		RHIUpdateTextureReference(TextureReference.TextureReferenceRHI, GetResource()->TextureRHI);
 	});
 

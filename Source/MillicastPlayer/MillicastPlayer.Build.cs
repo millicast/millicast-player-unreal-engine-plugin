@@ -72,12 +72,21 @@ namespace UnrealBuildTool.Rules
 					"SSL",
 					"RHI",
 					"libOpus",
-					"HeadMountedDisplay",
-					"AVCodecsCore",
-					"AVCodecsCoreRHI"
-		});
+					"HeadMountedDisplay"
+			});
 
-			PrivateIncludePathModuleNames.AddRange(
+            if (Target.Platform.ToString() == "Android" || Target.Platform.ToString() == "IOS" || Target.Platform.ToString() == "Mac")
+            {
+                PublicDefinitions.Add("WITH_AVCODECS=0");
+            }
+            else
+            {
+                PublicDefinitions.Add("WITH_AVCODECS=1");
+                // required for casting UE4 BackBuffer to Vulkan Texture2D for NvEnc
+                PrivateDependencyModuleNames.AddRange(new string[] { "AVCodecsCore", "AVCodecsCoreRHI" });
+            }
+
+            PrivateIncludePathModuleNames.AddRange(
 				new string[] {
 					"Media",
 				});

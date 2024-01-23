@@ -16,6 +16,17 @@
 #include "api/video_codecs/h264_profile_level_id.h"
 #endif
 
+#if PLATFORM_ANDROID
+
+#include "sdk/android/native_api/codecs/wrapper.h"
+#include "sdk/android/native_api/jni/class_loader.h"
+#include "sdk/android/native_api/jni/jvm.h"
+#include "sdk/android/native_api/jni/scoped_java_ref.h"
+#include "sdk/android/src/jni/jvm.h"
+#include "sdk/android/src/jni/video_decoder_factory_wrapper.h"
+
+#endif
+
 namespace Millicast::Player
 {
 
@@ -48,11 +59,12 @@ webrtc::SdpVideoFormat CreateH264Format(H264_Profile profile, H264_Level level)
 std::vector<webrtc::SdpVideoFormat> FMillicastVideoDecoderFactory::GetSupportedFormats() const
 {
 	std::vector<webrtc::SdpVideoFormat> VideoFormats;
-	// VideoFormats.push_back(CreateH264Format(H264_Profile::kProfileMain, H264_Level::kLevel1));
+	
 	VideoFormats.push_back(webrtc::SdpVideoFormat(cricket::kVp8CodecName));
 	VideoFormats.push_back(webrtc::SdpVideoFormat(cricket::kVp9CodecName));
 	VideoFormats.push_back(CreateH264Format(H264_Profile::kProfileConstrainedBaseline, H264_Level::kLevel3_1));
 	VideoFormats.push_back(CreateH264Format(H264_Profile::kProfileBaseline, H264_Level::kLevel3_1));
+
 	return VideoFormats;
 }
 
@@ -71,11 +83,48 @@ std::unique_ptr<webrtc::VideoDecoder> FMillicastVideoDecoderFactory::CreateVideo
 
 	if (absl::EqualsIgnoreCase(format.name, cricket::kH264CodecName))
 	{
+#if WITH_AVCODECS
 		return std::make_unique<Millicast::Player::FVideoHardwareDecoder>();
+#endif
 	}
 
 	UE_LOG(LogMillicastPlayer, Warning, TEXT("CreateVideoEncoder called with unknown encoder: %s"), *FString(format.name.c_str()));
 	return nullptr;
+}
+
+FMillicastVideoDecoderFactoryBase::FMillicastVideoDecoderFactoryBase()
+{
+#if PLATFORM_ANDROID
+	JNIEnv* env = webrtc::AttachCurrentThreadIfNeeded();
+
+	webrtc::ScopedJavaLocalRef<jclass> factory_class =
+		webrtc::GetClass(env, "org/webrtc/HardwareVideoDecoderFactory");
+
+	jmethodID factory_constructor = env->GetMethodID(
+		factory_class.obj(), "<init>", "(Lorg/webrtc/EglBase$Context;)V");
+
+	webrtc::ScopedJavaLocalRef<jobject> factory_object(
+		env, env->NewObject(factory_class.obj(), factory_constructor,
+			nullptr /* shared_context */));
+
+	DecoderImpl = MakeUnique<webrtc::jni::VideoDecoderFactoryWrapper>(env, 
+		webrtc::JavaParamRef<jobject>(factory_object.obj()));
+
+#elif PLATFORM_IOS || PLATFORM_MAC
+	DecoderImpl = MakeUnique<FMillicastVideoDecoderFactory>();
+#else
+	DecoderImpl = MakeUnique<FMillicastVideoDecoderFactory>();
+#endif
+}
+
+std::vector<webrtc::SdpVideoFormat> FMillicastVideoDecoderFactoryBase::GetSupportedFormats() const
+{
+	return DecoderImpl->GetSupportedFormats();
+}
+
+std::unique_ptr<webrtc::VideoDecoder> FMillicastVideoDecoderFactoryBase::CreateVideoDecoder(const webrtc::SdpVideoFormat& format)
+{
+	return DecoderImpl->CreateVideoDecoder(format);
 }
 
 }

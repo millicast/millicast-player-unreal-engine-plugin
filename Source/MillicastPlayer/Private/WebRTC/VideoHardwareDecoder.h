@@ -2,6 +2,8 @@
 
 #pragma once
 
+#if WITH_AVCODECS
+
 #include "WebRTC/WebRTCInc.h"
 #include "Video/Decoders/Configs/VideoDecoderConfigH264.h"
 #include "Video/Resources/VideoResourceRHI.h"
@@ -27,3 +29,5 @@ namespace Millicast::Player
 		uint32 FrameCount = 0;
 	};
 }
+
+#endif
